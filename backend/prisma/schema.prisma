@@ -1,0 +1,263 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum MatchStatus {
+  SCHEDULED
+  LIVE
+  HALFTIME
+  FINISHED
+  POSTPONED
+  CANCELLED
+}
+
+enum PlayerPosition {
+  GOALKEEPER
+  DEFENDER
+  MIDFIELDER
+  FORWARD
+}
+
+enum ArticleCategory {
+  NEWS
+  ANALYSIS
+  INTERVIEW
+  TRANSFER
+  MATCH_REPORT
+}
+
+// ─── User ─────────────────────────────────────────────────────────────────────
+
+model User {
+  id              String    @id @default(cuid())
+  email           String    @unique
+  username        String    @unique
+  password_hash   String
+  full_name       String?
+  avatar_url      String?
+  role            Role      @default(USER)
+  is_verified     Boolean   @default(false)
+  refresh_token   String?
+
+  favorite_teams  Team[]    @relation("UserFavoriteTeams")
+  favorite_leagues League[] @relation("UserFavoriteLeagues")
+  articles        Article[]
+
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+
+  @@map("users")
+}
+
+// ─── Country ──────────────────────────────────────────────────────────────────
+
+model Country {
+  id         String   @id @default(cuid())
+  name       String   @unique
+  code       String   @unique
+  flag_url   String?
+
+  leagues    League[]
+  teams      Team[]
+  players    Player[]
+
+  @@map("countries")
+}
+
+// ─── League / Competition ─────────────────────────────────────────────────────
+
+model League {
+  id          String   @id @default(cuid())
+  name        String
+  short_name  String?
+  logo_url    String?
+  country_id  String?
+  country     Country? @relation(fields: [country_id], references: [id])
+  is_active   Boolean  @default(true)
+
+  seasons     Season[]
+  favorites   User[]   @relation("UserFavoriteLeagues")
+
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  @@map("leagues")
+}
+
+// ─── Season ───────────────────────────────────────────────────────────────────
+
+model Season {
+  id          String   @id @default(cuid())
+  league_id   String
+  league      League   @relation(fields: [league_id], references: [id])
+  year        Int
+  start_date  DateTime
+  end_date    DateTime
+  is_current  Boolean  @default(false)
+
+  matches     Match[]
+  standings   Standing[]
+
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  @@unique([league_id, year])
+  @@map("seasons")
+}
+
+// ─── Team ─────────────────────────────────────────────────────────────────────
+
+model Team {
+  id          String   @id @default(cuid())
+  name        String
+  short_name  String?
+  code        String?
+  logo_url    String?
+  country_id  String?
+  country     Country? @relation(fields: [country_id], references: [id])
+  founded     Int?
+  stadium     String?
+  venue_city  String?
+  is_active   Boolean  @default(true)
+
+  home_matches    Match[]    @relation("HomeTeam")
+  away_matches    Match[]    @relation("AwayTeam")
+  players         Player[]
+  standings       Standing[]
+  favorites       User[]     @relation("UserFavoriteTeams")
+
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  @@map("teams")
+}
+
+// ─── Player ───────────────────────────────────────────────────────────────────
+
+model Player {
+  id          String         @id @default(cuid())
+  name        String
+  first_name  String?
+  last_name   String?
+  photo_url   String?
+  nationality String?
+  country_id  String?
+  country     Country?       @relation(fields: [country_id], references: [id])
+  date_of_birth DateTime?
+  position    PlayerPosition?
+  number      Int?
+  team_id     String?
+  team        Team?          @relation(fields: [team_id], references: [id])
+  is_active   Boolean        @default(true)
+
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  @@map("players")
+}
+
+// ─── Match / Fixture ──────────────────────────────────────────────────────────
+
+model Match {
+  id             String      @id @default(cuid())
+  season_id      String
+  season         Season      @relation(fields: [season_id], references: [id])
+  home_team_id   String
+  home_team      Team        @relation("HomeTeam", fields: [home_team_id], references: [id])
+  away_team_id   String
+  away_team      Team        @relation("AwayTeam", fields: [away_team_id], references: [id])
+  kickoff_at     DateTime
+  status         MatchStatus @default(SCHEDULED)
+  minute         Int?
+  home_score     Int?
+  away_score     Int?
+  home_ht_score  Int?
+  away_ht_score  Int?
+  venue          String?
+  referee        String?
+
+  events         MatchEvent[]
+
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  @@map("matches")
+}
+
+// ─── Match Event ──────────────────────────────────────────────────────────────
+
+model MatchEvent {
+  id          String   @id @default(cuid())
+  match_id    String
+  match       Match    @relation(fields: [match_id], references: [id])
+  type        String
+  minute      Int
+  team_id     String?
+  player_name String?
+  detail      String?
+
+  created_at  DateTime @default(now())
+
+  @@map("match_events")
+}
+
+// ─── Standing ─────────────────────────────────────────────────────────────────
+
+model Standing {
+  id             String  @id @default(cuid())
+  season_id      String
+  season         Season  @relation(fields: [season_id], references: [id])
+  team_id        String
+  team           Team    @relation(fields: [team_id], references: [id])
+  position       Int
+  played         Int     @default(0)
+  won            Int     @default(0)
+  drawn          Int     @default(0)
+  lost           Int     @default(0)
+  goals_for      Int     @default(0)
+  goals_against  Int     @default(0)
+  goal_diff      Int     @default(0)
+  points         Int     @default(0)
+  form           String?
+
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  @@unique([season_id, team_id])
+  @@map("standings")
+}
+
+// ─── Article / News ───────────────────────────────────────────────────────────
+
+model Article {
+  id           String          @id @default(cuid())
+  title        String
+  slug         String          @unique
+  excerpt      String?
+  content      String
+  cover_url    String?
+  category     ArticleCategory @default(NEWS)
+  is_published Boolean         @default(false)
+  published_at DateTime?
+  author_id    String
+  author       User            @relation(fields: [author_id], references: [id])
+  tags         String[]
+
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  @@map("articles")
+}
