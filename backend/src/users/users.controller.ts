@@ -3,7 +3,7 @@ import { UsersService } from './users.service.js';
 import { UpdateProfileDto } from './dto/update-profile.dto.js';
 import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard.js';
 import { CurrentUser } from '@/common/decorators/current-user.decorator.js';
-import { SafeUser } from '@/common/constants/user-select.constant.js';
+import type { SafeUser } from '@/common/constants/user-select.constant.js';
 
 @UseGuards(JwtAuthGuard)
 @Controller('users')

@@ -5,7 +5,7 @@ import { LoginDto } from './dto/login.dto.js';
 import { Public } from '@/common/decorators/public.decorator.js';
 import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
 import { CurrentUser } from '@/common/decorators/current-user.decorator.js';
-import { SafeUser } from '@/common/constants/user-select.constant.js';
+import type { SafeUser } from '@/common/constants/user-select.constant.js';
 
 @Controller('auth')
 export class AuthController {
