@@ -90,8 +90,8 @@ jobs:
 
             echo ${DOCKERHUB_TOKEN} | docker login -u ${DOCKERHUB_USERNAME} --password-stdin
 
-            docker-compose pull
-            docker-compose up -d --remove-orphans --force-recreate
+            docker compose pull
+            docker compose up -d --remove-orphans --force-recreate
             docker image prune -f
         env:
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
