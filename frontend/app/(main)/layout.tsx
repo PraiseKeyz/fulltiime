@@ -40,7 +40,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
           <div className="mt-10 h-px w-16 bg-primary/40" />
 
           <p className="mt-6 text-[12px] text-[#555] tracking-wide">
-            © 2026 FULLTIIME. All rights reserved.
+            © 2026 FULLTIIME. All rights reserved. A product of Glostarep Media Limited.
           </p>
         </div>
 
