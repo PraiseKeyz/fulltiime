@@ -1,22 +1,36 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-const MAIN_DOMAINS = ['fulltiime.com', 'www.fulltiime.com']
+const MAIN_DOMAIN = 'fulltiime.com'
 
 export function middleware(request: NextRequest) {
-  const hostname = request.nextUrl.hostname
+  const hostname = request.headers.get('host') || ''
+  const { pathname } = request.nextUrl
 
-  if (MAIN_DOMAINS.includes(hostname)) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/coming-soon'
-    return NextResponse.rewrite(url)
+  console.log(`[Middleware] Host: ${hostname} | Path: ${pathname}`)
+
+  const isMainDomain = hostname.includes(MAIN_DOMAIN)
+  const isBetaOrDev  = hostname.startsWith('beta.') || hostname.startsWith('dev.')
+
+  if (isMainDomain && !isBetaOrDev) {
+    // Root → rewrite to coming-soon (URL stays as fulltiime.com)
+    if (pathname === '/') {
+      return NextResponse.rewrite(new URL('/coming-soon', request.url))
+    }
+
+    // Any other path → redirect back to root so nobody bypasses via /news etc.
+    const isInternal = pathname.startsWith('/_next') ||
+                       pathname.startsWith('/api')   ||
+                       pathname.startsWith('/coming-soon')
+
+    if (!isInternal) {
+      return NextResponse.redirect(new URL('/', request.url))
+    }
   }
 
   return NextResponse.next()
 }
 
 export const config = {
-  matcher: [
-    '/((?!_next/static|_next/image|coming-soon|.*\\.png|.*\\.jpg|.*\\.svg|.*\\.ico).*)',
-  ],
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
 }
