@@ -63,7 +63,7 @@ export function Footer() {
             </div>
           </div>
 
-          {/* Link columns */}
+      
           {COLUMNS.map((col) => (
             <div key={col.title}>
               <h4 className="text-[11px] font-sans uppercase tracking-widest mb-3 text-foreground">
