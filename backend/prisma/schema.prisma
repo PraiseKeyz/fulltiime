@@ -80,13 +80,14 @@ model Country {
 // ─── League / Competition ─────────────────────────────────────────────────────
 
 model League {
-  id          String   @id @default(cuid())
-  name        String
-  short_name  String?
-  logo_url    String?
-  country_id  String?
-  country     Country? @relation(fields: [country_id], references: [id])
-  is_active   Boolean  @default(true)
+  id               String   @id @default(cuid())
+  api_football_id  Int?     @unique
+  name             String
+  short_name       String?
+  logo_url         String?
+  country_id       String?
+  country          Country? @relation(fields: [country_id], references: [id])
+  is_active        Boolean  @default(true)
 
   seasons     Season[]
   favorites   User[]   @relation("UserFavoriteLeagues")
@@ -121,17 +122,18 @@ model Season {
 // ─── Team ─────────────────────────────────────────────────────────────────────
 
 model Team {
-  id          String   @id @default(cuid())
-  name        String
-  short_name  String?
-  code        String?
-  logo_url    String?
-  country_id  String?
-  country     Country? @relation(fields: [country_id], references: [id])
-  founded     Int?
-  stadium     String?
-  venue_city  String?
-  is_active   Boolean  @default(true)
+  id               String   @id @default(cuid())
+  api_football_id  Int?     @unique
+  name             String
+  short_name       String?
+  code             String?
+  logo_url         String?
+  country_id       String?
+  country          Country? @relation(fields: [country_id], references: [id])
+  founded          Int?
+  stadium          String?
+  venue_city       String?
+  is_active        Boolean  @default(true)
 
   home_matches    Match[]    @relation("HomeTeam")
   away_matches    Match[]    @relation("AwayTeam")
@@ -148,20 +150,21 @@ model Team {
 // ─── Player ───────────────────────────────────────────────────────────────────
 
 model Player {
-  id          String         @id @default(cuid())
-  name        String
-  first_name  String?
-  last_name   String?
-  photo_url   String?
-  nationality String?
-  country_id  String?
-  country     Country?       @relation(fields: [country_id], references: [id])
-  date_of_birth DateTime?
-  position    PlayerPosition?
-  number      Int?
-  team_id     String?
-  team        Team?          @relation(fields: [team_id], references: [id])
-  is_active   Boolean        @default(true)
+  id               String         @id @default(cuid())
+  api_football_id  Int?           @unique
+  name             String
+  first_name       String?
+  last_name        String?
+  photo_url        String?
+  nationality      String?
+  country_id       String?
+  country          Country?       @relation(fields: [country_id], references: [id])
+  date_of_birth    DateTime?
+  position         PlayerPosition?
+  number           Int?
+  team_id          String?
+  team             Team?          @relation(fields: [team_id], references: [id])
+  is_active        Boolean        @default(true)
 
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
@@ -172,8 +175,9 @@ model Player {
 // ─── Match / Fixture ──────────────────────────────────────────────────────────
 
 model Match {
-  id             String      @id @default(cuid())
-  season_id      String
+  id               String      @id @default(cuid())
+  api_football_id  Int?        @unique
+  season_id        String
   season         Season      @relation(fields: [season_id], references: [id])
   home_team_id   String
   home_team      Team        @relation("HomeTeam", fields: [home_team_id], references: [id])

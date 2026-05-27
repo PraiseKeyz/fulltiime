@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { ScheduleModule } from '@nestjs/schedule';
 import { APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
@@ -13,10 +14,13 @@ import { StandingsModule } from './standings/standings.module.js';
 import { NewsModule } from './news/news.module.js';
 import { TeamsModule } from './teams/teams.module.js';
 import { PlayersModule } from './players/players.module.js';
+import { ApiFootballModule } from './api-football/api-football.module.js';
+import { SyncModule } from './sync/sync.module.js';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    ScheduleModule.forRoot(),
 
     ThrottlerModule.forRoot([{
       name: 'global',
@@ -33,6 +37,8 @@ import { PlayersModule } from './players/players.module.js';
     NewsModule,
     TeamsModule,
     PlayersModule,
+    ApiFootballModule,
+    SyncModule,
   ],
   controllers: [AppController],
   providers: [
