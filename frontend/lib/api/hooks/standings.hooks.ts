@@ -1,6 +1,14 @@
 import { useQuery } from '@tanstack/react-query'
 import { api } from '../instance'
-import type { StandingsResponse, Standing } from '../domain'
+import type { StandingsResponse, Standing, SnapshotEntry } from '../domain'
+
+export function useStandingsSnapshot() {
+  return useQuery({
+    queryKey: ['standings', 'snapshot'],
+    queryFn:  () => api.get<SnapshotEntry[]>('/standings/snapshot'),
+    staleTime: 5 * 60_000,
+  })
+}
 
 export const standingKeys = {
   league: (leagueId: string, season?: number) =>

@@ -28,6 +28,19 @@ export class FixturesController {
     return this.fixturesService.findLive();
   }
 
+  @Get('upcoming')
+  findUpcoming(
+    @Query('leagueId') leagueId?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.fixturesService.findUpcoming(leagueId, limit ? Number(limit) : 10);
+  }
+
+  @Get('featured')
+  findFeatured() {
+    return this.fixturesService.findFeatured();
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.fixturesService.findOne(id);

@@ -27,6 +27,34 @@ export class StandingsService {
     return { data: { season, standings } };
   }
 
+  async snapshot() {
+    const leagues = await this.prisma.league.findMany({
+      where:   { is_active: true },
+      include: {
+        seasons: {
+          where:   { is_current: true },
+          take:    1,
+          include: {
+            standings: {
+              include:  { team: { select: { id: true, name: true, short_name: true, logo_url: true } } },
+              orderBy:  { position: 'asc' },
+              take:     5,
+            },
+          },
+        },
+      },
+    });
+
+    const result = leagues
+      .filter(l => l.seasons[0]?.standings.length > 0)
+      .map(l => ({
+        league:    { id: l.id, name: l.name, logo_url: l.logo_url, short_name: l.short_name },
+        standings: l.seasons[0].standings,
+      }));
+
+    return { data: result };
+  }
+
   async findByTeam(teamId: string) {
     const standings = await this.prisma.standing.findMany({
       where: { team_id: teamId },

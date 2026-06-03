@@ -1,10 +1,12 @@
 import { Module } from '@nestjs/common';
 import { SyncService } from './sync.service.js';
-import { ApiFootballModule } from '../api-football/api-football.module.js';
+import { SyncController } from './sync.controller.js';
+import { SportMonksModule } from '../sportmonks/sportmonks.module.js';
 
 @Module({
-  imports:   [ApiFootballModule],
-  providers: [SyncService],
-  exports:   [SyncService],
+  imports:     [SportMonksModule],
+  providers:   [SyncService],
+  controllers: [SyncController],
+  exports:     [SyncService],
 })
 export class SyncModule {}

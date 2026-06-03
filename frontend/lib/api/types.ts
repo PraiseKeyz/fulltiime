@@ -2,9 +2,10 @@ import type { ApiError, NetworkError } from './errors'
 
 export interface ApiEnvelope<T = unknown> {
   success: boolean
-  statusCode: number
+  statusCode?: number
   data: T
   message?: string
+  error?: unknown
   timestamp?: string
 }
 

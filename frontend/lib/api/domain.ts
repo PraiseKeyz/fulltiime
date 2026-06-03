@@ -44,7 +44,7 @@ export interface League {
 export interface Season {
   id: string
   league_id: string
-  league: League
+  league?: League
   year: number
   start_date: string
   end_date: string
@@ -122,6 +122,26 @@ export interface Match {
   venue: string | null
   referee: string | null
   events?: MatchEvent[]
+  statistics?: MatchStatistic[]
+}
+
+export interface FeaturedMatchResponse {
+  match: Match
+  type: 'live' | 'upcoming' | 'finished'
+}
+
+// ─── Match Statistic ─────────────────────────────────────────────────────────
+
+export interface MatchStatistic {
+  team_id:         string
+  possession:      number | null
+  shots:           number | null
+  shots_on_target: number | null
+  xg:              number | null
+  corners:         number | null
+  fouls:           number | null
+  yellow_cards:    number | null
+  red_cards:       number | null
 }
 
 // ─── Standing ─────────────────────────────────────────────────────────────────
@@ -143,6 +163,13 @@ export interface Standing {
 
 export interface StandingsResponse {
   season: Season
+  standings: Standing[]
+}
+
+// ─── Standings Snapshot ───────────────────────────────────────────────────────
+
+export interface SnapshotEntry {
+  league:    Pick<League, 'id' | 'name' | 'logo_url' | 'short_name'>
   standings: Standing[]
 }
 

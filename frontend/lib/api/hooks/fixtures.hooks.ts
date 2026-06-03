@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { api } from '../instance'
-import type { Match, MatchStatus } from '../domain'
+import type { Match, MatchStatus, FeaturedMatchResponse } from '../domain'
 
 export const fixtureKeys = {
   all: ['fixtures'] as const,
@@ -48,5 +48,27 @@ export function useFixture(id: string) {
     queryKey: fixtureKeys.detail(id),
     queryFn: () => api.get<Match>(`/fixtures/${id}`),
     enabled: !!id,
+  })
+}
+
+export function useUpcomingFixtures(leagueId?: string, limit = 10) {
+  return useQuery({
+    queryKey: ['fixtures', 'upcoming', leagueId, limit],
+    queryFn: () =>
+      api.get<Match[]>('/fixtures/upcoming', {
+        params: {
+          ...(leagueId ? { leagueId } : {}),
+          limit,
+        },
+      }),
+    staleTime: 5 * 60_000,
+  })
+}
+
+export function useFeaturedMatch() {
+  return useQuery({
+    queryKey: ['fixtures', 'featured'],
+    queryFn: () => api.get<FeaturedMatchResponse>('/fixtures/featured'),
+    refetchInterval: 60_000,
   })
 }

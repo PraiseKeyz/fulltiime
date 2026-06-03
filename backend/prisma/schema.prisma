@@ -101,13 +101,14 @@ model League {
 // ─── Season ───────────────────────────────────────────────────────────────────
 
 model Season {
-  id          String   @id @default(cuid())
-  league_id   String
-  league      League   @relation(fields: [league_id], references: [id])
-  year        Int
-  start_date  DateTime
-  end_date    DateTime
-  is_current  Boolean  @default(false)
+  id              String   @id @default(cuid())
+  sportmonks_id   Int?     @unique
+  league_id       String
+  league          League   @relation(fields: [league_id], references: [id])
+  year            Int
+  start_date      DateTime
+  end_date        DateTime
+  is_current      Boolean  @default(false)
 
   matches     Match[]
   standings   Standing[]
@@ -135,11 +136,12 @@ model Team {
   venue_city       String?
   is_active        Boolean  @default(true)
 
-  home_matches    Match[]    @relation("HomeTeam")
-  away_matches    Match[]    @relation("AwayTeam")
+  home_matches    Match[]          @relation("HomeTeam")
+  away_matches    Match[]          @relation("AwayTeam")
   players         Player[]
   standings       Standing[]
-  favorites       User[]     @relation("UserFavoriteTeams")
+  statistics      MatchStatistic[]
+  favorites       User[]           @relation("UserFavoriteTeams")
 
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
@@ -194,6 +196,7 @@ model Match {
   referee        String?
 
   events         MatchEvent[]
+  statistics     MatchStatistic[]
 
   created_at     DateTime @default(now())
   updated_at     DateTime @updatedAt
@@ -242,6 +245,29 @@ model Standing {
 
   @@unique([season_id, team_id])
   @@map("standings")
+}
+
+// ─── Match Statistic ──────────────────────────────────────────────────────────
+
+model MatchStatistic {
+  id              String  @id @default(cuid())
+  match_id        String
+  match           Match   @relation(fields: [match_id], references: [id])
+  team_id         String
+  team            Team    @relation(fields: [team_id], references: [id])
+  possession      Float?
+  shots           Int?
+  shots_on_target Int?
+  xg              Float?
+  corners         Int?
+  fouls           Int?
+  yellow_cards    Int?
+  red_cards       Int?
+
+  updated_at      DateTime @updatedAt
+
+  @@unique([match_id, team_id])
+  @@map("match_statistics")
 }
 
 // ─── Article / News ───────────────────────────────────────────────────────────

@@ -1,43 +1,174 @@
 'use client'
 
+import { useState, useMemo } from 'react'
 import { ChevronRight } from 'lucide-react'
 import Link from 'next/link'
-import { cn } from '@/lib/utils'
+import { cn, formatKickoff } from '@/lib/utils'
+import { useTodayFixtures } from '@/lib/api/hooks/fixtures.hooks'
+import type { Match } from '@/lib/api/domain'
 
-// Placeholder match data — will be replaced with API data
-const MOCK_MATCHES = [
-  { id: '1', comp: 'UCL', status: 'LIVE', minute: 87, home: 'ARS', homeLogo: '', away: 'BAR', awayLogo: '', homeScore: 2, awayScore: 1, awayRed: true },
-  { id: '2', comp: 'UCL', status: 'LIVE', minute: 23, home: 'MCI', homeLogo: '', away: 'RMA', awayLogo: '', homeScore: 0, awayScore: 0 },
-  { id: '3', comp: 'UCL', status: 'HT', minute: null, home: 'LIV', homeLogo: '', away: 'PSG', awayLogo: '', homeScore: 3, awayScore: 2 },
-  { id: '4', comp: 'BUN', status: 'LIVE', minute: 78, home: 'BAY', homeLogo: '', away: 'INT', awayLogo: '', homeScore: 1, awayScore: 1 },
-  { id: '5', comp: 'PL', status: 'SCHEDULED', time: '19:45', home: 'CHE', homeLogo: '', away: 'TOT', awayLogo: '', homeScore: null, awayScore: null },
-  { id: '6', comp: 'SA', status: 'FT', minute: null, home: 'JUV', homeLogo: '', away: 'ATM', awayLogo: '', homeScore: 2, awayScore: 0 },
-  { id: '7', comp: 'UCL', status: 'LIVE', minute: 55, home: 'BVB', homeLogo: '', away: 'MIL', awayLogo: '', homeScore: 1, awayScore: 2 },
+const TABS = [
+  { key: 'all',              label: 'All'  },
+  { key: 'Premier League',   label: 'PL'   },
+  { key: 'Champions League', label: 'UCL'  },
+  { key: 'La Liga',          label: 'LL'   },
+  { key: 'Serie A',          label: 'SA'   },
+  { key: 'Bundesliga',       label: 'BUN'  },
+  { key: 'Europa League',    label: 'EL'   },
 ]
 
-function StatusBadge({ status, minute, time }: { status: string; minute?: number | null; time?: string }) {
-  if (status === 'LIVE' && minute) {
+const LEAGUE_SHORT: Record<string, string> = {
+  'Premier League':   'PL',
+  'Champions League': 'UCL',
+  'La Liga':          'LL',
+  'Serie A':          'SA',
+  'Bundesliga':       'BUN',
+  'Europa League':    'EL',
+}
+
+const STATUS_ORDER: Record<string, number> = {
+  LIVE: 0, HALFTIME: 1, SCHEDULED: 2, FINISHED: 3, POSTPONED: 4, CANCELLED: 5,
+}
+
+function sortMatches(matches: Match[]): Match[] {
+  return [...matches].sort((a, b) => {
+    const diff = (STATUS_ORDER[a.status] ?? 9) - (STATUS_ORDER[b.status] ?? 9)
+    if (diff !== 0) return diff
+    if (a.status === 'LIVE') return (b.minute ?? 0) - (a.minute ?? 0)
+    return new Date(a.kickoff_at).getTime() - new Date(b.kickoff_at).getTime()
+  })
+}
+
+function TeamRow({
+  name, shortName, logo, score, isLive, isScheduled,
+}: {
+  name: string
+  shortName: string | null
+  logo: string | null
+  score: number | null
+  isLive: boolean
+  isScheduled: boolean
+}) {
+  return (
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-1.5 min-w-0">
+        {logo ? (
+          <img src={logo} alt={name} className="h-4 w-4 object-contain shrink-0" />
+        ) : (
+          <div className="h-4 w-4 rounded-full bg-muted shrink-0 flex items-center justify-center text-[7px] font-black text-muted-foreground">
+            {name[0]}
+          </div>
+        )}
+        <span className="text-[12px] font-bold truncate">
+          {shortName ?? name.slice(0, 3).toUpperCase()}
+        </span>
+      </div>
+      <span className={cn('text-[13px] font-black tabular-nums', isLive && 'text-live')}>
+        {isScheduled ? '' : (score ?? '—')}
+      </span>
+    </div>
+  )
+}
+
+function StatusLabel({ match }: { match: Match }) {
+  const { status, minute, kickoff_at } = match
+  if (status === 'LIVE') {
     return (
       <span className="flex items-center gap-1 text-live text-[10px] font-bold">
-        <span className="h-1 w-1 rounded-full bg-live animate-pulse" />
-        {minute}&apos;
+        <span className="h-1.5 w-1.5 rounded-full bg-live animate-pulse" />
+        {minute ? `${minute}'` : 'LIVE'}
       </span>
     )
   }
-  if (status === 'HT') return <span className="text-[10px] font-bold text-orange-400">HT</span>
-  if (status === 'FT') return <span className="text-[10px] font-semibold text-muted-foreground">FT</span>
-  if (status === 'SCHEDULED' && time) return <span className="text-[11px] font-semibold text-foreground">{time}</span>
+  if (status === 'HALFTIME')  return <span className="text-[10px] font-bold text-orange-400">HT</span>
+  if (status === 'FINISHED')  return <span className="text-[10px] font-semibold text-muted-foreground">FT</span>
+  if (status === 'SCHEDULED') return <span className="text-[11px] font-semibold">{formatKickoff(kickoff_at)}</span>
+  if (status === 'POSTPONED') return <span className="text-[10px] text-muted-foreground font-semibold">PST</span>
   return null
 }
 
+function StripCard({ match }: { match: Match }) {
+  const isLive      = match.status === 'LIVE' || match.status === 'HALFTIME'
+  const isScheduled = match.status === 'SCHEDULED'
+  const leagueName  = match.season?.league?.name ?? ''
+  const leagueShort = LEAGUE_SHORT[leagueName] ?? (leagueName.slice(0, 3).toUpperCase() || '—')
+
+  return (
+    <Link
+      href={`/matches/${match.id}`}
+      className={cn(
+        'shrink-0 w-[140px] rounded-lg border border-border bg-card hover:border-primary/40 transition-colors p-3 space-y-2',
+        isLive && 'border-live/30 bg-live/[0.04]',
+      )}
+    >
+      <div className="flex items-center justify-between">
+        <span className="text-[10px] font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+          {leagueShort}
+        </span>
+        <StatusLabel match={match} />
+      </div>
+      <TeamRow
+        name={match.home_team.name}
+        shortName={match.home_team.short_name}
+        logo={match.home_team.logo_url}
+        score={match.home_score}
+        isLive={isLive}
+        isScheduled={isScheduled}
+      />
+      <TeamRow
+        name={match.away_team.name}
+        shortName={match.away_team.short_name}
+        logo={match.away_team.logo_url}
+        score={match.away_score}
+        isLive={isLive}
+        isScheduled={isScheduled}
+      />
+    </Link>
+  )
+}
+
+function SkeletonCard() {
+  return (
+    <div className="shrink-0 w-[140px] rounded-lg border border-border bg-card p-3 space-y-3 animate-pulse">
+      <div className="flex items-center justify-between">
+        <div className="h-4 w-8 rounded bg-muted" />
+        <div className="h-3 w-10 rounded bg-muted" />
+      </div>
+      <div className="flex items-center justify-between">
+        <div className="h-4 w-16 rounded bg-muted" />
+        <div className="h-4 w-4 rounded bg-muted" />
+      </div>
+      <div className="flex items-center justify-between">
+        <div className="h-4 w-16 rounded bg-muted" />
+        <div className="h-4 w-4 rounded bg-muted" />
+      </div>
+    </div>
+  )
+}
+
 export function ScoresStrip() {
+  const [tab, setTab] = useState('all')
+  const { data: matches, isLoading } = useTodayFixtures()
+
+  const filtered = useMemo(() => {
+    if (!matches) return []
+    const base = tab === 'all'
+      ? matches
+      : matches.filter(m => m.season?.league?.name === tab)
+    return sortMatches(base)
+  }, [matches, tab])
+
+  const hasLive = matches?.some(m => m.status === 'LIVE' || m.status === 'HALFTIME') ?? false
+
+  if (!isLoading && !filtered.length) return null
+
   return (
     <section className="bg-background-secondary border-b border-border">
-      <div className="mx-auto max-w-[1400px] px-4 lg:px-6 py-3">
+      <div className="mx-auto max-w-[1400px] px-4 lg:px-6 pt-3 pb-0">
         {/* Header */}
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center justify-between mb-2">
           <h2 className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider">
-            <span className="h-1.5 w-1.5 rounded-full bg-live" />
+            {hasLive && <span className="h-1.5 w-1.5 rounded-full bg-live animate-pulse" />}
             Scores &amp; Fixtures
           </h2>
           <Link href="/matches" className="flex items-center gap-1 text-[11px] font-bold text-primary hover:underline">
@@ -45,46 +176,31 @@ export function ScoresStrip() {
           </Link>
         </div>
 
-        {/* Scrollable cards */}
-        <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-none">
-          {MOCK_MATCHES.map((match) => (
-            <Link
-              key={match.id}
-              href={`/matches/${match.id}`}
-              className="shrink-0 w-[140px] rounded-lg border border-border bg-card hover:border-primary/40 transition-colors p-3 space-y-2"
+        {/* League tabs */}
+        <div className="flex gap-1 overflow-x-auto scrollbar-none mb-3">
+          {TABS.map(t => (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              className={cn(
+                'shrink-0 px-3 py-1 rounded-md text-[11px] font-bold transition-colors',
+                tab === t.key
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted',
+              )}
             >
-              {/* Competition + status */}
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                  {match.comp}
-                </span>
-                <StatusBadge status={match.status} minute={match.minute} time={(match as any).time} />
-              </div>
-
-              {/* Home team */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5">
-                  <div className="h-4 w-4 rounded-full bg-muted" />
-                  <span className="text-[12px] font-bold">{match.home}</span>
-                </div>
-                <span className="text-[13px] font-black tabular-nums">
-                  {match.homeScore ?? '—'}
-                </span>
-              </div>
-
-              {/* Away team */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5">
-                  <div className="h-4 w-4 rounded-full bg-muted" />
-                  <span className="text-[12px] font-bold">{match.away}</span>
-                  {(match as any).awayRed && <span className="text-live text-[10px]">●</span>}
-                </div>
-                <span className="text-[13px] font-black tabular-nums">
-                  {match.awayScore ?? '—'}
-                </span>
-              </div>
-            </Link>
+              {t.label}
+            </button>
           ))}
+        </div>
+
+        {/* Cards */}
+        <div className="flex gap-3 overflow-x-auto pb-3 scrollbar-none">
+          {isLoading ? (
+            Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)
+          ) : filtered.length === 0 ? null : (
+            filtered.map(m => <StripCard key={m.id} match={m} />)
+          )}
         </div>
       </div>
     </section>

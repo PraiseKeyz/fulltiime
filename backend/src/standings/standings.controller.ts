@@ -7,6 +7,11 @@ import { Public } from '@/common/decorators/public.decorator.js';
 export class StandingsController {
   constructor(private readonly standingsService: StandingsService) {}
 
+  @Get('snapshot')
+  snapshot() {
+    return this.standingsService.snapshot();
+  }
+
   @Get('league/:leagueId')
   findByLeague(
     @Param('leagueId') leagueId: string,

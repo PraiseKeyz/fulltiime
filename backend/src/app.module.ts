@@ -14,7 +14,7 @@ import { StandingsModule } from './standings/standings.module.js';
 import { NewsModule } from './news/news.module.js';
 import { TeamsModule } from './teams/teams.module.js';
 import { PlayersModule } from './players/players.module.js';
-import { ApiFootballModule } from './api-football/api-football.module.js';
+import { SportMonksModule } from './sportmonks/sportmonks.module.js';
 import { SyncModule } from './sync/sync.module.js';
 
 @Module({
@@ -37,7 +37,7 @@ import { SyncModule } from './sync/sync.module.js';
     NewsModule,
     TeamsModule,
     PlayersModule,
-    ApiFootballModule,
+    SportMonksModule,
     SyncModule,
   ],
   controllers: [AppController],
