@@ -39,6 +39,7 @@ export interface League {
   logo_url: string | null
   country: Country | null
   is_active: boolean
+  seasons?: Season[]
 }
 
 export interface Season {
