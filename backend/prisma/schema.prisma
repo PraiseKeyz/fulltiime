@@ -141,6 +141,7 @@ model Team {
   players         Player[]
   standings       Standing[]
   statistics      MatchStatistic[]
+  lineups         MatchLineup[]
   favorites       User[]           @relation("UserFavoriteTeams")
 
   created_at  DateTime @default(now())
@@ -194,9 +195,12 @@ model Match {
   away_ht_score  Int?
   venue          String?
   referee        String?
+  home_formation String?
+  away_formation String?
 
   events         MatchEvent[]
   statistics     MatchStatistic[]
+  lineups        MatchLineup[]
 
   created_at     DateTime @default(now())
   updated_at     DateTime @updatedAt
@@ -207,18 +211,42 @@ model Match {
 // ─── Match Event ──────────────────────────────────────────────────────────────
 
 model MatchEvent {
-  id          String   @id @default(cuid())
-  match_id    String
-  match       Match    @relation(fields: [match_id], references: [id])
-  type        String
-  minute      Int
-  team_id     String?
-  player_name String?
-  detail      String?
+  id                  String   @id @default(cuid())
+  sportmonks_id       Int?     @unique
+  match_id            String
+  match               Match    @relation(fields: [match_id], references: [id])
+  type                String
+  minute              Int
+  extra_minute        Int?
+  team_id             String?
+  player_name         String?
+  related_player_name String?
+  detail              String?
+  sort_order          Int?
 
   created_at  DateTime @default(now())
 
   @@map("match_events")
+}
+
+// ─── Match Lineup ──────────────────────────────────────────────────────────────
+
+model MatchLineup {
+  id                   String  @id @default(cuid())
+  sportmonks_id        Int?    @unique
+  match_id             String
+  match                Match   @relation(fields: [match_id], references: [id])
+  team_id              String
+  team                 Team    @relation(fields: [team_id], references: [id])
+  player_name          String
+  player_photo         String?
+  jersey_number        Int?
+  position             String?
+  formation_field      String?
+  is_starting          Boolean @default(true)
+  sportmonks_player_id Int?
+
+  @@map("match_lineups")
 }
 
 // ─── Standing ─────────────────────────────────────────────────────────────────

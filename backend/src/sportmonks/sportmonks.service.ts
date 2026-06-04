@@ -74,18 +74,23 @@ export class SportMonksService {
     });
   }
 
-  // /livescores/inplay returns ALL currently live fixtures
+  // Full detail include string — events, lineups, stats, formations all in one call
+  private readonly DETAIL_INCLUDE =
+    'participants;scores;state;league;venue;periods;' +
+    'events.type;lineups.player;lineups.type;statistics.type;formations';
+
+  // /livescores/inplay returns ALL currently live fixtures, enriched with detail
   async getLiveFixtures() {
     return this.getAll<any>('/livescores/inplay', {
-      include: 'participants;scores;state;league',
+      include: this.DETAIL_INCLUDE,
     });
   }
 
-  async getFixtureStatistics(fixtureId: number) {
-    const res = await this.get<any>(`/fixtures/${fixtureId}`, {
-      include: 'statistics',
+  // Single fixture with full detail (used for finished matches / on-demand)
+  async getFixtureById(fixtureId: number) {
+    return this.get<any>(`/fixtures/${fixtureId}`, {
+      include: this.DETAIL_INCLUDE,
     });
-    return res?.statistics ?? [];
   }
 
   // ── Standings ─────────────────────────────────────────────────────────────────

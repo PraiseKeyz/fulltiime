@@ -3,17 +3,16 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useTheme } from 'next-themes'
-import { Search, Bell, Sun, Moon, Zap } from 'lucide-react'
+import { Search, Bell, Sun, Moon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const NAV_LINKS = [
-  { href: '/news', label: 'News' },
+  // { href: '/news', label: 'News' },
   { href: '/matches', label: 'Matches' },
   { href: '/live', label: 'Live', live: true },
   { href: '/analytics', label: 'Analytics' },
   { href: '/competitions', label: 'Competitions' },
   { href: '/transfers', label: 'Transfers' },
-  { href: '/videos', label: 'Videos' },
 ]
 
 export function Navbar() {
@@ -26,9 +25,7 @@ export function Navbar() {
         <div className="grid grid-cols-[auto_1fr_auto] h-14 items-center gap-4">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-1.5 shrink-0">
-            <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary">
-              <Zap className="h-4 w-4 fill-black text-black" />
-            </span>
+            <img src="/dark-favicon.png" alt="Fulltiime" className="h-7 w-7 rounded-md" />
             <span className="text-[15px] font-black tracking-wider text-foreground">
               FULLTIIME
             </span>

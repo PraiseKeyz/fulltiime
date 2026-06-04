@@ -21,23 +21,6 @@ const SHORT_NAMES: Record<number, string> = {
   1107: 'CAF CL',
 };
 
-// Featured match priority weight by SportMonks league ID
-const LEAGUE_WEIGHT: Record<number, number> = {
-  732:  10, // World Cup — highest
-  1107: 7,  // CAF Champions League
-  8:    6,  // Premier League
-  564:  5,  // La Liga
-  384:  4,  // Serie A
-  82:   3,  // Bundesliga
-  720:  2,  // WC Qual Europe
-  726:  2,  // WC Qual South America
-  714:  1,  // WC Qual Asia
-  711:  1,  // CAF WC Qualifiers
-  717:  1,  // WC Qual Concacaf
-  723:  1,  // WC Qual Oceania
-  729:  1,  // WCQ Intercontinental
-};
-
 // SportMonks state short codes → our MatchStatus
 const STATUS_MAP: Record<string, MatchStatus> = {
   'LIVE':     MatchStatus.LIVE,
@@ -289,10 +272,8 @@ export class SyncService {
       if (!fixtures?.length) return;
 
       this.logger.log(`Updating ${fixtures.length} live fixtures`);
+      // Live payload already carries events, lineups and stats via includes
       await this.upsertFixtures(fixtures);
-
-      const featuredId = this.pickFeaturedFixtureId(fixtures);
-      if (featuredId) await this.syncFixtureStats(featuredId);
     } catch (err: any) {
       this.logger.error(`Live scores sync failed: ${err.message}`);
     }
@@ -389,16 +370,23 @@ export class SyncService {
         const { homeScore, awayScore, htHome, htAway } = this.getCurrentScore(fixture);
         const minute    = fixture.periods?.find((p: any) => p.ticking)?.minutes ?? null;
 
-        await this.prisma.match.upsert({
+        // Formations — match by participant id
+        const formations = fixture.formations ?? [];
+        const homeFormation = formations.find((f: any) => f.participant_id === home.id)?.formation ?? null;
+        const awayFormation = formations.find((f: any) => f.participant_id === away.id)?.formation ?? null;
+
+        const dbMatch = await this.prisma.match.upsert({
           where:  { api_football_id: fixture.id },
           update: {
             status,
             minute,
-            home_score:    homeScore,
-            away_score:    awayScore,
-            home_ht_score: htHome,
-            away_ht_score: htAway,
-            venue:         fixture.venue?.name ?? null,
+            home_score:     homeScore,
+            away_score:     awayScore,
+            home_ht_score:  htHome,
+            away_ht_score:  htAway,
+            venue:          fixture.venue?.name ?? null,
+            home_formation: homeFormation,
+            away_formation: awayFormation,
           },
           create: {
             api_football_id: fixture.id,
@@ -408,83 +396,164 @@ export class SyncService {
             kickoff_at:      new Date(fixture.starting_at),
             status,
             venue:           fixture.venue?.name ?? null,
+            home_formation:  homeFormation,
+            away_formation:  awayFormation,
           },
         });
+
+        // Map SportMonks participant/team id → our team record
+        const teamByApiId = new Map<number, string>([
+          [home.id, homeTeam.id],
+          [away.id, awayTeam.id],
+        ]);
+
+        if (fixture.events?.length)     await this.upsertEvents(dbMatch.id, fixture.events, teamByApiId);
+        if (fixture.lineups?.length)    await this.upsertLineups(dbMatch.id, fixture.lineups, teamByApiId);
+        if (fixture.statistics?.length) await this.upsertStats(dbMatch.id, fixture.statistics, teamByApiId);
       } catch (err: any) {
         this.logger.error(`Failed upserting fixture ${fixture.id}: ${err.message}`);
       }
     }
   }
 
-  // ── Featured match priority ───────────────────────────────────────────────────
+  // ── Upsert events (goals, cards, subs) ──────────────────────────────────────────
 
-  private pickFeaturedFixtureId(fixtures: any[]): number | null {
-    if (!fixtures.length) return null;
-    const scored = fixtures.map(f => {
-      const { homeScore, awayScore } = this.getCurrentScore(f);
-      const leagueId = f.league_id ?? f.league?.id ?? 0;
-      const weight   = LEAGUE_WEIGHT[leagueId] ?? 0;
-      const goals    = (homeScore ?? 0) + (awayScore ?? 0);
-      const minute   = f.periods?.find((p: any) => p.ticking)?.minutes ?? 0;
-      return { id: f.id as number, score: weight * 10 + goals * 2 + (minute > 45 ? 1 : 0) };
-    });
-    scored.sort((a, b) => b.score - a.score);
-    return scored[0].id;
+  private async upsertEvents(matchId: string, events: any[], teamByApiId: Map<number, string>) {
+    for (const ev of events) {
+      try {
+        const type = ev.type?.name ?? this.eventTypeName(ev.type_id);
+        await this.prisma.matchEvent.upsert({
+          where:  { sportmonks_id: ev.id },
+          update: {
+            type,
+            minute:              ev.minute ?? 0,
+            extra_minute:        ev.extra_minute ?? null,
+            team_id:             teamByApiId.get(ev.participant_id) ?? null,
+            player_name:         ev.player_name ?? null,
+            related_player_name: ev.related_player_name ?? null,
+            detail:              ev.addition ?? ev.info ?? ev.result ?? null,
+            sort_order:          ev.sort_order ?? null,
+          },
+          create: {
+            sportmonks_id:       ev.id,
+            match_id:            matchId,
+            type,
+            minute:              ev.minute ?? 0,
+            extra_minute:        ev.extra_minute ?? null,
+            team_id:             teamByApiId.get(ev.participant_id) ?? null,
+            player_name:         ev.player_name ?? null,
+            related_player_name: ev.related_player_name ?? null,
+            detail:              ev.addition ?? ev.info ?? ev.result ?? null,
+            sort_order:          ev.sort_order ?? null,
+          },
+        });
+      } catch (err: any) {
+        this.logger.error(`Failed upserting event ${ev.id}: ${err.message}`);
+      }
+    }
   }
 
-  // ── Fixture statistics ────────────────────────────────────────────────────────
+  // ── Upsert lineups (starting XI + bench) ────────────────────────────────────────
 
-  private async syncFixtureStats(fixtureId: number) {
-    try {
-      const stats = await this.api.getFixtureStatistics(fixtureId);
-      if (!stats?.length) return;
+  private async upsertLineups(matchId: string, lineups: any[], teamByApiId: Map<number, string>) {
+    for (const lp of lineups) {
+      try {
+        const teamId = teamByApiId.get(lp.team_id);
+        if (!teamId) continue;
 
-      const dbMatch = await this.prisma.match.findUnique({
-        where:   { api_football_id: fixtureId },
-        include: { home_team: true, away_team: true },
-      });
-      if (!dbMatch) return;
+        // type_id 11 = starting XI, 12 = bench
+        const isStarting = lp.type_id === 11 || lp.type?.name?.toLowerCase() === 'lineup';
 
-      for (const teamStat of stats) {
-        const apiTeamId = teamStat.participant_id ?? teamStat.team_id;
-        const dbTeam =
-          dbMatch.home_team.api_football_id === apiTeamId ? dbMatch.home_team :
-          dbMatch.away_team.api_football_id === apiTeamId ? dbMatch.away_team :
-          null;
-        if (!dbTeam) continue;
+        await this.prisma.matchLineup.upsert({
+          where:  { sportmonks_id: lp.id },
+          update: {
+            player_name:     lp.player_name ?? lp.player?.display_name ?? 'Unknown',
+            player_photo:    lp.player?.image_path ?? null,
+            jersey_number:   lp.jersey_number ?? null,
+            position:        lp.position?.name ?? null,
+            formation_field: lp.formation_field ?? null,
+            is_starting:     isStarting,
+          },
+          create: {
+            sportmonks_id:        lp.id,
+            match_id:             matchId,
+            team_id:              teamId,
+            player_name:          lp.player_name ?? lp.player?.display_name ?? 'Unknown',
+            player_photo:         lp.player?.image_path ?? null,
+            jersey_number:        lp.jersey_number ?? null,
+            position:             lp.position?.name ?? null,
+            formation_field:      lp.formation_field ?? null,
+            is_starting:          isStarting,
+            sportmonks_player_id: lp.player_id ?? null,
+          },
+        });
+      } catch (err: any) {
+        this.logger.error(`Failed upserting lineup ${lp.id}: ${err.message}`);
+      }
+    }
+  }
 
-        const find = (typeId: number) =>
-          teamStat.details?.find((d: any) => d.type_id === typeId)?.value?.value ?? null;
+  // ── Upsert statistics (flat per-team rows) ──────────────────────────────────────
 
+  private async upsertStats(matchId: string, stats: any[], teamByApiId: Map<number, string>) {
+    for (const [apiTeamId, dbTeamId] of teamByApiId.entries()) {
+      const find = (typeId: number) => {
+        const row = stats.find(s => s.participant_id === apiTeamId && s.type_id === typeId);
+        const v = row?.data?.value;
+        return typeof v === 'number' ? v : null;
+      };
+
+      // Only write if this team actually has stat rows
+      if (!stats.some(s => s.participant_id === apiTeamId)) continue;
+
+      try {
         await this.prisma.matchStatistic.upsert({
-          where:  { match_id_team_id: { match_id: dbMatch.id, team_id: dbTeam.id } },
+          where:  { match_id_team_id: { match_id: matchId, team_id: dbTeamId } },
           update: {
             possession:      find(45),
             shots:           find(42),
             shots_on_target: find(86),
-            xg:              find(140),
-            corners:         find(65),
+            xg:              find(5304),
+            corners:         find(34),
             fouls:           find(56),
             yellow_cards:    find(84),
             red_cards:       find(83),
           },
           create: {
-            match_id:        dbMatch.id,
-            team_id:         dbTeam.id,
+            match_id:        matchId,
+            team_id:         dbTeamId,
             possession:      find(45),
             shots:           find(42),
             shots_on_target: find(86),
-            xg:              find(140),
-            corners:         find(65),
+            xg:              find(5304),
+            corners:         find(34),
             fouls:           find(56),
             yellow_cards:    find(84),
             red_cards:       find(83),
           },
         });
+      } catch (err: any) {
+        this.logger.error(`Failed upserting stats for team ${dbTeamId}: ${err.message}`);
       }
-    } catch (err: any) {
-      this.logger.error(`Failed syncing stats for fixture ${fixtureId}: ${err.message}`);
     }
+  }
+
+  // ── Fetch + sync a single fixture's full detail (finished / on-demand) ──────────
+
+  async syncFixtureDetail(apiFixtureId: number) {
+    const fixture = await this.api.getFixtureById(apiFixtureId);
+    if (!fixture) return;
+    await this.upsertFixtures([fixture]);
+  }
+
+  // SportMonks event type_id → readable name (fallback when type include missing)
+  private eventTypeName(typeId: number): string {
+    const map: Record<number, string> = {
+      14: 'Goal', 15: 'Goal', 16: 'Penalty', 17: 'Own Goal',
+      18: 'Substitution', 19: 'Yellow Card', 20: 'Red Card', 21: 'Yellow Red Card',
+      52: 'Goal', 83: 'Substitution',
+    };
+    return map[typeId] ?? 'Event';
   }
 
   // ── Manual trigger ────────────────────────────────────────────────────────────

@@ -102,9 +102,23 @@ export interface MatchEvent {
   id: string
   type: string
   minute: number
+  extra_minute: number | null
   team_id: string | null
   player_name: string | null
+  related_player_name: string | null
   detail: string | null
+  sort_order: number | null
+}
+
+export interface MatchLineup {
+  id: string
+  team_id: string
+  player_name: string
+  player_photo: string | null
+  jersey_number: number | null
+  position: string | null
+  formation_field: string | null
+  is_starting: boolean
 }
 
 export interface Match {
@@ -121,7 +135,10 @@ export interface Match {
   away_ht_score: number | null
   venue: string | null
   referee: string | null
+  home_formation: string | null
+  away_formation: string | null
   events?: MatchEvent[]
+  lineups?: MatchLineup[]
   statistics?: MatchStatistic[]
 }
 

@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Zap, Twitter, Instagram, Youtube } from 'lucide-react'
+import { Twitter, Instagram, Youtube } from 'lucide-react'
 
 const COLUMNS = [
   {
@@ -42,9 +42,7 @@ export function Footer() {
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <Link href="/" className="flex items-center gap-1.5 mb-3">
-              <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary">
-                <Zap className="h-4 w-4 fill-black text-black" />
-              </span>
+              <img src="/dark-favicon.png" alt="Fulltiime" className="h-7 w-7 rounded-md" />
               <span className="text-[15px] font-black tracking-wider">FULLTIIME</span>
             </Link>
             <p className="text-[12px] text-muted-foreground leading-relaxed max-w-[200px]">

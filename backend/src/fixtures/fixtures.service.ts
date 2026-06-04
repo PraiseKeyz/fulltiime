@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service.js';
+import { SyncService } from '@/sync/sync.service.js';
 import { MatchStatus } from '../../generated/prisma/index.js';
 
 const MATCH_INCLUDE = {
@@ -31,13 +32,18 @@ const FEATURED_INCLUDE = {
   },
 } as const;
 
+// Featured-match priority weight by SportMonks league ID
 const LEAGUE_WEIGHT: Record<number, number> = {
-  2: 6, 39: 5, 140: 4, 135: 3, 78: 2, 3: 1,
+  732: 10, 1107: 7, 8: 6, 564: 5, 384: 4, 82: 3,
+  720: 2, 726: 2, 714: 1, 711: 1, 717: 1, 723: 1, 729: 1,
 };
 
 @Injectable()
 export class FixturesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly sync:   SyncService,
+  ) {}
 
   async findAll(query: { status?: MatchStatus; leagueId?: string; teamId?: string; date?: string }) {
     const where: any = {};
@@ -122,12 +128,12 @@ export class FixturesService {
       return { data: { match: scored[0].match, type: 'live' as const } };
     }
 
-    // 2. Fallback: next scheduled match from our leagues
+    // 2. Fallback: next scheduled match from any active league
     const upcoming = await this.prisma.match.findFirst({
       where: {
         status:     MatchStatus.SCHEDULED,
         kickoff_at: { gte: new Date() },
-        season:     { league: { api_football_id: { in: [2, 39, 140, 135, 78, 3] } } },
+        season:     { league: { is_active: true } },
       },
       orderBy: { kickoff_at: 'asc' },
       include: FEATURED_INCLUDE,
@@ -141,7 +147,7 @@ export class FixturesService {
     const finished = await this.prisma.match.findFirst({
       where: {
         status: MatchStatus.FINISHED,
-        season: { league: { api_football_id: { in: [2, 39, 140, 135, 78, 3] } } },
+        season: { league: { is_active: true } },
       },
       orderBy: { kickoff_at: 'desc' },
       include: FEATURED_INCLUDE,
@@ -150,28 +156,53 @@ export class FixturesService {
     return { data: { match: finished ?? null, type: 'finished' as const } };
   }
 
-  async findOne(id: string) {
-    const match = await this.prisma.match.findUnique({
-      where: { id },
-      include: {
-        ...MATCH_INCLUDE,
-        events:     { orderBy: { minute: 'asc' } },
-        statistics: {
-          select: {
-            team_id:         true,
-            possession:      true,
-            shots:           true,
-            shots_on_target: true,
-            xg:              true,
-            corners:         true,
-            fouls:           true,
-            yellow_cards:    true,
-            red_cards:       true,
-          },
-        },
+  private readonly DETAIL_INCLUDE = {
+    ...MATCH_INCLUDE,
+    events:     { orderBy: { sort_order: 'asc' as const } },
+    lineups:    { orderBy: { jersey_number: 'asc' as const } },
+    statistics: {
+      select: {
+        team_id:         true,
+        possession:      true,
+        shots:           true,
+        shots_on_target: true,
+        xg:              true,
+        corners:         true,
+        fouls:           true,
+        yellow_cards:    true,
+        red_cards:       true,
       },
+    },
+  };
+
+  async findOne(id: string) {
+    let match = await this.prisma.match.findUnique({
+      where:   { id },
+      include: this.DETAIL_INCLUDE,
     });
     if (!match) throw new NotFoundException('Match not found');
+
+    // Lazy-load full detail (events/lineups/stats) on first view of a
+    // live, finished, or about-to-start match when we don't have it yet.
+    const minsToKickoff = (new Date(match.kickoff_at).getTime() - Date.now()) / 60_000;
+    const shouldHydrate =
+      match.api_football_id != null &&
+      match.events.length === 0 &&
+      (
+        match.status === MatchStatus.LIVE ||
+        match.status === MatchStatus.HALFTIME ||
+        match.status === MatchStatus.FINISHED ||
+        (match.status === MatchStatus.SCHEDULED && minsToKickoff <= 75 && minsToKickoff > -5)
+      );
+
+    if (shouldHydrate) {
+      await this.sync.syncFixtureDetail(match.api_football_id!);
+      match = await this.prisma.match.findUnique({
+        where:   { id },
+        include: this.DETAIL_INCLUDE,
+      });
+    }
+
     return { data: match };
   }
 }
