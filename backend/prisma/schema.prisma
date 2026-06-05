@@ -87,6 +87,7 @@ model League {
   logo_url         String?
   country_id       String?
   country          Country? @relation(fields: [country_id], references: [id])
+  sub_type         String?
   is_active        Boolean  @default(true)
 
   seasons     Season[]
@@ -267,6 +268,7 @@ model Standing {
   goal_diff      Int     @default(0)
   points         Int     @default(0)
   form           String?
+  group          String?
 
   created_at     DateTime @default(now())
   updated_at     DateTime @updatedAt

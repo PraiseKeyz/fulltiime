@@ -1,69 +1,78 @@
 'use client'
 
 import { useParams } from 'next/navigation'
-import { Zap, Clock, ArrowLeft } from 'lucide-react'
+import { Newspaper, Clock, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
+import { getArticleBySlug, getRelatedNews, timeAgo, TAG_COLORS, type NewsArticle } from '@/data/news'
 
-const TAG_COLORS: Record<string, string> = {
-  'CHAMPIONS LEAGUE': '#4da6ff',
-  'PREMIER LEAGUE':   '#8b5cf6',
-  'LA LIGA':          '#f97316',
-  'TRANSFERS':        '#f59e0b',
-  "WOMEN'S FOOTBALL": '#ec4899',
-  'BUNDESLIGA':       '#ef4444',
-  'TACTICAL ANALYSIS':'#22c55e',
-  'ANALYTICS':        '#22c55e',
-}
-
-// Placeholder — will be replaced with real API data
-const MOCK_ARTICLE = {
-  tag: 'CHAMPIONS LEAGUE',
-  title: "Saka's Brace Fires Arsenal Into UCL Quarter-Finals",
-  excerpt: 'Bukayo Saka scored twice in seven minutes to send the Gunners through in a breathless European night at the Emirates.',
-  content: `Bukayo Saka delivered a masterclass performance as Arsenal secured their place in the UEFA Champions League quarter-finals with a stunning display at the Emirates Stadium.
-
-The England international, who has been in scintillating form all season, opened the scoring with a precise finish from outside the box before doubling the lead with a brilliant solo effort that left the Barcelona goalkeeper rooted to the spot.
-
-Arsenal's defensive resilience was equally impressive, with the backline marshalled superbly by William Saliba keeping the Catalan giants at bay throughout a breathless second half.
-
-Manager Mikel Arteta praised his side's composure and tactical discipline after the final whistle, describing it as "one of the great European nights in the club's recent history."`,
-  author: 'James Morrison',
-  authorAvatar: '',
-  time: '12 min ago',
-  readTime: '4 min',
-  cover: '',
-  tags: ['Arsenal', 'Champions League', 'Saka'],
+function RelatedCard({ article }: { article: NewsArticle }) {
+  return (
+    <Link
+      href={`/news/${article.slug}`}
+      className="group flex flex-col rounded-xl overflow-hidden border border-border bg-card hover:border-primary/30 transition-colors"
+    >
+      <div className="h-32 bg-muted overflow-hidden relative">
+        {article.cover ? (
+          <img src={article.cover} alt="" className="w-full h-full object-cover" />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <Newspaper className="h-7 w-7 text-muted-foreground/20" />
+          </div>
+        )}
+      </div>
+      <div className="p-3 flex flex-col gap-1.5">
+        <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: TAG_COLORS[article.category] ?? '#888' }}>
+          {article.category}
+        </span>
+        <h4 className="text-[13px] font-bold leading-snug group-hover:text-primary transition-colors line-clamp-2">
+          {article.title}
+        </h4>
+      </div>
+    </Link>
+  )
 }
 
 export default function ArticlePage() {
   const { slug } = useParams<{ slug: string }>()
+  const article = getArticleBySlug(slug)
 
-  const article = MOCK_ARTICLE
+  if (!article) {
+    return (
+      <div className="mx-auto max-w-[900px] px-4 lg:px-6 py-20 text-center">
+        <p className="text-muted-foreground text-sm">Article not found.</p>
+        <Link href="/news" className="text-primary text-sm font-semibold hover:underline mt-2 inline-block">
+          Back to News
+        </Link>
+      </div>
+    )
+  }
+
+  const related = getRelatedNews(slug, 3)
 
   return (
     <>
-      {/* Dark header */}
-      <div className="bg-[#111111] dark:bg-[#111111] border-b border-border py-6">
+      {/* Header */}
+      <div className="bg-card border-b border-border py-6">
         <div className="mx-auto max-w-[900px] px-4 lg:px-6">
-          <Link href="/news" className="inline-flex items-center gap-1.5 text-[12px] text-[#888] hover:text-white transition-colors mb-4">
+          <Link href="/news" className="inline-flex items-center gap-1.5 text-[12px] text-muted-foreground hover:text-foreground transition-colors mb-4">
             <ArrowLeft className="h-3.5 w-3.5" />
             Back to News
           </Link>
 
-          <span className="block text-[11px] font-bold uppercase tracking-wider mb-2" style={{ color: TAG_COLORS[article.tag] ?? '#888' }}>
-            {article.tag}
+          <span className="block text-[11px] font-bold uppercase tracking-wider mb-2" style={{ color: TAG_COLORS[article.category] ?? '#888' }}>
+            {article.category}
           </span>
 
-          <h1 className="text-3xl font-black text-white leading-tight">{article.title}</h1>
+          <h1 className="text-3xl font-black leading-tight">{article.title}</h1>
 
           {article.excerpt && (
-            <p className="mt-3 text-[15px] text-[#aaa] leading-relaxed">{article.excerpt}</p>
+            <p className="mt-3 text-[15px] text-muted-foreground leading-relaxed">{article.excerpt}</p>
           )}
 
-          <div className="flex items-center gap-2 mt-4 text-[12px] text-[#666]">
-            <span className="text-[#aaa] font-semibold">{article.author}</span>
+          <div className="flex items-center gap-2 mt-4 text-[12px] text-muted-foreground">
+            <span className="font-semibold text-foreground">{article.author}</span>
             <span>·</span>
-            <span>{article.time}</span>
+            <span>{timeAgo(article.publishedAt)}</span>
             <span>·</span>
             <Clock className="h-3 w-3" />
             <span>{article.readTime}</span>
@@ -71,19 +80,19 @@ export default function ArticlePage() {
         </div>
       </div>
 
-      {/* Content */}
+      {/* Body */}
       <div className="mx-auto max-w-[900px] px-4 lg:px-6 py-8">
-        {/* Cover image */}
+        {/* Cover */}
         {article.cover ? (
           <img src={article.cover} alt={article.title} className="w-full rounded-xl object-cover max-h-[440px] mb-8" />
         ) : (
           <div className="w-full rounded-xl bg-muted h-64 flex items-center justify-center mb-8">
-            <Zap className="h-10 w-10 text-muted-foreground/20" />
+            <Newspaper className="h-10 w-10 text-muted-foreground/20" />
           </div>
         )}
 
-        {/* Body text */}
-        <div className="prose max-w-none space-y-4">
+        {/* Content */}
+        <div className="max-w-none space-y-4">
           {article.content.split('\n\n').map((para, i) => (
             <p key={i} className="text-[15px] leading-relaxed text-foreground/90">
               {para}
@@ -94,11 +103,21 @@ export default function ArticlePage() {
         {/* Tags */}
         {article.tags.length > 0 && (
           <div className="flex flex-wrap gap-2 mt-8 pt-6 border-t border-border">
-            {article.tags.map((tag) => (
-              <span key={tag} className="rounded-full bg-muted px-3 py-1 text-[12px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
+            {article.tags.map(tag => (
+              <span key={tag} className="rounded-full bg-muted px-3 py-1 text-[12px] text-muted-foreground">
                 #{tag}
               </span>
             ))}
+          </div>
+        )}
+
+        {/* Related */}
+        {related.length > 0 && (
+          <div className="mt-10 pt-8 border-t border-border">
+            <h2 className="text-[13px] font-black uppercase tracking-wide mb-4">Related Stories</h2>
+            <div className="grid sm:grid-cols-3 gap-4">
+              {related.map(a => <RelatedCard key={a.id} article={a} />)}
+            </div>
           </div>
         )}
       </div>

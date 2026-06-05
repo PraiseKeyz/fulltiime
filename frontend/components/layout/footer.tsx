@@ -15,11 +15,11 @@ const COLUMNS = [
   {
     title: 'Competitions',
     links: [
-      { label: 'Premier League', href: '/competitions/pl' },
-      { label: 'Champions League', href: '/competitions/ucl' },
-      { label: 'La Liga', href: '/competitions/laliga' },
-      { label: 'Serie A', href: '/competitions/seriea' },
-      { label: 'Bundesliga', href: '/competitions/bundesliga' },
+      { label: 'All Leagues', href: '/leagues' },
+      { label: 'Standings', href: '/standings' },
+      { label: 'Fixtures', href: '/matches' },
+      { label: 'Live Scores', href: '/live' },
+      { label: 'Transfers', href: '/transfers' },
     ],
   },
   {

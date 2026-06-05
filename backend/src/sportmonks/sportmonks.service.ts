@@ -98,7 +98,7 @@ export class SportMonksService {
 
   async getStandings(sportmonksSeasonId: number) {
     return this.getAll<any>(`/standings/seasons/${sportmonksSeasonId}`, {
-      include: 'participant;details',
+      include: 'participant;details.type;group',
     });
   }
 }

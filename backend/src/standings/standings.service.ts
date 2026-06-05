@@ -21,7 +21,8 @@ export class StandingsService {
       include: {
         team: { select: { id: true, name: true, short_name: true, logo_url: true } },
       },
-      orderBy: { position: 'asc' },
+      // Group-structured competitions (e.g. World Cup) keep groups together
+      orderBy: [{ group: 'asc' }, { position: 'asc' }],
     });
 
     return { data: { season, standings } };
@@ -46,7 +47,12 @@ export class StandingsService {
     });
 
     const result = leagues
-      .filter(l => l.seasons[0]?.standings.length > 0)
+      // Single-table leagues only — group competitions (World Cup) are shown
+      // as grouped tables on their own hub, not as a flat top-5 here.
+      .filter(l => {
+        const standings = l.seasons[0]?.standings ?? [];
+        return standings.length > 0 && !standings.some(s => s.group);
+      })
       .map(l => ({
         league:    { id: l.id, name: l.name, logo_url: l.logo_url, short_name: l.short_name },
         standings: l.seasons[0].standings,

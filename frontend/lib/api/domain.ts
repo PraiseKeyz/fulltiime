@@ -12,15 +12,9 @@ export interface User {
   updated_at: string
 }
 
-export interface AuthTokens {
-  access_token: string
-  refresh_token: string
-}
-
+// Tokens are delivered as httpOnly cookies, never in the response body
 export interface AuthResponse {
   user: User
-  access_token: string
-  refresh_token: string
 }
 
 // ─── League ───────────────────────────────────────────────────────────────────
@@ -32,12 +26,15 @@ export interface Country {
   flag_url: string | null
 }
 
+export type LeagueSubType = 'domestic' | 'cup_international' | 'international' | 'play-offs' | string
+
 export interface League {
   id: string
   name: string
   short_name: string | null
   logo_url: string | null
   country: Country | null
+  sub_type?: LeagueSubType | null
   is_active: boolean
   seasons?: Season[]
 }
@@ -68,6 +65,7 @@ export interface Team extends TeamSummary {
   stadium: string | null
   venue_city: string | null
   is_active: boolean
+  players?: Player[]
 }
 
 // ─── Player ───────────────────────────────────────────────────────────────────
@@ -177,6 +175,7 @@ export interface Standing {
   goal_diff: number
   points: number
   form: string | null
+  group: string | null
 }
 
 export interface StandingsResponse {

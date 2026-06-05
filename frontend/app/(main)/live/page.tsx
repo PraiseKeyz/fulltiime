@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Zap, ChevronRight, Clock } from 'lucide-react'
+import {ChevronRight, Clock } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 
@@ -185,13 +185,8 @@ export default function LivePage() {
           {/* Title row */}
           <div className="flex items-center gap-3 mb-1">
             <h1 className="flex items-center gap-2 text-3xl font-black text-white">
-              <Zap className="h-7 w-7 text-primary fill-primary" />
               Live Centre
             </h1>
-            <span className="flex items-center gap-1.5 rounded-full bg-live/20 border border-live/40 px-3 py-1 text-[11px] font-black text-live">
-              <span className="h-1.5 w-1.5 rounded-full bg-live animate-pulse" />
-              {liveCount} LIVE
-            </span>
           </div>
           <p className="text-[13px] text-[#888]">Real-time scores from across football</p>
 

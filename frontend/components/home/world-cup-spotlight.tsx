@@ -100,7 +100,7 @@ export function WorldCupSpotlight() {
             )}
             World Cup 2026
           </h2>
-          <Link href="/competitions" className="flex items-center gap-1 text-[12px] font-bold text-primary hover:underline">
+          <Link href="/leagues" className="flex items-center gap-1 text-[12px] font-bold text-primary hover:underline">
             View All <ChevronRight className="h-3.5 w-3.5" />
           </Link>
         </div>

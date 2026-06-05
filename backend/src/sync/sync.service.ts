@@ -128,6 +128,7 @@ export class SyncService {
             name:       league.name,
             logo_url:   league.image_path,
             country_id: countryRecord?.id,
+            sub_type:   league.sub_type ?? null,
             is_active:  true,
           },
           create: {
@@ -136,6 +137,7 @@ export class SyncService {
             short_name:      SHORT_NAMES[league.id] ?? league.short_code ?? null,
             logo_url:        league.image_path,
             country_id:      countryRecord?.id,
+            sub_type:        league.sub_type ?? null,
             is_active:       true,
           },
         });
@@ -279,6 +281,34 @@ export class SyncService {
     }
   }
 
+  // SportMonks returns standing `details` as a flat array of { type, value }.
+  // We match the "overall" rows by the type's developer-name/code/name keywords.
+  private parseStandingDetails(details: any[]) {
+    // Normalise the type identifier; separators vary (_, -, space) across plans.
+    const codeOf = (d: any) =>
+      String(d.type?.developer_name ?? d.type?.code ?? d.type?.name ?? '')
+        .toLowerCase()
+        .replace(/[\s_]+/g, '-');
+
+    const pick = (match: (c: string) => boolean) => {
+      const row = details.find(d => match(codeOf(d)));
+      const v = row?.value;
+      return typeof v === 'number' ? v : Number(v) || 0;
+    };
+
+    const overall = (c: string) => !c.includes('home') && !c.includes('away');
+
+    const played       = pick(c => overall(c) && (c.includes('played') || c.includes('matches') || c.includes('games')));
+    const won          = pick(c => overall(c) && (c.includes('won') || c.includes('win')));
+    const drawn        = pick(c => overall(c) && c.includes('draw'));
+    const lost         = pick(c => overall(c) && (c.includes('lost') || c.includes('lose')));
+    const goalsFor     = pick(c => overall(c) && c.includes('goal') && (c.includes('scored') || c.includes('for')));
+    const goalsAgainst = pick(c => overall(c) && c.includes('goal') && (c.includes('conceded') || c.includes('against')));
+    const goalDiff     = goalsFor - goalsAgainst;
+
+    return { played, won, drawn, lost, goalsFor, goalsAgainst, goalDiff };
+  }
+
   // ── Sync standings ────────────────────────────────────────────────────────────
 
   @Cron(CronExpression.EVERY_DAY_AT_2AM)
@@ -303,35 +333,25 @@ export class SyncService {
           const team   = await this.prisma.team.findUnique({ where: { api_football_id: teamId } });
           if (!team) continue;
 
-          const d = row.details ?? {};
+          const s = this.parseStandingDetails(row.details ?? []);
+          const data = {
+            position:      row.position,
+            played:        s.played,
+            won:           s.won,
+            drawn:         s.drawn,
+            lost:          s.lost,
+            goals_for:     s.goalsFor,
+            goals_against: s.goalsAgainst,
+            goal_diff:     s.goalDiff,
+            points:        row.points ?? 0,
+            form:          row.form ?? null,
+            group:         row.group?.name ?? null,
+          };
+
           await this.prisma.standing.upsert({
             where:  { season_id_team_id: { season_id: season.id, team_id: team.id } },
-            update: {
-              position:      row.position,
-              played:        d.games_played    ?? 0,
-              won:           d.won             ?? 0,
-              drawn:         d.draw            ?? 0,
-              lost:          d.lost            ?? 0,
-              goals_for:     d.goals_scored    ?? 0,
-              goals_against: d.goals_conceded  ?? 0,
-              goal_diff:     d.goal_difference ?? 0,
-              points:        row.points        ?? 0,
-              form:          row.form          ?? null,
-            },
-            create: {
-              season_id:     season.id,
-              team_id:       team.id,
-              position:      row.position,
-              played:        d.games_played    ?? 0,
-              won:           d.won             ?? 0,
-              drawn:         d.draw            ?? 0,
-              lost:          d.lost            ?? 0,
-              goals_for:     d.goals_scored    ?? 0,
-              goals_against: d.goals_conceded  ?? 0,
-              goal_diff:     d.goal_difference ?? 0,
-              points:        row.points        ?? 0,
-              form:          row.form          ?? null,
-            },
+            update: data,
+            create: { season_id: season.id, team_id: team.id, ...data },
           });
         }
 

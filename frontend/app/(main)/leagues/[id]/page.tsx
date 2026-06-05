@@ -152,6 +152,23 @@ export default function CompetitionHubPage() {
 
   const hasStandings = (standingsData?.standings?.length ?? 0) > 0
 
+  // Group-structured competitions (World Cup) → split into per-group tables
+  const groups = useMemo(() => {
+    const rows = standingsData?.standings ?? []
+    if (!rows.some(r => r.group)) return null
+    const map = new Map<string, Standing[]>()
+    for (const r of rows) {
+      const g = r.group ?? 'Group'
+      if (!map.has(g)) map.set(g, [])
+      map.get(g)!.push(r)
+    }
+    return Array.from(map.entries())
+      .map(([name, rows]) => ({ name, rows: rows.sort((a, b) => a.position - b.position) }))
+      .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }))
+  }, [standingsData])
+
+  const tableLabel = groups ? 'Groups' : 'Table'
+
   // Default to Fixtures for competitions without a league table (cups)
   useEffect(() => {
     if (!standingsLoading && !hasStandings) setTab('fixtures')
@@ -169,9 +186,9 @@ export default function CompetitionHubPage() {
   if (!league) {
     return (
       <div className="mx-auto max-w-[1100px] px-4 lg:px-6 py-20 text-center">
-        <p className="text-muted-foreground text-sm">Competition not found.</p>
-        <Link href="/competitions" className="text-primary text-sm font-semibold hover:underline mt-2 inline-block">
-          Back to competitions
+        <p className="text-muted-foreground text-sm">League not found.</p>
+        <Link href="/leagues" className="text-primary text-sm font-semibold hover:underline mt-2 inline-block">
+          Back to leagues
         </Link>
       </div>
     )
@@ -186,8 +203,8 @@ export default function CompetitionHubPage() {
       <div className={`relative bg-gradient-to-br ${gradient} border-b border-border`}>
         <div className="absolute inset-0 bg-black/30" />
         <div className="relative mx-auto max-w-[1100px] px-4 lg:px-6 py-8">
-          <Link href="/competitions" className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-white/70 hover:text-white transition-colors mb-5">
-            <ArrowLeft className="h-3.5 w-3.5" /> All Competitions
+          <Link href="/leagues" className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-white/70 hover:text-white transition-colors mb-5">
+            <ArrowLeft className="h-3.5 w-3.5" /> All Leagues
           </Link>
 
           <div className="flex items-center gap-4">
@@ -222,7 +239,7 @@ export default function CompetitionHubPage() {
                 tab === 'table' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground',
               )}
             >
-              Table
+              {tableLabel}
             </button>
           )}
           <button
@@ -237,7 +254,18 @@ export default function CompetitionHubPage() {
         </div>
 
         {tab === 'table' && hasStandings && standingsData && (
-          <StandingsTable standings={standingsData.standings} />
+          groups ? (
+            <div className="grid lg:grid-cols-2 gap-5">
+              {groups.map(g => (
+                <div key={g.name}>
+                  <h3 className="text-[12px] font-black uppercase tracking-wide text-muted-foreground mb-2 px-1">{g.name}</h3>
+                  <StandingsTable standings={g.rows} />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <StandingsTable standings={standingsData.standings} />
+          )
         )}
 
         {tab === 'fixtures' && (

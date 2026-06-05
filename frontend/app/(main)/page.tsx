@@ -1,8 +1,7 @@
 import { ScoresStrip } from '@/components/home/scores-strip'
 import { HeroSection } from '@/components/home/hero-section'
 import { WorldCupSpotlight } from '@/components/home/world-cup-spotlight'
-import { StandingsSnapshot } from '@/components/home/standings-snapshot'
-import { CompetitionsSection } from '@/components/home/competitions-section'
+import { NewsSection } from '@/components/home/news-section'
 
 export default function HomePage() {
   return (
@@ -10,8 +9,7 @@ export default function HomePage() {
       <ScoresStrip />
       <HeroSection />
       <WorldCupSpotlight />
-      <StandingsSnapshot />
-      <CompetitionsSection />
+      <NewsSection />
     </>
   )
 }

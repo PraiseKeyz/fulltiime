@@ -12,12 +12,27 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
 import { CurrentUser } from '@/common/decorators/current-user.decorator.js';
 import type { SafeUser } from '@/common/constants/user-select.constant.js';
 
-const COOKIE_OPTIONS = {
-  httpOnly:  true,
-  secure:    process.env.NODE_ENV === 'production',
-  sameSite:  'strict' as const,
-  maxAge:    7 * 24 * 60 * 60 * 1000, // 7 days
-  path:      '/api/v1/auth',
+const ACCESS_COOKIE = 'access_token';
+const REFRESH_COOKIE = 'refresh_token';
+
+const BASE_COOKIE = {
+  httpOnly: true,
+  secure:   process.env.NODE_ENV === 'production',
+  sameSite: 'strict' as const,
+};
+
+// Access token: sent to every API route, short-lived (matches the 15m JWT expiry)
+const ACCESS_COOKIE_OPTIONS = {
+  ...BASE_COOKIE,
+  maxAge: 15 * 60 * 1000, // 15 minutes
+  path:   '/',
+};
+
+// Refresh token: only sent to the auth endpoints that need it, long-lived
+const REFRESH_COOKIE_OPTIONS = {
+  ...BASE_COOKIE,
+  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  path:   '/api/v1/auth',
 };
 
 @Controller('auth')
@@ -34,9 +49,10 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const { user, access_token, refresh_token } = await this.authService.register(dto);
-    res.cookie('refresh_token', refresh_token, COOKIE_OPTIONS);
+    res.cookie(ACCESS_COOKIE, access_token, ACCESS_COOKIE_OPTIONS);
+    res.cookie(REFRESH_COOKIE, refresh_token, REFRESH_COOKIE_OPTIONS);
     return {
-      data:    { user, access_token },
+      data:    { user },
       message: 'Account created successfully',
     };
   }
@@ -51,9 +67,10 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const { user, access_token, refresh_token } = await this.authService.login(dto);
-    res.cookie('refresh_token', refresh_token, COOKIE_OPTIONS);
+    res.cookie(ACCESS_COOKIE, access_token, ACCESS_COOKIE_OPTIONS);
+    res.cookie(REFRESH_COOKIE, refresh_token, REFRESH_COOKIE_OPTIONS);
     return {
-      data:    { user, access_token },
+      data:    { user },
       message: 'Login successful',
     };
   }
@@ -71,9 +88,9 @@ export class AuthController {
     if (!token) throw new UnauthorizedException('No refresh token provided');
 
     const { access_token, refresh_token } = await this.authService.refresh(token);
-    res.cookie('refresh_token', refresh_token, COOKIE_OPTIONS);
+    res.cookie(ACCESS_COOKIE, access_token, ACCESS_COOKIE_OPTIONS);
+    res.cookie(REFRESH_COOKIE, refresh_token, REFRESH_COOKIE_OPTIONS);
     return {
-      data:    { access_token },
       message: 'Token refreshed',
     };
   }
@@ -88,7 +105,8 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     await this.authService.logout(user.id);
-    res.clearCookie('refresh_token', { path: '/api/v1/auth' });
+    res.clearCookie(ACCESS_COOKIE, { path: '/' });
+    res.clearCookie(REFRESH_COOKIE, { path: '/api/v1/auth' });
     return { message: 'Logged out successfully' };
   }
 

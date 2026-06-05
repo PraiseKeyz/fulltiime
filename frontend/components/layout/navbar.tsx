@@ -9,9 +9,9 @@ import { cn } from '@/lib/utils'
 const NAV_LINKS = [
   // { href: '/news', label: 'News' },
   { href: '/matches', label: 'Matches' },
-  { href: '/live', label: 'Live', live: true },
+  { href: '/live', label: 'Live' },
   { href: '/analytics', label: 'Analytics' },
-  { href: '/competitions', label: 'Competitions' },
+  { href: '/leagues', label: 'Leagues' },
   { href: '/transfers', label: 'Transfers' },
 ]
 
@@ -45,12 +45,6 @@ export function Navbar() {
                 )}
               >
                 {link.label}
-                {link.live && (
-                  <span className="flex items-center gap-1 rounded-sm bg-primary px-1.5 py-0.5 text-[10px] font-bold text-primary-foreground leading-none">
-                    <span className="h-1.5 w-1.5 rounded-full bg-primary-foreground animate-pulse" />
-                    LIVE
-                  </span>
-                )}
               </Link>
             ))}
           </nav>
@@ -64,12 +58,12 @@ export function Navbar() {
               <Search className="h-4 w-4" />
             </button>
 
-            <button
+            {/* <button
               aria-label="Notifications"
               className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
             >
               <Bell className="h-4 w-4" />
-            </button>
+            </button> */}
 
             <button
               aria-label="Toggle theme"

@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service.js';
+import { leaguePriority } from '@/common/constants/league-priority.constant.js';
 
 @Injectable()
 export class LeaguesService {
@@ -9,8 +10,14 @@ export class LeaguesService {
     const leagues = await this.prisma.league.findMany({
       where: { is_active: true },
       include: { country: true, _count: { select: { seasons: true } } },
-      orderBy: { name: 'asc' },
     });
+
+    // Order by "hotness" priority, then alphabetically as a tie-breaker
+    leagues.sort((a, b) => {
+      const diff = leaguePriority(b.api_football_id) - leaguePriority(a.api_football_id);
+      return diff !== 0 ? diff : a.name.localeCompare(b.name);
+    });
+
     return { data: leagues };
   }
 
