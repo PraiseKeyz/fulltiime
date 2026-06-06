@@ -8,7 +8,7 @@ const COLUMNS = [
       { label: 'News', href: '/news' },
       { label: 'Matches', href: '/matches' },
       { label: 'Live', href: '/live' },
-      { label: 'Analytics', href: '/analytics' },
+      { label: 'Analytics', href: '/news?tab=analytics' },
       { label: 'Videos', href: '/videos' },
     ],
   },
@@ -19,7 +19,7 @@ const COLUMNS = [
       { label: 'Standings', href: '/standings' },
       { label: 'Fixtures', href: '/matches' },
       { label: 'Live Scores', href: '/live' },
-      { label: 'Transfers', href: '/transfers' },
+      { label: 'Transfers', href: '/news?tab=transfers' },
     ],
   },
   {

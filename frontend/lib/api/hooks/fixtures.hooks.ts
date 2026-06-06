@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { api } from '../instance'
-import type { Match, MatchStatus, FeaturedMatchResponse } from '../domain'
+import type { Match, MatchStatus, FeaturedMatchResponse, Bracket, MatchPreview } from '../domain'
 
 export const fixtureKeys = {
   all: ['fixtures'] as const,
@@ -46,7 +46,7 @@ export function useLiveFixtures() {
 export function useFixture(id: string) {
   return useQuery({
     queryKey: fixtureKeys.detail(id),
-    queryFn: () => api.get<Match>(`/fixtures/${id}`),
+    queryFn: () => api.get<Match | MatchPreview>(`/fixtures/${id}`),
     enabled: !!id,
   })
 }
@@ -62,6 +62,15 @@ export function useUpcomingFixtures(leagueId?: string, limit = 10) {
         },
       }),
     staleTime: 5 * 60_000,
+  })
+}
+
+export function useBracket(leagueId: string) {
+  return useQuery({
+    queryKey: ['fixtures', 'bracket', leagueId],
+    queryFn:  () => api.get<Bracket | null>(`/fixtures/bracket/${leagueId}`, { silent: true }),
+    enabled:  !!leagueId,
+    retry:    false,
   })
 }
 

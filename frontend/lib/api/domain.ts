@@ -146,6 +146,67 @@ export interface FeaturedMatchResponse {
   type: 'live' | 'upcoming' | 'finished'
 }
 
+// ─── Match Preview (placeholder fixtures) ──────────────────────────────────────
+
+export interface VenueInfo {
+  name:     string | null
+  city?:    string | null
+  capacity?: number | null
+  surface?: string | null
+  image?:   string | null
+}
+
+export interface MatchPreview {
+  preview:  true
+  id:       number
+  name:     string | null
+  date:     string | null
+  venue:    VenueInfo | null
+  league:   { name: string; logo: string | null } | null
+  stage:    string | null
+  homeSlot: string | null
+  awaySlot: string | null
+  homeTeam: BracketTeam | null
+  awayTeam: BracketTeam | null
+  roundFixtures?: BracketTie[]
+}
+
+// ─── Knockout Bracket ──────────────────────────────────────────────────────────
+
+export interface BracketTeam {
+  name: string
+  logo: string | null
+}
+
+export interface BracketTie {
+  id:          number
+  label:       string | null   // "Match 73"
+  date:        string | null
+  placeholder: boolean
+  homeSlot:    string | null   // "1st Group E" (before teams are known)
+  awaySlot:    string | null
+  homeTeam:    BracketTeam | null
+  awayTeam:    BracketTeam | null
+}
+
+export interface BracketStage {
+  id:   number
+  name: string
+  ties: BracketTie[]
+}
+
+export interface BracketEdge {
+  child:     number
+  childSlot: 'home' | 'away'
+  parent:    number
+  outcome:   'winner' | 'loser'
+}
+
+export interface Bracket {
+  stages: BracketStage[]
+  edges:  BracketEdge[]
+}
+
 // ─── Match Statistic ─────────────────────────────────────────────────────────
 
 export interface MatchStatistic {

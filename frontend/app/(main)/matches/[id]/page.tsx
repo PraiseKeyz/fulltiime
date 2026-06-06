@@ -1,15 +1,16 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
-import { useParams } from 'next/navigation'
+import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useParams, useSearchParams, useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import {
   ArrowLeft, MapPin, Clock, Goal, RectangleVertical,
-  ArrowLeftRight, Flag, ShieldHalf,
+  ArrowLeftRight, Flag, ShieldHalf, Shield, CalendarDays,
 } from 'lucide-react'
-import { useFixture } from '@/lib/api/hooks/fixtures.hooks'
+import { useFixture, useUpcomingFixtures } from '@/lib/api/hooks/fixtures.hooks'
 import { cn, formatMatchDate, formatKickoff } from '@/lib/utils'
-import type { Match, MatchEvent, MatchLineup, MatchStatistic } from '@/lib/api/domain'
+import type { Match, MatchEvent, MatchLineup, MatchStatistic, MatchPreview } from '@/lib/api/domain'
+import { VenueCard, RoundFixturesCard, type RailFixture } from './_components/match-rail'
 
 // ── Status helpers ─────────────────────────────────────────────────────────────
 
@@ -50,8 +51,8 @@ function MatchHeader({ match }: { match: Match }) {
   const showCountdown = match.status === 'SCHEDULED' && countdown
 
   return (
-    <div className="bg-card border-b border-border">
-      <div className="mx-auto max-w-[900px] px-4 lg:px-6 py-6">
+    <div className="rounded-xl border border-border bg-card">
+      <div className="p-6">
         <Link href="/matches" className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-muted-foreground hover:text-foreground transition-colors mb-5">
           <ArrowLeft className="h-3.5 w-3.5" /> All Matches
         </Link>
@@ -337,18 +338,145 @@ function EmptyTab({ text }: { text: string }) {
 
 type Tab = 'summary' | 'lineups' | 'stats'
 
+// ── Preview (placeholder knockout fixtures, teams not yet known) ────────────────
+
+function shortSlot(s: string | null): string {
+  if (!s) return 'TBD'
+  let m: RegExpMatchArray | null
+  if ((m = s.match(/^(\d)(?:st|nd|rd|th) Group (.+)$/i)))          return `${m[1]}${m[2]}`
+  if ((m = s.match(/^Winner Match (\d+)$/i)))                      return `W${m[1]}`
+  if ((m = s.match(/^Winner (Quarter-final|Semi-final) (\d+)$/i))) return `W ${m[1].startsWith('Q') ? 'QF' : 'SF'}${m[2]}`
+  if ((m = s.match(/^Loser (Quarter-final|Semi-final) (\d+)$/i)))  return `L ${m[1].startsWith('Q') ? 'QF' : 'SF'}${m[2]}`
+  return s
+}
+
+function PreviewSide({ team, slot }: { team: MatchPreview['homeTeam']; slot: string | null }) {
+  return (
+    <div className="flex flex-col items-center gap-3 flex-1 min-w-0">
+      <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center overflow-hidden">
+        {team?.logo
+          ? <img src={team.logo} alt="" className="h-12 w-12 object-contain" />
+          : <Shield className="h-8 w-8 text-muted-foreground/40" />}
+      </div>
+      <span className="text-[14px] font-bold text-center leading-tight" title={slot ?? undefined}>
+        {team ? team.name : shortSlot(slot)}
+      </span>
+    </div>
+  )
+}
+
+function MatchPreviewView({ preview }: { preview: MatchPreview }) {
+  const dateStr = preview.date
+    ? `${formatMatchDate(preview.date)} · ${formatKickoff(preview.date)}`
+    : 'Date TBC'
+  const home = preview.homeTeam ? preview.homeTeam.name : shortSlot(preview.homeSlot)
+  const away = preview.awayTeam ? preview.awayTeam.name : shortSlot(preview.awaySlot)
+  const venueName = preview.venue?.name
+
+  const railFixtures: RailFixture[] = (preview.roundFixtures ?? []).map(t => ({
+    id:        t.id,
+    homeLabel: t.homeTeam?.name ?? shortSlot(t.homeSlot),
+    homeLogo:  t.homeTeam?.logo ?? null,
+    awayLabel: t.awayTeam?.name ?? shortSlot(t.awaySlot),
+    awayLogo:  t.awayTeam?.logo ?? null,
+    date:      t.date,
+    isCurrent: t.id === preview.id,
+  }))
+
+  return (
+    <div className="mx-auto max-w-[1100px] px-4 lg:px-6 py-6 grid lg:grid-cols-[1fr_320px] gap-6">
+      {/* Main */}
+      <div className="min-w-0 space-y-6">
+        {/* Header card */}
+        <div className="rounded-xl border border-border bg-card p-6">
+          <Link href="/matches" className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-muted-foreground hover:text-foreground transition-colors mb-5">
+            <ArrowLeft className="h-3.5 w-3.5" /> Matches
+          </Link>
+
+          <div className="flex items-center justify-center gap-2 mb-6">
+            {preview.league?.logo && <img src={preview.league.logo} alt="" className="h-5 w-5 object-contain" />}
+            <span className="text-[12px] font-bold uppercase tracking-wider text-primary">
+              {preview.league?.name}{preview.stage ? ` · ${preview.stage}` : ''}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4">
+            <PreviewSide team={preview.homeTeam} slot={preview.homeSlot} />
+            <div className="text-center px-2">
+              <div className="text-xl font-black">{preview.date ? formatKickoff(preview.date) : 'vs'}</div>
+              {preview.date && <div className="text-[11px] text-muted-foreground mt-0.5">{formatMatchDate(preview.date)}</div>}
+            </div>
+            <PreviewSide team={preview.awayTeam} slot={preview.awaySlot} />
+          </div>
+
+          {venueName && (
+            <div className="flex items-center justify-center gap-1 mt-6 text-[11px] text-muted-foreground">
+              <MapPin className="h-3 w-3" /> {venueName}
+            </div>
+          )}
+        </div>
+
+        {/* About */}
+        <div className="rounded-xl border border-border bg-card p-6">
+          <h2 className="text-[13px] font-black uppercase tracking-wide mb-3">About the match</h2>
+          <p className="text-[14px] text-muted-foreground leading-relaxed">
+            <span className="text-foreground font-semibold">{home}</span> faces{' '}
+            <span className="text-foreground font-semibold">{away}</span>
+            {venueName ? ` at ${venueName}` : ''} on {dateStr}, as part of the{' '}
+            <span className="text-foreground font-semibold">{preview.league?.name}</span>
+            {preview.stage ? ` ${preview.stage}` : ''}.
+          </p>
+          <p className="text-[13px] text-muted-foreground/80 leading-relaxed mt-3">
+            The teams will be confirmed once the earlier rounds are played. Check back for line-ups,
+            stats and live updates closer to kick-off.
+          </p>
+        </div>
+      </div>
+
+      {/* Rail */}
+      <aside className="space-y-4">
+        <VenueCard venue={preview.venue} />
+        <RoundFixturesCard
+          title={preview.league?.name ?? 'Competition'}
+          subtitle={preview.stage}
+          logo={preview.league?.logo}
+          fixtures={railFixtures}
+        />
+      </aside>
+    </div>
+  )
+}
+
 // ── Page ───────────────────────────────────────────────────────────────────────
 
 export default function MatchDetailPage() {
   const { id } = useParams<{ id: string }>()
+  const searchParams = useSearchParams()
+  const router       = useRouter()
+  const pathname     = usePathname()
+
   const { data: match, isLoading } = useFixture(id)
-  const [tab, setTab] = useState<Tab>('summary')
+
+  const urlTab = searchParams.get('tab') as Tab | null
+  const [tab, setTab] = useState<Tab>(urlTab ?? 'summary')
+
+  // Reflect the active tab in the URL (?tab=…) so a reload restores it
+  const selectTab = useCallback((value: Tab) => {
+    setTab(value)
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('tab', value)
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+  }, [searchParams, router, pathname])
 
   const tabs = useMemo(() => ([
     { key: 'summary' as const, label: 'Summary' },
     { key: 'lineups' as const, label: 'Line-ups' },
     { key: 'stats'   as const, label: 'Stats' },
   ]), [])
+
+  // For a real match, the rail shows the rest of that competition's fixtures
+  const railLeagueId = match && !('preview' in match) ? match.season?.league?.id : undefined
+  const { data: leagueFixtures } = useUpcomingFixtures(railLeagueId, 12)
 
   if (isLoading) {
     return (
@@ -370,33 +498,66 @@ export default function MatchDetailPage() {
     )
   }
 
+  // Placeholder knockout fixture (teams not yet known) → preview layout
+  if ('preview' in match && match.preview) {
+    return <MatchPreviewView preview={match} />
+  }
+
+  const railFixtures: RailFixture[] = (leagueFixtures ?? []).map(m => ({
+    id:        m.id,
+    homeLabel: m.home_team.short_name ?? m.home_team.name,
+    homeLogo:  m.home_team.logo_url,
+    awayLabel: m.away_team.short_name ?? m.away_team.name,
+    awayLogo:  m.away_team.logo_url,
+    date:      m.kickoff_at,
+    homeScore: m.home_score,
+    awayScore: m.away_score,
+    isCurrent: m.id === match.id,
+  }))
+
+  const league = match.season?.league
+
   return (
-    <>
-      <MatchHeader match={match} />
+    <div className="mx-auto max-w-[1100px] px-4 lg:px-6 py-6 grid lg:grid-cols-[1fr_320px] gap-6">
+      {/* Main */}
+      <div className="min-w-0 space-y-6">
+        <MatchHeader match={match} />
 
-      <div className="mx-auto max-w-[900px] px-4 lg:px-6 py-6">
-        {/* Tabs */}
-        <div className="flex gap-1 border-b border-border mb-6">
-          {tabs.map(t => (
-            <button
-              key={t.key}
-              onClick={() => setTab(t.key)}
-              className={cn(
-                'px-5 py-2.5 text-[13px] font-bold transition-colors border-b-2 -mb-px',
-                tab === t.key
-                  ? 'border-primary text-primary'
-                  : 'border-transparent text-muted-foreground hover:text-foreground',
-              )}
-            >
-              {t.label}
-            </button>
-          ))}
+        <div>
+          {/* Tabs */}
+          <div className="flex gap-1 border-b border-border mb-6">
+            {tabs.map(t => (
+              <button
+                key={t.key}
+                onClick={() => selectTab(t.key)}
+                className={cn(
+                  'px-5 py-2.5 text-[13px] font-bold transition-colors border-b-2 -mb-px',
+                  tab === t.key
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-muted-foreground hover:text-foreground',
+                )}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          {tab === 'summary' && <SummaryTab match={match} />}
+          {tab === 'lineups' && <LineupsTab match={match} />}
+          {tab === 'stats'   && <StatsTab match={match} />}
         </div>
-
-        {tab === 'summary' && <SummaryTab match={match} />}
-        {tab === 'lineups' && <LineupsTab match={match} />}
-        {tab === 'stats'   && <StatsTab match={match} />}
       </div>
-    </>
+
+      {/* Rail */}
+      <aside className="space-y-4">
+        <VenueCard venue={match.venue ? { name: match.venue } : null} />
+        <RoundFixturesCard
+          title={league?.name ?? 'Competition'}
+          subtitle="Fixtures"
+          logo={league?.logo_url}
+          fixtures={railFixtures}
+        />
+      </aside>
+    </div>
   )
 }

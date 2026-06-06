@@ -1,15 +1,16 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
-import { useParams } from 'next/navigation'
+import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useParams, useSearchParams, useRouter, usePathname } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import Link from 'next/link'
 import { ArrowLeft, Trophy } from 'lucide-react'
 import { api } from '@/lib/api/instance'
 import { useLeague } from '@/lib/api/hooks/leagues.hooks'
-import { useUpcomingFixtures } from '@/lib/api/hooks/fixtures.hooks'
+import { useUpcomingFixtures, useBracket } from '@/lib/api/hooks/fixtures.hooks'
 import { cn, formatMatchDate, formatKickoff } from '@/lib/utils'
 import type { Match, Standing, StandingsResponse } from '@/lib/api/domain'
+import { KnockoutBracket } from './_components/knockout-bracket'
 
 const GRADIENTS: Record<string, string> = {
   'Premier League':   'from-[#1e0540] via-[#3b1280] to-[#6d28d9]',
@@ -119,13 +120,28 @@ function FixtureList({ title, matches }: { title: string; matches: Match[] }) {
 
 // ── Page ───────────────────────────────────────────────────────────────────────
 
-type Tab = 'table' | 'fixtures'
+type Tab = 'table' | 'knockout' | 'fixtures'
 
 export default function CompetitionHubPage() {
   const { id } = useParams<{ id: string }>()
-  const [tab, setTab] = useState<Tab>('table')
+  const searchParams = useSearchParams()
+  const router       = useRouter()
+  const pathname     = usePathname()
+
+  const urlTab = searchParams.get('tab') as Tab | null
+  const [tab, setTab] = useState<Tab>(urlTab ?? 'table')
+
+  // Selecting a tab also writes it to the URL (?tab=…) so a reload restores it
+  const selectTab = useCallback((value: Tab) => {
+    setTab(value)
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('tab', value)
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+  }, [searchParams, router, pathname])
 
   const { data: league, isLoading: leagueLoading } = useLeague(id)
+  const { data: bracket } = useBracket(id)
+  const hasBracket = (bracket?.stages?.length ?? 0) > 0
 
   // Standings — silent so cup competitions (no table) don't fire an error toast
   const { data: standingsData, isLoading: standingsLoading } = useQuery({
@@ -169,14 +185,15 @@ export default function CompetitionHubPage() {
 
   const tableLabel = groups ? 'Groups' : 'Table'
 
-  // Default to Fixtures for competitions without a league table (cups)
+  // Default to Fixtures for competitions without a league table (cups) —
+  // but only when the URL didn't already specify a tab.
   useEffect(() => {
-    if (!standingsLoading && !hasStandings) setTab('fixtures')
-  }, [standingsLoading, hasStandings])
+    if (!urlTab && !standingsLoading && !hasStandings) setTab('fixtures')
+  }, [urlTab, standingsLoading, hasStandings])
 
   if (leagueLoading) {
     return (
-      <div className="mx-auto max-w-[1100px] px-4 lg:px-6 py-8 space-y-4">
+      <div className="mx-auto max-w-[1400px] px-4 lg:px-6 py-8 space-y-4">
         <div className="h-40 rounded-xl bg-card border border-border animate-pulse" />
         <div className="h-96 rounded-xl bg-card border border-border animate-pulse" />
       </div>
@@ -185,7 +202,7 @@ export default function CompetitionHubPage() {
 
   if (!league) {
     return (
-      <div className="mx-auto max-w-[1100px] px-4 lg:px-6 py-20 text-center">
+      <div className="mx-auto max-w-[1400px] px-4 lg:px-6 py-20 text-center">
         <p className="text-muted-foreground text-sm">League not found.</p>
         <Link href="/leagues" className="text-primary text-sm font-semibold hover:underline mt-2 inline-block">
           Back to leagues
@@ -202,7 +219,7 @@ export default function CompetitionHubPage() {
       {/* Banner */}
       <div className={`relative bg-gradient-to-br ${gradient} border-b border-border`}>
         <div className="absolute inset-0 bg-black/30" />
-        <div className="relative mx-auto max-w-[1100px] px-4 lg:px-6 py-8">
+        <div className="relative mx-auto max-w-[1400px] px-4 lg:px-6 py-8">
           <Link href="/leagues" className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-white/70 hover:text-white transition-colors mb-5">
             <ArrowLeft className="h-3.5 w-3.5" /> All Leagues
           </Link>
@@ -228,12 +245,12 @@ export default function CompetitionHubPage() {
       </div>
 
       {/* Body */}
-      <div className="mx-auto max-w-[1100px] px-4 lg:px-6 py-6">
+      <div className="mx-auto max-w-[1400px] px-4 lg:px-6 py-6">
         {/* Tabs */}
         <div className="flex gap-1 border-b border-border mb-6">
           {hasStandings && (
             <button
-              onClick={() => setTab('table')}
+              onClick={() => selectTab('table')}
               className={cn(
                 'px-5 py-2.5 text-[13px] font-bold transition-colors border-b-2 -mb-px',
                 tab === 'table' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground',
@@ -242,8 +259,19 @@ export default function CompetitionHubPage() {
               {tableLabel}
             </button>
           )}
+          {hasBracket && (
+            <button
+              onClick={() => selectTab('knockout')}
+              className={cn(
+                'px-5 py-2.5 text-[13px] font-bold transition-colors border-b-2 -mb-px',
+                tab === 'knockout' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground',
+              )}
+            >
+              Knockout
+            </button>
+          )}
           <button
-            onClick={() => setTab('fixtures')}
+            onClick={() => selectTab('fixtures')}
             className={cn(
               'px-5 py-2.5 text-[13px] font-bold transition-colors border-b-2 -mb-px',
               tab === 'fixtures' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground',
@@ -252,6 +280,10 @@ export default function CompetitionHubPage() {
             Fixtures &amp; Results
           </button>
         </div>
+
+        {tab === 'knockout' && hasBracket && bracket && (
+          <KnockoutBracket bracket={bracket} />
+        )}
 
         {tab === 'table' && hasStandings && standingsData && (
           groups ? (

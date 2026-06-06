@@ -7,12 +7,9 @@ import { Search, Bell, Sun, Moon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const NAV_LINKS = [
-  // { href: '/news', label: 'News' },
   { href: '/matches', label: 'Matches' },
-  { href: '/live', label: 'Live' },
-  { href: '/analytics', label: 'Analytics' },
+  { href: '/news', label: 'News' },
   { href: '/leagues', label: 'Leagues' },
-  { href: '/transfers', label: 'Transfers' },
 ]
 
 export function Navbar() {

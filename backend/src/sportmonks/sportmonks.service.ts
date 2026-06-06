@@ -10,7 +10,6 @@ export class SportMonksService {
   constructor(private config: ConfigService) {
     this.http = axios.create({
       baseURL: 'https://api.sportmonks.com/v3/football',
-      // Auth goes as query param per SportMonks docs
       params: { api_token: this.config.get('SPORTMONKS_API_KEY') },
       timeout: 15_000,
     });
@@ -93,6 +92,13 @@ export class SportMonksService {
     });
   }
 
+  // Lightweight fixture for a preview page (placeholder knockout ties etc.)
+  async getFixturePreview(fixtureId: number) {
+    return this.get<any>(`/fixtures/${fixtureId}`, {
+      include: 'participants;league;venue;stage',
+    });
+  }
+
   // ── Standings ─────────────────────────────────────────────────────────────────
   // Requires SportMonks season ID (not year)
 
@@ -100,5 +106,12 @@ export class SportMonksService {
     return this.getAll<any>(`/standings/seasons/${sportmonksSeasonId}`, {
       include: 'participant;details.type;group',
     });
+  }
+
+  // ── Brackets (knockout structure) ─────────────────────────────────────────────
+  // Returns { stages: [...], edges: [...] } for a season's knockout phase.
+
+  async getBrackets(sportmonksSeasonId: number) {
+    return this.get<any>(`/seasons/${sportmonksSeasonId}/brackets`);
   }
 }

@@ -2,21 +2,26 @@ import {
   Injectable,
   ConflictException,
   UnauthorizedException,
+  Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as argon2 from 'argon2';
 import { PrismaService } from '@/prisma/prisma.service.js';
 import { SafeUserSelect } from '@/common/constants/user-select.constant.js';
+import { EmailService } from '../email/email.service.js';
 import { RegisterDto } from './dto/register.dto.js';
 import { LoginDto } from './dto/login.dto.js';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly prisma:      PrismaService,
     private readonly jwtService:  JwtService,
     private readonly config:      ConfigService,
+    private readonly emailService: EmailService,
   ) {}
 
   // ── Register ──────────────────────────────────────────────────────────────────
@@ -45,6 +50,12 @@ export class AuthService {
       },
       select: SafeUserSelect,
     });
+
+    try {
+      await this.emailService.sendWelcomeEmail(user.email, user.full_name ?? user.username);
+    } catch (error: any) {
+      this.logger.warn(`Welcome email failed for ${user.email}: ${error?.message ?? 'unknown'}`);
+    }
 
     const { access_token, refresh_token } = await this.signAndStoreTokens(user.id, user.email);
     return { user, access_token, refresh_token };

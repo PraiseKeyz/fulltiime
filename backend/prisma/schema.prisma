@@ -250,6 +250,21 @@ model MatchLineup {
   @@map("match_lineups")
 }
 
+// ─── Cache ────────────────────────────────────────────────────────────────────
+// Generic key/value cache for slow-changing passthrough data (e.g. brackets,
+// match previews). Avoids hammering external APIs; shared across instances.
+
+model Cache {
+  key        String   @id
+  payload    Json
+  expires_at DateTime
+
+  updated_at DateTime @updatedAt
+
+  @@index([expires_at])
+  @@map("cache")
+}
+
 // ─── Standing ─────────────────────────────────────────────────────────────────
 
 model Standing {

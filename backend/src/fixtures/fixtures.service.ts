@@ -1,6 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service.js';
 import { SyncService } from '@/sync/sync.service.js';
+import { SportMonksService } from '@/sportmonks/sportmonks.service.js';
+import { CacheService } from '@/cache/cache.service.js';
 import { MatchStatus } from '../../generated/prisma/index.js';
 
 const MATCH_INCLUDE = {
@@ -41,9 +43,105 @@ const LEAGUE_WEIGHT: Record<number, number> = {
 @Injectable()
 export class FixturesService {
   constructor(
-    private readonly prisma: PrismaService,
-    private readonly sync:   SyncService,
+    private readonly prisma:     PrismaService,
+    private readonly sync:       SyncService,
+    private readonly sportmonks: SportMonksService,
+    private readonly cache:      CacheService,
   ) {}
+
+  // ── Knockout bracket ──────────────────────────────────────────────────────────
+
+  // Bracket structure changes slowly → cache the normalized result for 12h so we
+  // hit SportMonks at most once per competition per half-day (shared across users).
+  async getBracket(leagueId: string) {
+    const data = await this.cache.getOrSet(
+      `bracket:${leagueId}`,
+      12 * 60 * 60 * 1000, // 12 hours
+      () => this.buildBracket(leagueId),
+    );
+    return { data };
+  }
+
+  private async buildBracket(leagueId: string) {
+    const league = await this.prisma.league.findUnique({
+      where:   { id: leagueId },
+      include: { seasons: { where: { is_current: true }, take: 1 } },
+    });
+    const seasonId = league?.seasons[0]?.sportmonks_id;
+    if (!seasonId) return null;
+
+    const raw = await this.sportmonks.getBrackets(seasonId);
+    if (!raw?.stages?.length) return null;
+
+    const stages = raw.stages.map((st: any) => ({
+      id:   st.stage_id,
+      name: st.stage_name,
+      ties: (st.fixtures ?? []).map((f: any) => this.mapTie(f)),
+    }));
+
+    const edges = (raw.edges ?? []).map((e: any) => ({
+      child:     e.child_fixture_id,
+      childSlot: e.child_slot,       // 'home' | 'away'
+      parent:    e.parent_fixture_id,
+      outcome:   e.parent_outcome,   // 'winner' | 'loser'
+    }));
+
+    return { stages, edges };
+  }
+
+  // Map a SportMonks (bracket/placeholder) fixture into a compact tie shape
+  private mapTie(f: any) {
+    const [homeSlot, awaySlot] = String(f.name ?? '').split(' vs ');
+    const parts = f.participants ?? [];
+    const home  = parts.find((p: any) => p.meta?.location === 'home');
+    const away  = parts.find((p: any) => p.meta?.location === 'away');
+    return {
+      id:          f.id,
+      label:       f.details ?? null,
+      date:        f.starting_at ?? null,
+      placeholder: f.placeholder ?? true,
+      homeSlot:    homeSlot ?? null,
+      awaySlot:    awaySlot ?? null,
+      homeTeam:    home ? { name: home.name, logo: home.image_path } : null,
+      awayTeam:    away ? { name: away.name, logo: away.image_path } : null,
+    };
+  }
+
+  // ── Match preview (placeholder fixtures not yet in our DB) ─────────────────────
+
+  private async buildPreview(fixtureId: number) {
+    const fx = await this.sportmonks.getFixturePreview(fixtureId);
+    if (!fx) return null;
+
+    const v = fx.venue;
+    const venue = v
+      ? {
+          name:     v.name ?? null,
+          city:     v.city_name ?? v.city?.name ?? null,
+          capacity: v.capacity ?? null,
+          surface:  v.surface ?? null,
+          image:    v.image_path ?? null,
+        }
+      : null;
+
+    // Other fixtures in the same knockout round (from the bracket)
+    let roundFixtures: any[] = [];
+    if (fx.season_id && fx.stage_id) {
+      const raw = await this.sportmonks.getBrackets(fx.season_id);
+      const stage = raw?.stages?.find((s: any) => s.stage_id === fx.stage_id);
+      roundFixtures = (stage?.fixtures ?? []).map((f: any) => this.mapTie(f));
+    }
+
+    return {
+      preview:       true as const,
+      ...this.mapTie(fx),
+      name:          fx.name ?? null,
+      venue,
+      league:        fx.league ? { name: fx.league.name, logo: fx.league.image_path } : null,
+      stage:         fx.stage?.name ?? null,   // e.g. "Round of 32"
+      roundFixtures,
+    };
+  }
 
   async findAll(query: { status?: MatchStatus; leagueId?: string; teamId?: string; date?: string }) {
     const where: any = {};
@@ -176,11 +274,33 @@ export class FixturesService {
   };
 
   async findOne(id: string) {
+    // Resolve by our cuid, or fall back to the SportMonks fixture id (used by
+    // bracket ties, which carry the SportMonks id rather than our internal id).
     let match = await this.prisma.match.findUnique({
       where:   { id },
       include: this.DETAIL_INCLUDE,
     });
+    if (!match && /^\d+$/.test(id)) {
+      match = await this.prisma.match.findUnique({
+        where:   { api_football_id: Number(id) },
+        include: this.DETAIL_INCLUDE,
+      });
+    }
+
+    // Not in our DB but it's a SportMonks fixture id → a placeholder knockout
+    // tie. Return a lightweight preview (cached) instead of 404.
+    if (!match && /^\d+$/.test(id)) {
+      const preview = await this.cache.getOrSet(
+        `preview:${id}`,
+        6 * 60 * 60 * 1000, // 6 hours
+        () => this.buildPreview(Number(id)),
+      );
+      if (preview) return { data: preview };
+    }
+
     if (!match) throw new NotFoundException('Match not found');
+
+    const resolvedId = match.id;
 
     // Lazy-load full detail (events/lineups/stats) on first view of a
     // live, finished, or about-to-start match when we don't have it yet.
@@ -198,7 +318,7 @@ export class FixturesService {
     if (shouldHydrate) {
       await this.sync.syncFixtureDetail(match.api_football_id!);
       match = await this.prisma.match.findUnique({
-        where:   { id },
+        where:   { id: resolvedId },
         include: this.DETAIL_INCLUDE,
       });
     }

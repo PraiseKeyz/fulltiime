@@ -302,8 +302,8 @@ export class SyncService {
     const won          = pick(c => overall(c) && (c.includes('won') || c.includes('win')));
     const drawn        = pick(c => overall(c) && c.includes('draw'));
     const lost         = pick(c => overall(c) && (c.includes('lost') || c.includes('lose')));
-    const goalsFor     = pick(c => overall(c) && c.includes('goal') && (c.includes('scored') || c.includes('for')));
-    const goalsAgainst = pick(c => overall(c) && c.includes('goal') && (c.includes('conceded') || c.includes('against')));
+    const goalsFor     = pick(c => overall(c) && (c.includes('scored') || (c.includes('goal') && c.includes('for'))));
+    const goalsAgainst = pick(c => overall(c) && (c.includes('conceded') || (c.includes('goal') && c.includes('against'))));
     const goalDiff     = goalsFor - goalsAgainst;
 
     return { played, won, drawn, lost, goalsFor, goalsAgainst, goalDiff };
