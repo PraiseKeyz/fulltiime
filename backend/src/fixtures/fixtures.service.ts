@@ -113,16 +113,24 @@ export class FixturesService {
     const fx = await this.sportmonks.getFixturePreview(fixtureId);
     if (!fx) return null;
 
-    const v = fx.venue;
-    const venue = v
-      ? {
-          name:     v.name ?? null,
-          city:     v.city_name ?? v.city?.name ?? null,
-          capacity: v.capacity ?? null,
-          surface:  v.surface ?? null,
-          image:    v.image_path ?? null,
-        }
-      : null;
+    // Prefer our stored Venue (rich: country, image); fall back to the live one.
+    let venue: any = null;
+    if (fx.venue_id) {
+      venue = await this.prisma.venue.findUnique({
+        where:  { sportmonks_id: fx.venue_id },
+        ...this.VENUE_SELECT,
+      });
+    }
+    if (!venue && fx.venue) {
+      venue = {
+        name:      fx.venue.name ?? null,
+        city:      fx.venue.city_name ?? fx.venue.city?.name ?? null,
+        country:   null,
+        capacity:  fx.venue.capacity ?? null,
+        surface:   fx.venue.surface ?? null,
+        image_url: fx.venue.image_path ?? null,
+      };
+    }
 
     // Other fixtures in the same knockout round (from the bracket)
     let roundFixtures: any[] = [];
@@ -254,8 +262,16 @@ export class FixturesService {
     return { data: { match: finished ?? null, type: 'finished' as const } };
   }
 
+  private readonly VENUE_SELECT = {
+    select: {
+      name: true, city: true, country: true,
+      capacity: true, surface: true, image_url: true,
+    },
+  } as const;
+
   private readonly DETAIL_INCLUDE = {
     ...MATCH_INCLUDE,
+    venue_ref:  this.VENUE_SELECT,
     events:     { orderBy: { sort_order: 'asc' as const } },
     lineups:    { orderBy: { jersey_number: 'asc' as const } },
     statistics: {

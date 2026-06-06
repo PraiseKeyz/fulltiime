@@ -11,31 +11,40 @@ const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 
 export function VenueCard({ venue }: { venue: VenueInfo | null | undefined }) {
   if (!venue?.name) return null
+  const location = [venue.city, venue.country].filter(Boolean).join(', ')
   return (
-    <div className="rounded-xl border border-border bg-card p-4 space-y-3">
-      <div className="flex items-start gap-2">
-        <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-        <div className="min-w-0">
-          <p className="text-[13px] font-bold leading-tight">{venue.name}</p>
-          {venue.city && <p className="text-[11px] text-muted-foreground mt-0.5">{venue.city}</p>}
-        </div>
-      </div>
-      {(venue.capacity != null || venue.surface) && (
-        <div className="border-t border-border pt-3 space-y-1.5">
-          {venue.capacity != null && (
-            <div className="flex items-center justify-between text-[11px]">
-              <span className="text-muted-foreground">Capacity</span>
-              <span className="font-semibold tabular-nums">{venue.capacity.toLocaleString()}</span>
-            </div>
-          )}
-          {venue.surface && (
-            <div className="flex items-center justify-between text-[11px]">
-              <span className="text-muted-foreground">Surface</span>
-              <span className="font-semibold">{cap(venue.surface)}</span>
-            </div>
-          )}
+    <div className="rounded-xl border border-border bg-card overflow-hidden">
+      {/* Stadium photo */}
+      {venue.image_url && (
+        <div className="h-28 bg-muted overflow-hidden">
+          <img src={venue.image_url} alt={venue.name ?? ''} className="w-full h-full object-cover" />
         </div>
       )}
+      <div className="p-4 space-y-3">
+        <div className="flex items-start gap-2">
+          <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+          <div className="min-w-0">
+            <p className="text-[13px] font-bold leading-tight">{venue.name}</p>
+            {location && <p className="text-[11px] text-muted-foreground mt-0.5">{location}</p>}
+          </div>
+        </div>
+        {(venue.capacity != null || venue.surface) && (
+          <div className="border-t border-border pt-3 space-y-1.5">
+            {venue.capacity != null && (
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="text-muted-foreground">Capacity</span>
+                <span className="font-semibold tabular-nums">{venue.capacity.toLocaleString()}</span>
+              </div>
+            )}
+            {venue.surface && (
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="text-muted-foreground">Surface</span>
+                <span className="font-semibold">{cap(venue.surface)}</span>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

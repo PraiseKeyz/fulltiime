@@ -194,7 +194,9 @@ model Match {
   away_score     Int?
   home_ht_score  Int?
   away_ht_score  Int?
-  venue          String?
+  venue          String?      // name fallback
+  venue_id       String?
+  venue_ref      Venue?       @relation(fields: [venue_id], references: [id])
   referee        String?
   home_formation String?
   away_formation String?
@@ -207,6 +209,29 @@ model Match {
   updated_at     DateTime @updatedAt
 
   @@map("matches")
+}
+
+// ─── Venue ────────────────────────────────────────────────────────────────────
+
+model Venue {
+  id            String   @id @default(cuid())
+  sportmonks_id Int?     @unique
+  name          String
+  city          String?
+  country       String?
+  address       String?
+  capacity      Int?
+  surface       String?
+  image_url     String?
+  latitude      Float?
+  longitude     Float?
+
+  matches       Match[]
+
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  @@map("venues")
 }
 
 // ─── Match Event ──────────────────────────────────────────────────────────────

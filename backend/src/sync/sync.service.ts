@@ -238,6 +238,58 @@ export class SyncService {
     this.logger.log('Teams sync complete');
   }
 
+  // ── Sync venues ───────────────────────────────────────────────────────────────
+
+  @Cron('0 4 * * 1') // every Monday at 4am
+  async syncVenues() {
+    this.logger.log('Syncing venues...');
+
+    // Only domestic leagues + international cups (World Cup, CAF CL). The global
+    // qualifiers reference hundreds of venues worldwide and time out — and we
+    // don't surface those venues anyway.
+    const activeLeagues = await this.prisma.league.findMany({
+      where:   { is_active: true, sub_type: { in: ['domestic', 'cup_international'] } },
+      include: { seasons: { where: { is_current: true }, take: 1 } },
+    });
+
+    const seen = new Set<number>(); // a venue can appear across leagues
+
+    for (const league of activeLeagues) {
+      const season = league.seasons[0];
+      if (!season?.sportmonks_id) continue;
+
+      try {
+        const venues = await this.api.getVenuesBySeason(season.sportmonks_id);
+        for (const v of venues ?? []) {
+          if (!v?.id || seen.has(v.id)) continue;
+          seen.add(v.id);
+
+          const data = {
+            name:      v.name,
+            city:      v.city_name ?? v.city?.name ?? null,
+            country:   v.country?.name ?? null,
+            address:   v.address ?? null,
+            capacity:  v.capacity ?? null,
+            surface:   v.surface ?? null,
+            image_url: v.image_path ?? null,
+            latitude:  v.latitude  != null ? parseFloat(v.latitude)  : null,
+            longitude: v.longitude != null ? parseFloat(v.longitude) : null,
+          };
+
+          await this.prisma.venue.upsert({
+            where:  { sportmonks_id: v.id },
+            update: data,
+            create: { sportmonks_id: v.id, ...data },
+          });
+        }
+      } catch (err: any) {
+        this.logger.error(`Failed syncing venues for ${league.name}: ${err.message}`);
+      }
+    }
+
+    this.logger.log(`Venues sync complete — ${seen.size} venues`);
+  }
+
   // ── Sync fixtures ─────────────────────────────────────────────────────────────
 
   @Cron('0 */6 * * *') // every 6 hours
@@ -395,6 +447,11 @@ export class SyncService {
         const homeFormation = formations.find((f: any) => f.participant_id === home.id)?.formation ?? null;
         const awayFormation = formations.find((f: any) => f.participant_id === away.id)?.formation ?? null;
 
+        // Link to our stored Venue (synced separately) by SportMonks venue id
+        const venueId = fixture.venue_id
+          ? (await this.prisma.venue.findUnique({ where: { sportmonks_id: fixture.venue_id } }))?.id ?? null
+          : null;
+
         const dbMatch = await this.prisma.match.upsert({
           where:  { api_football_id: fixture.id },
           update: {
@@ -405,6 +462,7 @@ export class SyncService {
             home_ht_score:  htHome,
             away_ht_score:  htAway,
             venue:          fixture.venue?.name ?? null,
+            venue_id:       venueId,
             home_formation: homeFormation,
             away_formation: awayFormation,
           },
@@ -416,6 +474,7 @@ export class SyncService {
             kickoff_at:      new Date(fixture.starting_at),
             status,
             venue:           fixture.venue?.name ?? null,
+            venue_id:        venueId,
             home_formation:  homeFormation,
             away_formation:  awayFormation,
           },
@@ -582,6 +641,7 @@ export class SyncService {
     this.logger.log('Running full sync...');
     await this.syncLeagues();
     await this.syncTeams();
+    await this.syncVenues();
     await this.syncFixtures();
     await this.syncStandings();
     this.logger.log('Full sync complete');

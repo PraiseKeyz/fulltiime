@@ -550,7 +550,7 @@ export default function MatchDetailPage() {
 
       {/* Rail */}
       <aside className="space-y-4">
-        <VenueCard venue={match.venue ? { name: match.venue } : null} />
+        <VenueCard venue={match.venue_ref ?? (match.venue ? { name: match.venue } : null)} />
         <RoundFixturesCard
           title={league?.name ?? 'Competition'}
           subtitle="Fixtures"

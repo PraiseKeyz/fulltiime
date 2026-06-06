@@ -114,4 +114,13 @@ export class SportMonksService {
   async getBrackets(sportmonksSeasonId: number) {
     return this.get<any>(`/seasons/${sportmonksSeasonId}/brackets`);
   }
+
+  // ── Venues ────────────────────────────────────────────────────────────────────
+  // Per-season (avoids paginating the full venue list); include country for name.
+
+  async getVenuesBySeason(sportmonksSeasonId: number) {
+    return this.getAll<any>(`/venues/seasons/${sportmonksSeasonId}`, {
+      include: 'country',
+    });
+  }
 }

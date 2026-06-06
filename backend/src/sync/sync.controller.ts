@@ -28,6 +28,13 @@ export class SyncController {
     return { message: 'Teams sync completed' };
   }
 
+  @Post('venues')
+  @HttpCode(200)
+  async syncVenues() {
+    await this.syncService.syncVenues();
+    return { message: 'Venues sync completed' };
+  }
+
   @Post('fixtures')
   @HttpCode(200)
   async syncFixtures() {

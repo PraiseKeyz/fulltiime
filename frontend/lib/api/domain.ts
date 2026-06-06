@@ -133,6 +133,7 @@ export interface Match {
   home_ht_score: number | null
   away_ht_score: number | null
   venue: string | null
+  venue_ref?: VenueInfo | null
   referee: string | null
   home_formation: string | null
   away_formation: string | null
@@ -149,11 +150,12 @@ export interface FeaturedMatchResponse {
 // ─── Match Preview (placeholder fixtures) ──────────────────────────────────────
 
 export interface VenueInfo {
-  name:     string | null
-  city?:    string | null
+  name:      string | null
+  city?:     string | null
+  country?:  string | null
   capacity?: number | null
-  surface?: string | null
-  image?:   string | null
+  surface?:  string | null
+  image_url?: string | null
 }
 
 export interface MatchPreview {
