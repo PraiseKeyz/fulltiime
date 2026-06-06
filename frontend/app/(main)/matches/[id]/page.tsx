@@ -499,7 +499,7 @@ export default function MatchDetailPage() {
   }
 
   // Placeholder knockout fixture (teams not yet known) → preview layout
-  if ('preview' in match && match.preview) {
+  if ('preview' in match) {
     return <MatchPreviewView preview={match} />
   }
 

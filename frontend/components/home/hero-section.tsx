@@ -39,9 +39,11 @@ export function HeroSection() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const activeId = selectedId ?? ordered[0]?.id ?? null
 
-  // Rich detail (events for the scorer line) for whichever match is selected
+  // Rich detail (events for the scorer line) for whichever match is selected.
+  // Ignore preview shapes — the hero always shows a real fixture.
   const { data: detail } = useFixture(activeId ?? '')
-  const activeMatch = detail?.id === activeId ? detail : ordered.find(m => m.id === activeId)
+  const detailMatch = detail && !('preview' in detail) ? detail : undefined
+  const activeMatch = detailMatch?.id === activeId ? detailMatch : ordered.find(m => m.id === activeId)
 
   if (todayLoading || (needFallback && upcomingLoading)) return <HeroSkeleton />
   if (!ordered.length || !activeMatch) return null
