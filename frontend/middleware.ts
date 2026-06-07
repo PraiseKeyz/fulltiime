@@ -19,9 +19,13 @@ export function middleware(request: NextRequest) {
     }
 
     // Any other path → redirect back to root so nobody bypasses via /news etc.
+    // Static files in /public (favicon.png, robots.txt, images…) have a file
+    // extension — let them through, or the favicon gets redirected to `/`.
+    const isStaticFile = /\.[a-zA-Z0-9]+$/.test(pathname)
     const isInternal = pathname.startsWith('/_next') ||
                        pathname.startsWith('/api')   ||
-                       pathname.startsWith('/coming-soon')
+                       pathname.startsWith('/coming-soon') ||
+                       isStaticFile
 
     if (!isInternal) {
       return NextResponse.redirect(new URL('/', request.url))
