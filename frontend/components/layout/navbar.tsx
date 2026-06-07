@@ -21,11 +21,8 @@ export function Navbar() {
       <div className="mx-auto max-w-[1400px] px-4 lg:px-6">
         <div className="grid grid-cols-[auto_1fr_auto] h-14 items-center gap-4">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-1.5 shrink-0">
-            <img src="/dark-favicon.png" alt="Fulltiime" className="h-7 w-7 rounded-md" />
-            <span className="text-[15px] font-black tracking-wider text-foreground">
-              FULLTIIME
-            </span>
+          <Link href="/" className="flex items-center shrink-0">
+            <img src="/logo.svg" alt="Fulltiime" className="h-6 w-auto" />
           </Link>
 
           {/* Nav links — centered in the middle column */}

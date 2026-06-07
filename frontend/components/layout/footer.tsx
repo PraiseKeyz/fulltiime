@@ -41,9 +41,8 @@ export function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
-            <Link href="/" className="flex items-center gap-1.5 mb-3">
-              <img src="/dark-favicon.png" alt="Fulltiime" className="h-7 w-7 rounded-md" />
-              <span className="text-[15px] font-black tracking-wider">FULLTIIME</span>
+            <Link href="/" className="flex items-center mb-3">
+              <img src="/logo.svg" alt="Fulltiime" className="h-6 w-auto" />
             </Link>
             <p className="text-[12px] text-muted-foreground leading-relaxed max-w-[200px]">
               Football organized intelligently. The home of intelligent football coverage.
