@@ -1,4 +1,5 @@
 import Image from 'next/image'
+import { LaunchCountdown } from './_components/launch-countdown'
 
 export const metadata = {
   title: 'Coming Soon — Fulltiime',
@@ -34,6 +35,12 @@ export default function ComingSoonPage() {
         <p className="mt-5 text-[15px] sm:text-[17px] text-[#888] leading-relaxed max-w-sm">
           with a <span className="text-primary font-semibold">fulltiime</span> football experience
         </p>
+
+        {/* Countdown to launch */}
+        <p className="mt-10 text-[11px] font-black uppercase tracking-[0.25em] text-[#666] mb-4">
+          Launching June 9
+        </p>
+        <LaunchCountdown />
 
         {/* Decorative divider */}
         <div className="mt-10 h-px w-16 bg-primary/40" />
