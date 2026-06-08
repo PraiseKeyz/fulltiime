@@ -12,7 +12,18 @@ export function middleware(request: NextRequest) {
   const isMainDomain = hostname.includes(MAIN_DOMAIN)
   const isBetaOrDev  = hostname.startsWith('beta.') || hostname.startsWith('dev.')
 
-  if (isMainDomain && !isBetaOrDev) {
+  // Staging surfaces (beta./dev.) serve the full app for pre-launch testing but
+  // must never be indexed — a noindex header keeps them out of Google so only the
+  // real domain ranks. Crawlers can still fetch/render, so GSC "Test Live URL"
+  // and URL Inspection work for validation. Flip this off (or just launch the
+  // apex) when you're ready to let the real domain be indexed.
+  if (isBetaOrDev) {
+    const res = NextResponse.next()
+    res.headers.set('X-Robots-Tag', 'noindex, nofollow')
+    return res
+  }
+
+  if (isMainDomain) {
     // Root → rewrite to coming-soon (URL stays as fulltiime.com)
     if (pathname === '/') {
       return NextResponse.rewrite(new URL('/coming-soon', request.url))

@@ -3,7 +3,11 @@
 import Link from 'next/link'
 import { MapPin, Shield } from 'lucide-react'
 import { cn, formatMatchDate, formatKickoff } from '@/lib/utils'
-import type { VenueInfo } from '@/lib/api/domain'
+import type { Match, MatchPreview, VenueInfo } from '@/lib/api/domain'
+import { useLiveFixtures, useUpcomingFixtures } from '@/lib/api/hooks/fixtures.hooks'
+import type { MatchView } from './phase'
+import { getViewMeta } from './view-meta'
+import { shortSlot } from './labels'
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 
@@ -127,5 +131,89 @@ export function RoundFixturesCard({
         {fixtures.map(f => <RailRow key={f.id} f={f} />)}
       </div>
     </div>
+  )
+}
+
+// ── Phase-specific rail ───────────────────────────────────────────────────────
+//
+// Slot 1 is always the venue. Slot 2 varies by phase — each variant lives in its
+// own component so its data hook only runs when that phase is actually rendered.
+
+/** TBD — other ties in the same knockout round (from the preview payload). */
+function TbdRail({ preview }: { preview: MatchPreview }) {
+  const fixtures: RailFixture[] = (preview.roundFixtures ?? []).map(t => ({
+    id:        t.id,
+    homeLabel: t.homeTeam?.name ?? shortSlot(t.homeSlot),
+    homeLogo:  t.homeTeam?.logo ?? null,
+    awayLabel: t.awayTeam?.name ?? shortSlot(t.awaySlot),
+    awayLogo:  t.awayTeam?.logo ?? null,
+    date:      t.date,
+    isCurrent: t.id === preview.id,
+  }))
+  return (
+    <RoundFixturesCard
+      title={preview.league?.name ?? 'Competition'}
+      subtitle={preview.stage ?? 'Round'}
+      logo={preview.league?.logo}
+      fixtures={fixtures}
+    />
+  )
+}
+
+/** LIVE — other games currently in play across the app. */
+function LiveRail({ match }: { match: Match }) {
+  const { data } = useLiveFixtures()
+  const fixtures: RailFixture[] = (data ?? [])
+    .filter(m => m.id !== match.id)
+    .map(m => toRailFixture(m))
+  return <RoundFixturesCard title="Live Now" subtitle="In play" fixtures={fixtures} />
+}
+
+/** UPCOMING / FINISHED / DISRUPTED — the rest of this competition's fixtures. */
+function LeagueRail({ match }: { match: Match }) {
+  const leagueId = match.season?.league?.id
+  const league   = match.season?.league
+  const { data } = useUpcomingFixtures(leagueId, 12)
+  const fixtures: RailFixture[] = (data ?? []).map(m => toRailFixture(m, match.id))
+  return (
+    <RoundFixturesCard
+      title={league?.name ?? 'Competition'}
+      subtitle="Fixtures"
+      logo={league?.logo_url}
+      fixtures={fixtures}
+    />
+  )
+}
+
+function toRailFixture(m: Match, currentId?: string): RailFixture {
+  return {
+    id:        m.id,
+    homeLabel: m.home_team.short_name ?? m.home_team.name,
+    homeLogo:  m.home_team.logo_url,
+    awayLabel: m.away_team.short_name ?? m.away_team.name,
+    awayLogo:  m.away_team.logo_url,
+    date:      m.kickoff_at,
+    homeScore: m.home_score,
+    awayScore: m.away_score,
+    isCurrent: currentId ? m.id === currentId : false,
+  }
+}
+
+function RailSlot2({ view }: { view: MatchView }) {
+  switch (view.phase) {
+    case 'tbd':  return <TbdRail preview={view.preview} />
+    case 'live': return <LiveRail match={view.match} />
+    default:     return <LeagueRail match={view.match} />
+  }
+}
+
+/** The full right rail: venue (constant) + phase-specific fixtures slot. */
+export function MatchRail({ view }: { view: MatchView }) {
+  const { venue } = getViewMeta(view)
+  return (
+    <aside className="space-y-4">
+      <VenueCard venue={venue} />
+      <RailSlot2 view={view} />
+    </aside>
   )
 }
