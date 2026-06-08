@@ -30,7 +30,7 @@ export default function TeamPage() {
 
   if (isLoading) {
     return (
-      <div className="mx-auto max-w-[1100px] px-4 lg:px-6 py-8 space-y-4">
+      <div className="mx-auto max-w-[1400px] px-4 lg:px-6 py-8 space-y-4">
         <div className="h-40 rounded-xl bg-card border border-border animate-pulse" />
         <div className="h-96 rounded-xl bg-card border border-border animate-pulse" />
       </div>
@@ -39,7 +39,7 @@ export default function TeamPage() {
 
   if (!team) {
     return (
-      <div className="mx-auto max-w-[1100px] px-4 lg:px-6 py-20 text-center">
+      <div className="mx-auto max-w-[1400px] px-4 lg:px-6 py-20 text-center">
         <p className="text-muted-foreground text-sm">Team not found.</p>
         <Link href="/teams" className="text-primary text-sm font-semibold hover:underline mt-2 inline-block">
           Back to teams
@@ -53,7 +53,7 @@ export default function TeamPage() {
       {/* Banner */}
       <div className="relative bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#334155] border-b border-border">
         <div className="absolute inset-0 bg-black/20" />
-        <div className="relative mx-auto max-w-[1100px] px-4 lg:px-6 py-8">
+        <div className="relative mx-auto max-w-[1400px] px-4 lg:px-6 py-8">
           <Link href="/teams" className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-white/70 hover:text-white transition-colors mb-5">
             <ArrowLeft className="h-3.5 w-3.5" /> All Teams
           </Link>
@@ -93,7 +93,7 @@ export default function TeamPage() {
       </div>
 
       {/* Body */}
-      <div className="mx-auto max-w-[1100px] px-4 lg:px-6 py-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="mx-auto max-w-[1400px] px-4 lg:px-6 py-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Squad */}
         <div className="lg:col-span-2 space-y-6">
           <h2 className="text-[12px] font-black uppercase tracking-wide text-muted-foreground">Squad</h2>

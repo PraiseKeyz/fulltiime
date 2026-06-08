@@ -55,6 +55,7 @@ export class ApiClient {
       timeout = DEFAULT_TIMEOUT_MS,
       silent = false,
       successMessage,
+      skipAuthRedirect = false,
       headers,
       ...restInit
     } = config
@@ -92,14 +93,16 @@ export class ApiClient {
 
         if (response.status === 401) {
           this.handleError(error, silent)
-          const publicPaths = ['/', '/login', '/register']
-          const onPublicPage =
-            typeof window !== 'undefined' &&
-            publicPaths.some(
-              (p) => window.location.pathname === p || window.location.pathname.startsWith(p + '/'),
-            )
-          if (!onPublicPage && typeof window !== 'undefined') {
-            window.location.href = '/login'
+          if (!skipAuthRedirect) {
+            const publicPaths = ['/', '/login', '/register']
+            const onPublicPage =
+              typeof window !== 'undefined' &&
+              publicPaths.some(
+                (p) => window.location.pathname === p || window.location.pathname.startsWith(p + '/'),
+              )
+            if (!onPublicPage && typeof window !== 'undefined') {
+              window.location.href = '/login'
+            }
           }
           throw error
         }

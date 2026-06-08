@@ -2,7 +2,8 @@ import { Goal, RectangleVertical, ArrowLeftRight, ShieldHalf } from 'lucide-reac
 import { cn } from '@/lib/utils'
 import type { Match, MatchLineup } from '@/lib/api/domain'
 import type { MatchView } from './phase'
-import { getNarrative } from './match-narrative'
+import { getTbdNarrative } from './match-narrative'
+import { useMatchNarrative } from '@/lib/api/hooks/fixtures.hooks'
 
 // ─── Shared empty state ──────────────────────────────────────────────────────
 
@@ -17,24 +18,57 @@ export function EmptyTab({ text }: { text: string }) {
 
 // ─── Narrative ───────────────────────────────────────────────────────────────
 
-export function NarrativeTab({ view }: { view: MatchView }) {
-  const { paragraphs } = getNarrative(view)
+function NarrativeBody({ narrative }: { narrative: { intro: string; highlights: string[]; closing?: string } }) {
   return (
     <div className="rounded-xl border border-border bg-card p-6">
       <h2 className="text-[13px] font-black uppercase tracking-wide mb-3">About the match</h2>
-      {paragraphs.map((p, i) => (
-        <p
-          key={i}
-          className={cn(
-            'text-[14px] leading-relaxed',
-            i === 0 ? 'text-muted-foreground' : 'text-muted-foreground/80 mt-3 text-[13px]',
-          )}
-        >
-          {p}
-        </p>
-      ))}
+
+      <p className="text-[14px] leading-relaxed text-muted-foreground">{narrative.intro}</p>
+
+      {narrative.highlights.length > 0 && (
+        <ul className="mt-4 space-y-2.5">
+          {narrative.highlights.map((h, i) => (
+            <li key={i} className="flex gap-2.5 text-[13px] leading-relaxed text-muted-foreground/80">
+              <span className="mt-[7px] h-1 w-1 rounded-full bg-primary shrink-0" />
+              <span>{h}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {narrative.closing && (
+        <p className="mt-4 text-[13px] leading-relaxed text-muted-foreground/60 italic">{narrative.closing}</p>
+      )}
     </div>
   )
+}
+
+function NarrativeSkeleton() {
+  return (
+    <div className="rounded-xl border border-border bg-card p-6 space-y-3">
+      <div className="h-3 w-28 rounded bg-muted animate-pulse" />
+      <div className="h-3 w-full rounded bg-muted animate-pulse" />
+      <div className="h-3 w-5/6 rounded bg-muted animate-pulse" />
+      <div className="h-3 w-2/3 rounded bg-muted animate-pulse" />
+    </div>
+  )
+}
+
+// TBD placeholders have no real Match row — served from a static blurb. Every
+// other phase is LLM-authored, generated once and cached forever (see
+// docs/match-page-spec.md §5) — fetched lazily so the one-time generation
+// latency only ever blocks the very first page view of that phase-text.
+export function NarrativeTab({ view }: { view: MatchView }) {
+  if (view.phase === 'tbd') {
+    return <NarrativeBody narrative={getTbdNarrative(view)} />
+  }
+
+  const { data, isLoading } = useMatchNarrative(view.match.id)
+
+  if (isLoading) return <NarrativeSkeleton />
+  if (!data) return null
+
+  return <NarrativeBody narrative={data} />
 }
 
 // ─── Summary (events) ────────────────────────────────────────────────────────

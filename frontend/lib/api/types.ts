@@ -15,6 +15,9 @@ export interface RequestConfig extends Omit<RequestInit, 'body' | 'signal'> {
   timeout?: number
   silent?: boolean
   successMessage?: string
+  // When true, a 401 won't redirect the browser to /login. Used by the auth
+  // bootstrap check (/auth/me), which expects to fail silently for guests.
+  skipAuthRedirect?: boolean
 }
 
 export type RequestInterceptorFn = (

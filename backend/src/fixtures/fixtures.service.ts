@@ -1,8 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service.js';
-import { SyncService } from '@/sync/sync.service.js';
 import { SportMonksService } from '@/sportmonks/sportmonks.service.js';
 import { CacheService } from '@/cache/cache.service.js';
+import { MatchTextService } from '@/llm/match-text.service.js';
+import { MatchChatService, ChatMessage } from '@/llm/match-chat.service.js';
 import { MatchStatus } from '../../generated/prisma/index.js';
 
 const MATCH_INCLUDE = {
@@ -44,10 +45,25 @@ const LEAGUE_WEIGHT: Record<number, number> = {
 export class FixturesService {
   constructor(
     private readonly prisma:     PrismaService,
-    private readonly sync:       SyncService,
     private readonly sportmonks: SportMonksService,
     private readonly cache:      CacheService,
+    private readonly matchText:  MatchTextService,
+    private readonly matchChat:  MatchChatService,
   ) {}
+
+  // ── Narrative (LLM-authored, generate-once-lock-in — see docs §5) ──────────
+
+  async getNarrative(matchId: string) {
+    const data = await this.matchText.getOrGenerate(matchId);
+    return { data };
+  }
+
+  // ── Chat (signed-in only — see docs §9) ────────────────────────────────────
+
+  async chat(matchId: string, messages: ChatMessage[]) {
+    const reply = await this.matchChat.reply(matchId, messages);
+    return { data: reply ? { reply } : null };
+  }
 
   // ── Knockout bracket ──────────────────────────────────────────────────────────
 
@@ -148,6 +164,83 @@ export class FixturesService {
       league:        fx.league ? { name: fx.league.name, logo: fx.league.image_path } : null,
       stage:         fx.stage?.name ?? null,   // e.g. "Round of 32"
       roundFixtures,
+    };
+  }
+
+  // ── Head-to-head ──────────────────────────────────────────────────────────────
+
+  // Past meetings change rarely (only when these two teams play again) → cache
+  // for a day, keyed symmetrically so either fixture order hits the same entry.
+  async getHeadToHead(matchId: string) {
+    const match = await this.prisma.match.findUnique({
+      where:   { id: matchId },
+      select:  {
+        home_team: { select: { api_football_id: true } },
+        away_team: { select: { api_football_id: true } },
+      },
+    });
+    if (!match) throw new NotFoundException('Match not found');
+
+    const homeApiId = match.home_team.api_football_id;
+    const awayApiId = match.away_team.api_football_id;
+    if (!homeApiId || !awayApiId) return { data: null };
+
+    const [a, b] = [homeApiId, awayApiId].sort((x, y) => x - y);
+    const data = await this.cache.getOrSet(
+      `h2h:${a}:${b}`,
+      24 * 60 * 60 * 1000, // 24 hours
+      () => this.buildHeadToHead(homeApiId, awayApiId),
+    );
+    return { data };
+  }
+
+  private async buildHeadToHead(homeApiId: number, awayApiId: number) {
+    const raw = await this.sportmonks.getHeadToHead(homeApiId, awayApiId);
+
+    const meetings = raw
+      .map((f: any) => this.mapH2HFixture(f))
+      .filter((m: any): m is NonNullable<typeof m> => m !== null)
+      .sort((x: any, y: any) => +new Date(y.date ?? 0) - +new Date(x.date ?? 0));
+
+    // Tally relative to THIS fixture's home/away (not each meeting's historical
+    // venue) — so "Real Madrid 3 — Draws 2 — Barcelona 1" reads naturally.
+    let homeWins = 0, draws = 0, awayWins = 0;
+    for (const m of meetings) {
+      if (m.homeScore == null || m.awayScore == null) continue;
+      const homeGoals = m.homeIsApiId === homeApiId ? m.homeScore : m.awayScore;
+      const awayGoals = m.homeIsApiId === homeApiId ? m.awayScore : m.homeScore;
+      if (homeGoals > awayGoals) homeWins++;
+      else if (homeGoals < awayGoals) awayWins++;
+      else draws++;
+    }
+
+    return {
+      meetings: meetings.slice(0, 10).map(({ homeIsApiId, ...m }: any) => m),
+      summary: { played: meetings.length, homeWins, draws, awayWins },
+    };
+  }
+
+  // Map a SportMonks h2h fixture into a compact shape; null when participants
+  // are missing (shouldn't happen, but the API is third-party data).
+  private mapH2HFixture(f: any) {
+    const parts = f.participants ?? [];
+    const home  = parts.find((p: any) => p.meta?.location === 'home');
+    const away  = parts.find((p: any) => p.meta?.location === 'away');
+    if (!home || !away) return null;
+
+    const scores  = (f.scores ?? []).filter((s: any) => s.description === 'CURRENT');
+    const goals   = (loc: string) =>
+      scores.find((s: any) => s.score?.participant === loc)?.score?.goals ?? null;
+
+    return {
+      id:        f.id,
+      date:      f.starting_at ?? null,
+      league:    f.league ? { name: f.league.name, logo: f.league.image_path } : null,
+      homeTeam:  { name: home.name, logo: home.image_path ?? null },
+      awayTeam:  { name: away.name, logo: away.image_path ?? null },
+      homeScore: goals('home'),
+      awayScore: goals('away'),
+      homeIsApiId: home.id, // internal — stripped before returning to the client
     };
   }
 
@@ -272,8 +365,23 @@ export class FixturesService {
   private readonly DETAIL_INCLUDE = {
     ...MATCH_INCLUDE,
     venue_ref:  this.VENUE_SELECT,
-    events:     { orderBy: { sort_order: 'asc' as const } },
-    lineups:    { orderBy: { jersey_number: 'asc' as const } },
+    // sportmonks_id is now BigInt (raw SportMonks IDs exceed INT4 range) and the
+    // client never needs it — select it out so it never reaches JSON.stringify,
+    // which throws "Do not know how to serialize a BigInt".
+    events: {
+      orderBy: { sort_order: 'asc' as const },
+      select: {
+        id: true, type: true, minute: true, extra_minute: true, team_id: true,
+        player_name: true, related_player_name: true, detail: true, sort_order: true,
+      },
+    },
+    lineups: {
+      orderBy: { jersey_number: 'asc' as const },
+      select: {
+        id: true, team_id: true, player_name: true, player_photo: true,
+        jersey_number: true, position: true, formation_field: true, is_starting: true,
+      },
+    },
     statistics: {
       select: {
         team_id:         true,
@@ -315,29 +423,6 @@ export class FixturesService {
     }
 
     if (!match) throw new NotFoundException('Match not found');
-
-    const resolvedId = match.id;
-
-    // Lazy-load full detail (events/lineups/stats) on first view of a
-    // live, finished, or about-to-start match when we don't have it yet.
-    const minsToKickoff = (new Date(match.kickoff_at).getTime() - Date.now()) / 60_000;
-    const shouldHydrate =
-      match.api_football_id != null &&
-      match.events.length === 0 &&
-      (
-        match.status === MatchStatus.LIVE ||
-        match.status === MatchStatus.HALFTIME ||
-        match.status === MatchStatus.FINISHED ||
-        (match.status === MatchStatus.SCHEDULED && minsToKickoff <= 75 && minsToKickoff > -5)
-      );
-
-    if (shouldHydrate) {
-      await this.sync.syncFixtureDetail(match.api_football_id!);
-      match = await this.prisma.match.findUnique({
-        where:   { id: resolvedId },
-        include: this.DETAIL_INCLUDE,
-      });
-    }
 
     return { data: match };
   }

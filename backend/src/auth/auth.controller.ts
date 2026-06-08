@@ -7,6 +7,10 @@ import type { Request, Response } from 'express';
 import { AuthService } from './auth.service.js';
 import { RegisterDto } from './dto/register.dto.js';
 import { LoginDto } from './dto/login.dto.js';
+import { VerifyEmailDto } from './dto/verify-email.dto.js';
+import { ResendVerificationDto } from './dto/resend-verification.dto.js';
+import { ForgotPasswordDto } from './dto/forgot-password.dto.js';
+import { ResetPasswordDto } from './dto/reset-password.dto.js';
 import { Public } from '@/common/decorators/public.decorator.js';
 import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
 import { CurrentUser } from '@/common/decorators/current-user.decorator.js';
@@ -73,6 +77,42 @@ export class AuthController {
       data:    { user },
       message: 'Login successful',
     };
+  }
+
+  // ── Verify email ────────────────────────────────────────────────────────────────
+
+  @Public()
+  @Post('verify-email')
+  @HttpCode(200)
+  async verifyEmail(@Body() dto: VerifyEmailDto) {
+    const { user } = await this.authService.verifyEmail(dto.token);
+    return { data: { user }, message: 'Email verified successfully' };
+  }
+
+  @Public()
+  @Post('resend-verification')
+  @HttpCode(200)
+  async resendVerification(@Body() dto: ResendVerificationDto) {
+    const { message } = await this.authService.resendVerification(dto.email);
+    return { message };
+  }
+
+  // ── Password reset ────────────────────────────────────────────────────────────
+
+  @Public()
+  @Post('forgot-password')
+  @HttpCode(200)
+  async forgotPassword(@Body() dto: ForgotPasswordDto) {
+    const { message } = await this.authService.forgotPassword(dto.email);
+    return { message };
+  }
+
+  @Public()
+  @Post('reset-password')
+  @HttpCode(200)
+  async resetPassword(@Body() dto: ResetPasswordDto) {
+    const { message } = await this.authService.resetPassword(dto.token, dto.password);
+    return { message };
   }
 
   // ── Refresh ───────────────────────────────────────────────────────────────────

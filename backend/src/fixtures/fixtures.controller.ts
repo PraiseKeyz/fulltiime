@@ -1,6 +1,11 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query, SetMetadata, UseGuards } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { FixturesService } from './fixtures.service.js';
-import { Public } from '@/common/decorators/public.decorator.js';
+import { ChatDto } from './dto/chat.dto.js';
+import { Public, IS_PUBLIC_KEY } from '@/common/decorators/public.decorator.js';
+import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard.js';
+import { CurrentUser } from '@/common/decorators/current-user.decorator.js';
+import type { SafeUser } from '@/common/constants/user-select.constant.js';
 import { MatchStatus } from '../../generated/prisma/index.js';
 
 @Public()
@@ -44,6 +49,28 @@ export class FixturesController {
   @Get('bracket/:leagueId')
   getBracket(@Param('leagueId') leagueId: string) {
     return this.fixturesService.getBracket(leagueId);
+  }
+
+  @Get(':id/h2h')
+  getHeadToHead(@Param('id') id: string) {
+    return this.fixturesService.getHeadToHead(id);
+  }
+
+  @Get(':id/narrative')
+  getNarrative(@Param('id') id: string) {
+    return this.fixturesService.getNarrative(id);
+  }
+
+  // Chat is the one auth-gated route on this otherwise-@Public() controller —
+  // the class-level @Public() must be explicitly overridden here, or
+  // JwtAuthGuard would see it and wave everyone through. Signed-in only is the
+  // spec's cost/abuse control (§9); the tighter throttle bounds it further.
+  @UseGuards(JwtAuthGuard)
+  @SetMetadata(IS_PUBLIC_KEY, false)
+  @Throttle({ global: { limit: 12, ttl: 60_000 } })
+  @Post(':id/chat')
+  chat(@Param('id') id: string, @CurrentUser() _user: SafeUser, @Body() dto: ChatDto) {
+    return this.fixturesService.chat(id, dto.messages);
   }
 
   @Get(':id')

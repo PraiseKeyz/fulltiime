@@ -99,6 +99,13 @@ export class SportMonksService {
     });
   }
 
+  // Past meetings between two teams, most recent first (SportMonks default order)
+  async getHeadToHead(team1Id: number, team2Id: number) {
+    return this.getAll<any>(`/fixtures/head-to-head/${team1Id}/${team2Id}`, {
+      include: 'participants;scores;league',
+    });
+  }
+
   // ── Standings ─────────────────────────────────────────────────────────────────
   // Requires SportMonks season ID (not year)
 

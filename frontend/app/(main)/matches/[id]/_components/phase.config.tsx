@@ -1,10 +1,11 @@
 import type { ReactNode } from 'react'
 import type { Match } from '@/lib/api/domain'
 import type { MatchView } from './phase'
-import { getNarrative } from './match-narrative'
 import {
-  SummaryTab, LineupsTab, StatsTab, NarrativeTab, availableStatRows,
+  SummaryTab, LineupsTab, StatsTab, availableStatRows,
 } from './match-tab-content'
+import { H2HTab } from './match-h2h'
+import { ChatTab } from './match-chat'
 
 // ─── Phase plan ──────────────────────────────────────────────────────────────
 //
@@ -31,34 +32,41 @@ export interface PhasePlan {
 const hasLineups = (m: Match) => (m.lineups?.length ?? 0) > 0
 const hasStats   = (m: Match) => availableStatRows(m).length > 0
 
-function narrativeTab(view: MatchView): PhaseTab {
-  return {
-    key:    'narrative',
-    label:  getNarrative(view).label,
-    render: () => <NarrativeTab view={view} />,
-  }
+// H2H needs two real, resolved teams — only meaningful once the fixture is no
+// longer a placeholder (i.e. every phase except 'tbd'). The tab itself fetches
+// lazily and renders an empty state when SportMonks has no shared history.
+function h2hTab(m: Match): PhaseTab {
+  return { key: 'h2h', label: 'H2H', render: () => <H2HTab match={m} /> }
+}
+
+// Grounded in a real Match row (MatchChatService does prisma.match.findUnique),
+// so it's withheld for 'tbd' placeholders, which have no Match row to ground on.
+function chatTab(m: Match): PhaseTab {
+  return { key: 'chat', label: 'Ask', render: () => <ChatTab match={m} /> }
 }
 
 export function getPhasePlan(view: MatchView): PhasePlan {
   switch (view.phase) {
-    // Quiet phases — narrative carries the page, it's the only/default tab.
     case 'tbd':
-    case 'postponed':
-    case 'cancelled':
-      return { tabs: [narrativeTab(view)], defaultTab: 'narrative' }
+      return { tabs: [], defaultTab: '' }
 
-    // Upcoming — preview first; line-ups appear once confirmed (~1h pre-match).
+    case 'postponed':
+    case 'cancelled': {
+      const m = view.match
+      return { tabs: [chatTab(m)], defaultTab: 'chat' }
+    }
+
     case 'upcoming': {
       const m = view.match
-      const tabs: PhaseTab[] = [narrativeTab(view)]
+      const tabs: PhaseTab[] = []
       if (hasLineups(m)) {
         tabs.push({ key: 'lineups', label: 'Line-ups', render: () => <LineupsTab match={m} /> })
       }
-      return { tabs, defaultTab: 'narrative' }
+      tabs.push(h2hTab(m))
+      tabs.push(chatTab(m))
+      return { tabs, defaultTab: tabs[0]?.key ?? 'h2h' }
     }
 
-    // Busy phases — Summary is default; data-rich tabs appear when present; the
-    // narrative ("Preview"/"Report") is demoted to the end.
     case 'live':
     case 'finished': {
       const m = view.match
@@ -71,7 +79,8 @@ export function getPhasePlan(view: MatchView): PhasePlan {
       if (hasStats(m)) {
         tabs.push({ key: 'stats', label: 'Stats', render: () => <StatsTab match={m} /> })
       }
-      tabs.push(narrativeTab(view))
+      tabs.push(h2hTab(m))
+      tabs.push(chatTab(m))
       return { tabs, defaultTab: 'summary' }
     }
   }

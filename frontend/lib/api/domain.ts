@@ -173,6 +173,52 @@ export interface MatchPreview {
   roundFixtures?: BracketTie[]
 }
 
+// ─── Head-to-head ──────────────────────────────────────────────────────────────
+
+export interface H2HFixture {
+  id:        number
+  date:      string | null
+  league:    { name: string; logo: string | null } | null
+  homeTeam:  { name: string; logo: string | null }
+  awayTeam:  { name: string; logo: string | null }
+  homeScore: number | null
+  awayScore: number | null
+}
+
+export interface H2HSummary {
+  played:    number
+  homeWins:  number   // wins for THIS fixture's home team, regardless of historical venue
+  draws:     number
+  awayWins:  number   // wins for THIS fixture's away team
+}
+
+export interface H2HResponse {
+  meetings: H2HFixture[]
+  summary:  H2HSummary
+}
+
+// LLM-authored, generate-once-lock-in match prose (see docs/match-page-spec.md §5).
+// `kind` mirrors the backend's MatchTextKind; `label` is the tab label to render.
+export interface MatchNarrative {
+  kind:       'PREVIEW' | 'OVERVIEW' | 'ABOUT' | 'REPORT' | 'INFO'
+  label:      string
+  intro:      string
+  highlights: string[]
+  closing?:   string
+}
+
+// Match chat — stateless, signed-in only (see docs/match-page-spec.md §9). The
+// client holds the conversation; each turn sends the running history and gets
+// one grounded reply back.
+export interface ChatMessage {
+  role:    'user' | 'assistant'
+  content: string
+}
+
+export interface ChatReply {
+  reply: string
+}
+
 // ─── Knockout Bracket ──────────────────────────────────────────────────────────
 
 export interface BracketTeam {

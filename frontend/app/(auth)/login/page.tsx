@@ -157,9 +157,9 @@ export default function LoginPage() {
                 <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-700">
                   Password
                 </label>
-                <button type="button" onClick={soon} className="text-[12px] font-bold text-green-600 hover:underline">
+                <Link href="/forgot-password" className="text-[12px] font-bold text-green-600 hover:underline">
                   Forgot?
-                </button>
+                </Link>
               </div>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />

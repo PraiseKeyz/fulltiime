@@ -39,6 +39,11 @@ entry, not a new `if`.
 | CANCELLED | Will never be played | None, ever |
 | ABANDONED | Kicked off then stopped | **Partial** score + events (e.g. abandoned 60') |
 
+> **TBD is the one true exception** in this whole spec: it shows a single
+> **Preview** tab and *nothing else* (no Comments, no Table) — there's no real
+> match yet, just a placeholder bracket slot. Every other phase follows the
+> common rules below.
+
 ---
 
 ## 3. The layout (constant for every phase)
@@ -75,135 +80,166 @@ Applies to LIVE (running aggregate) and FINISHED second legs.
 
 ---
 
-## 5. The tab system
+## 5. All match text is LLM-authored — generated once, cached forever
 
-**Everything is a tab** — Summary, Line-ups, Stats, and the **Narrative**. The phase
-config decides, for each phase:
+This is the single biggest shift from the first pass of this spec: **every piece
+of narrative prose on the match page — Preview, Overview copy, About, Report,
+Info — is written by an LLM, not assembled from templates.** Templated text
+(`match-narrative.ts` in the first build) reads as robotic and doesn't scale to
+the richness FotMob-style pages need. An LLM, grounded in the real match data,
+can write naturally — and that same grounded text becomes the seed context for
+the AI chatbox later (see §9).
 
-1. **which tabs exist** — each tab has a `when(data)` predicate; if its data is
-   absent the tab simply does not render (no empty boxes),
-2. **their order**,
-3. **which one is the default** (opens first).
+**Generation rule — "generate once, lock it in":**
+- The text is generated **a single time**, at the moment its content is final for
+  that phase (e.g. the *preview* is written once the fixture/teams are confirmed;
+  the *report* is written once the match finishes).
+- It's saved to the **database** and served from there on every subsequent load —
+  exactly like the existing `Cache.getOrSet` pattern for brackets/previews, just
+  durable rather than TTL'd (the content won't change once the phase has settled).
+- This keeps the cost bounded: **one LLM call per match per phase-text**, not per
+  page view. Thousands of reads, one write.
+
+This generalises and *replaces* the original `getNarrative()` template function —
+the tab still renders the same way, but its text now comes from a DB-backed fetch
+(grounded generation) instead of a pure string-builder.
+
+---
+
+## 6. The tab system
+
+**Tabs are still data-driven** — the phase config decides which tabs exist, their
+order, and the default. Two new universal concepts join the catalogue:
+
+1. **Comments** — a cross-cutting tab present on **every phase except TBD**.
+   Public can *read* comments; only **signed-in users** can *post*. (See §7.)
+2. **Overview / Table** — richer pre-match content for **UPCOMING**, modelled on
+   FotMob: a combined preview (LLM text + last-XI/formation comparison) and a
+   standings table relevant to the fixture.
 
 ### Tab catalogue
 
-| Tab | `when` predicate (renders only if…) | Notes |
+| Tab | Appears when… | Content source |
 |---|---|---|
-| **Narrative** | always | Label changes: "Preview" (pre) / "Report" (post) / "Info" (disrupted) |
-| **Summary** | events exist OR live | Live event feed / match timeline |
-| **Line-ups** | lineups exist | ~1h before kickoff onward |
-| **Stats** | any stat present | Possession, shots, xG… |
-| **H2H** *(later)* | h2h data exists | Bucket B — backend not built yet |
+| **Preview** | TBD; also UPCOMING's narrative text | LLM-authored (§5) |
+| **Overview** | UPCOMING (default tab) | LLM preview text **+** last-XI / formation comparison (last lineup & result per team) |
+| **Table** | UPCOMING, when a relevant standings table exists (World Cup group stage; league standings where applicable) | Existing standings data, filtered to the relevant group/league |
+| **Summary** | LIVE / FINISHED — events exist or live | Synced match events |
+| **Line-ups** | confirmed XI exists for *this* fixture (~1h pre-match onward) | Synced lineups |
+| **Stats** | any stat present | Synced match statistics |
+| **About** | LIVE — narrative, demoted behind Summary | LLM-authored (§5) |
+| **Report** | FINISHED — narrative | LLM-authored (§5) |
+| **Info** | POSTPONED / CANCELLED — the only content tab | LLM-authored (§5) |
+| **Comments** | every phase except TBD | New backend feature — see §7 |
+| **H2H** *(next up)* | h2h data exists | SportMonks head-to-head endpoint — confirmed available |
 | **Form** *(later)* | form data exists | Bucket B — backend not built yet |
-| **Standings** *(optional)* | standings exist for league | Context table |
 
 ### Tab matrix (order shown left→right, **bold = default**)
 
 | Phase | Tabs |
 |---|---|
-| **TBD** | **Preview** |
-| **UPCOMING** | **Preview**, *(H2H)*, *(Form)*, *(Standings)* |
-| **LIVE** | **Summary**, Line-ups, Stats, Report |
-| **FINISHED** | **Summary**, Line-ups, Stats, Report |
-| **POSTPONED** | **Info**, *(Standings)* |
-| **CANCELLED** | **Info** |
-| **ABANDONED** | **Summary**, Line-ups, Stats, Report *(whatever partial data exists)* |
+| **TBD** | **Preview** *(only — no Comments, no Table; see §2 note)* |
+| **UPCOMING** | **Overview**, Table, Line-ups *(once published)*, Comments |
+| **LIVE** | **Summary**, Line-ups, Stats, About, Comments |
+| **FINISHED** | **Summary**, Line-ups, Stats, Report, Comments |
+| **POSTPONED** | **Info**, Comments |
+| **CANCELLED** | **Info**, Comments |
 
-*(parenthesised tabs appear only once their Bucket B data lands — see §7)*
+### Narrative prominence — unchanged principle, new labels
 
-### The narrative tab — "constant but de-prioritised for live"
+- **Quiet phases** (TBD, UPCOMING, POSTPONED, CANCELLED): the narrative-bearing tab
+  (**Preview** / **Overview** / **Info**) is the **default**, sitting first — it
+  carries the page.
+- **Busy phases** (LIVE, FINISHED): **Summary** is default; the narrative tab
+  (**About** for live, **Report** for finished) is demoted to the end.
 
-The narrative is present in **every** phase, always below the hero, always as a tab.
-What changes is its **prominence**:
-
-- **Quiet phases** (TBD, UPCOMING, CANCELLED, POSTPONED): narrative is the
-  **default** tab and sits **first** — it carries the page.
-- **Busy phases** (LIVE, FINISHED, ABANDONED): **Summary** is default; the narrative
-  ("Report") is still a tab, just **demoted** — not default, placed after the live data.
-
-So a user on a live game lands on the live feed; the preview/report is one click away.
+> **Why "About" and not "Preview" for live?** A match already underway isn't
+> being "previewed" — "About" reads naturally for "context on this fixture while
+> it's happening" without implying it hasn't started.
 
 ---
 
-## 6. Rail — per phase
+## 7. Comments — a new cross-cutting feature
+
+A lightweight, match-scoped discussion thread.
+
+- **Read:** open to everyone — including signed-out visitors.
+- **Write:** **signed-in users only** — ties posting to an account, giving natural
+  rate-limiting and traceable moderation without extra anti-abuse machinery.
+- **Scope:** appears on every phase except TBD (no comments on a placeholder
+  fixture with no real teams yet).
+
+This needs genuinely new infrastructure (unlike most of this spec, which re-shapes
+data we already have):
+- **Backend:** a `MatchComment` model (matchId, userId, body, timestamps),
+  endpoints to list (public) and create (authenticated), basic moderation hooks.
+- **Frontend:** a comment list + composer, with the composer swapped for a
+  "sign in to comment" prompt when logged out.
+
+---
+
+## 8. Rail — per phase
 
 | Phase | Slot 1 | Slot 2 |
 |---|---|---|
 | **TBD** | Venue | Other ties in this round |
-| **UPCOMING** | Venue | Matchday fixtures *(or standings)* |
+| **UPCOMING** | Venue | Rest of this competition's fixtures |
 | **LIVE** | Venue | Other live games |
-| **FINISHED** | Venue | League standings |
-| **DISRUPTED** | Venue | Other fixtures in the matchday/round |
+| **FINISHED** | Venue | Rest of this competition's fixtures |
+| **DISRUPTED** | Venue | Rest of this competition's fixtures |
 
 Venue is always slot 1 so the rail stays visually anchored across phases.
 
 ---
 
-## 7. Data buckets — what we can build now vs later
+## 9. What's confirmed buildable now vs. genuinely later
 
-**Bucket A — data we already have** (build fully now):
+**Build now — data we have, or is one small integration away:**
 teams · logos · kickoff · venue · events · line-ups · formations · stats ·
-standings · round fixtures / bracket ties.
+standings/tables · round fixtures / bracket ties · **head-to-head** (SportMonks
+v3 has a head-to-head fixtures endpoint — small, mechanical addition matching the
+existing `sportmonks.service.ts` patterns) · **last-XI / form comparison**
+(derivable from already-synced lineup + result data, plus one "last fixture" call
+per team).
 
-**Bucket B — data we do NOT pull yet** (design the slot, fill later):
-- **Form** — each team's last 5 results
-- **Head-to-head** — past meetings between the two teams
-- **Live text commentary** — minute-by-minute written feed
+**Foundational new system — build deliberately, not deferred:**
+- **LLM-authored match text** (§5) — replaces templated narrative across every
+  phase. This is now the *engine*, not a nice-to-have: it feeds Preview, Overview,
+  About, Report, and Info, and its grounded output becomes the context the AI
+  chatbox (below) reasons from.
+- **Comments** (§7) — new DB model + endpoints + auth-gated UI.
 
-Because tabs are data-driven (`when` predicate), Bucket B tabs **just don't appear
-until their data exists**. No flags, no empty states — they materialise when the
-backend lands. This keeps the engine unblocked by backend work.
-
----
-
-## 8. The config shape (target architecture)
-
-```ts
-type Phase =
-  | 'tbd' | 'upcoming' | 'live' | 'finished'
-  | 'postponed' | 'cancelled' | 'abandoned'
-
-interface TabDef {
-  key: string
-  label: (data) => string          // "Preview" | "Report" | "Info"
-  when: (data) => boolean           // data-presence predicate
-  render: (data) => ReactNode
-}
-
-interface PhaseConfig {
-  header: (data) => ReactNode       // hero center renderer
-  tabs: TabDef[]                     // candidate tabs, in order
-  defaultTab: string                // which opens first
-  rail: [RailSlot, RailSlot]        // slot 1 = venue (constant), slot 2 = phase
-}
-
-const CONFIG: Record<Phase, PhaseConfig>
-```
-
-The page becomes "dumb": `phase = getMatchPhase(data)` → look up `CONFIG[phase]` →
-render hero + (tabs filtered by `when`) + rail. New phase or tab = one config entry.
+**Genuinely later — needs its own design pass:**
+- **AI chatbox per match** — signed-in users only (cost/abuse control via auth).
+  Deliberately sequenced *last*: it needs the LLM overview, H2H, and form data as
+  grounding context, or it has nothing real to reason from and will hallucinate.
+- **Live text commentary** — minute-by-minute feed; no backend yet.
+- Two-legged aggregates, ABANDONED status — no data yet (see §2/§4 notes).
 
 ---
 
-## 9. Build order (proposed)
+## 10. Build order (revised)
 
-1. **`getMatchPhase(data)`** — the single discriminant (+ aggregate detection).
-2. **Phase config scaffolding** — `CONFIG` map + the dumb page that reads it.
-3. **Hero center renderers** — per phase (reuse existing countdown/score code).
-4. **Tab engine** — dynamic tabs with `when` predicates, order, default; URL-synced
-   (keep current `?tab=` behaviour).
-5. **Narrative tab** — phase-aware label + prominence (default vs demoted).
-6. **Migrate existing tabs** (Summary / Line-ups / Stats) into the engine.
-7. **Rail slot 2** per phase.
-8. **DISRUPTED** flavours (postponed / cancelled / abandoned).
-9. **Aggregates** for two-legged ties (header center variation).
-10. *(Later — Bucket B)* backend for Form + H2H → tabs auto-appear.
+1. **Head-to-head** — new SportMonks call + `H2H` tab in the existing engine
+   (smallest, most mechanical, immediate visible win).
+2. **LLM text pipeline** — generation-on-lock + DB storage; replaces
+   `match-narrative.ts`'s templates with grounded LLM output for
+   Preview/Overview/About/Report/Info.
+3. **Comments system** — backend model + endpoints, frontend tab (auth-gated
+   posting, public reading), wired into every non-TBD phase.
+4. **Overview & Table tabs (upcoming)** — last-XI/formation comparison component
+   + group/league standings table, replacing the bare "Preview" default for
+   upcoming matches.
+5. **Last-XI / form comparison** — shared with #4; also informs Live/Finished
+   if useful later.
+6. **AI chatbox** — signed-in users only, grounded in #1/#2/#5's real data.
 
 ---
 
-## 10. Out of scope (for this pass)
+## 11. Out of scope (for this pass)
 
-- Bucket B backend (Form, H2H, commentary) — slots designed, data later.
+- Live text commentary — no backend yet.
 - Odds / betting.
 - Player profile deep-links from line-ups.
+- FIFA-style external rankings (not in SportMonks; would need a new data source).
 </content>

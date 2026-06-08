@@ -31,6 +31,14 @@ enum PlayerPosition {
   FORWARD
 }
 
+enum MatchTextKind {
+  PREVIEW
+  OVERVIEW
+  ABOUT
+  REPORT
+  INFO
+}
+
 enum ArticleCategory {
   NEWS
   ANALYSIS
@@ -51,6 +59,13 @@ model User {
   role            Role      @default(USER)
   is_verified     Boolean   @default(false)
   refresh_token   String?
+
+  // Email verification & password reset — store a sha256 hash of the token
+  // (the raw token only ever lives in the emailed link), plus an expiry.
+  verification_token    String?   @unique
+  verification_expires  DateTime?
+  reset_token           String?   @unique
+  reset_expires         DateTime?
 
   favorite_teams  Team[]    @relation("UserFavoriteTeams")
   favorite_leagues League[] @relation("UserFavoriteLeagues")
@@ -204,6 +219,7 @@ model Match {
   events         MatchEvent[]
   statistics     MatchStatistic[]
   lineups        MatchLineup[]
+  texts          MatchText[]
 
   created_at     DateTime @default(now())
   updated_at     DateTime @updatedAt
@@ -238,7 +254,7 @@ model Venue {
 
 model MatchEvent {
   id                  String   @id @default(cuid())
-  sportmonks_id       Int?     @unique
+  sportmonks_id       BigInt?  @unique
   match_id            String
   match               Match    @relation(fields: [match_id], references: [id])
   type                String
@@ -259,7 +275,7 @@ model MatchEvent {
 
 model MatchLineup {
   id                   String  @id @default(cuid())
-  sportmonks_id        Int?    @unique
+  sportmonks_id        BigInt? @unique
   match_id             String
   match                Match   @relation(fields: [match_id], references: [id])
   team_id              String
@@ -273,6 +289,22 @@ model MatchLineup {
   sportmonks_player_id Int?
 
   @@map("match_lineups")
+}
+
+// ─── Match Text (LLM-authored, generate-once-lock-in) ────────────────────────
+// One row per (match, kind) — written exactly once, the moment that phase-text's
+// content is final, then served from here forever. See docs/match-page-spec.md §5.
+
+model MatchText {
+  id           String        @id @default(cuid())
+  match_id     String
+  match        Match         @relation(fields: [match_id], references: [id])
+  kind         MatchTextKind
+  body         String
+  generated_at DateTime      @default(now())
+
+  @@unique([match_id, kind])
+  @@map("match_texts")
 }
 
 // ─── Cache ────────────────────────────────────────────────────────────────────

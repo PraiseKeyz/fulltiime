@@ -9,8 +9,10 @@ export const authKeys = {
 export function useMe() {
   return useQuery({
     queryKey: authKeys.me,
-    queryFn: () => api.get<User>('/auth/me'),
+    // Guests are expected to 401 here — fail quietly and never redirect.
+    queryFn: () => api.get<User>('/auth/me', { silent: true, skipAuthRedirect: true }),
     retry: false,
+    staleTime: 5 * 60 * 1000,
   })
 }
 
@@ -39,9 +41,49 @@ export function useLogin() {
 export function useLogout() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: async () => {
+    // Hit the backend so the cookies + stored refresh token are cleared, then
+    // wipe the client cache. Ignore network errors — we log out locally regardless.
+    mutationFn: () => api.post('/auth/logout', undefined, { silent: true }).catch(() => null),
+    onSettled: () => {
       qc.setQueryData(authKeys.me, null)
       qc.clear()
     },
+  })
+}
+
+// ── Email verification ──────────────────────────────────────────────────────────
+
+export function useVerifyEmail() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (token: string) =>
+      api.post<AuthResponse>('/auth/verify-email', { token }, { silent: true }),
+    onSuccess: () => {
+      // If they happen to be logged in, refresh their is_verified flag.
+      qc.invalidateQueries({ queryKey: authKeys.me })
+    },
+  })
+}
+
+export function useResendVerification() {
+  return useMutation({
+    mutationFn: (email: string) =>
+      api.post('/auth/resend-verification', { email }, { silent: true }),
+  })
+}
+
+// ── Password reset ────────────────────────────────────────────────────────────────
+
+export function useForgotPassword() {
+  return useMutation({
+    mutationFn: (email: string) =>
+      api.post('/auth/forgot-password', { email }, { silent: true }),
+  })
+}
+
+export function useResetPassword() {
+  return useMutation({
+    mutationFn: (body: { token: string; password: string }) =>
+      api.post('/auth/reset-password', body, { silent: true }),
   })
 }

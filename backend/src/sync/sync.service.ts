@@ -312,9 +312,49 @@ export class SyncService {
 
       await this.upsertFixtures(fixtures);
       this.logger.log(`Fixtures sync complete — ${fixtures.length} fixtures processed`);
+
+      await this.syncLineups();
     } catch (err: any) {
       this.logger.error(`syncFixtures failed: ${err.message}`);
     }
+  }
+
+  async syncLineups() {
+    const since = new Date();
+    since.setHours(since.getHours() - 48);
+
+    const matches = await this.prisma.match.findMany({
+      where: {
+        api_football_id: { not: null },
+        OR: [
+          // Already-started matches: only worth re-fetching if we're still missing
+          // lineups entirely — the live cron keeps live ones fresh on its own, and
+          // finished-match rosters don't change after the fact.
+          { status: { in: [MatchStatus.LIVE, MatchStatus.HALFTIME, MatchStatus.FINISHED] }, kickoff_at: { gte: since }, lineups: { none: {} } },
+          // Scheduled matches: always re-check, even if we already have a lineup —
+          // SportMonks can publish/correct predicted XIs in the days before kickoff,
+          // and upsertLineups will overwrite existing rows with the latest data.
+          { status: MatchStatus.SCHEDULED },
+        ],
+      },
+      select: { id: true, api_football_id: true },
+    });
+
+    if (!matches.length) {
+      this.logger.log('No matches need a lineup check');
+      return;
+    }
+
+    this.logger.log(`Checking lineups for ${matches.length} match(es)...`);
+    for (const match of matches) {
+      try {
+        await this.syncFixtureDetail(match.api_football_id!);
+      } catch (err: any) {
+        this.logger.error(`Failed syncing lineups for match ${match.id}: ${err.message}`);
+      }
+    }
+
+    this.logger.log('Lineups check complete');
   }
 
   // ── Sync live scores ──────────────────────────────────────────────────────────
@@ -502,7 +542,7 @@ export class SyncService {
       try {
         const type = ev.type?.name ?? this.eventTypeName(ev.type_id);
         await this.prisma.matchEvent.upsert({
-          where:  { sportmonks_id: ev.id },
+          where:  { sportmonks_id: BigInt(ev.id) },
           update: {
             type,
             minute:              ev.minute ?? 0,
@@ -514,7 +554,7 @@ export class SyncService {
             sort_order:          ev.sort_order ?? null,
           },
           create: {
-            sportmonks_id:       ev.id,
+            sportmonks_id:       BigInt(ev.id),
             match_id:            matchId,
             type,
             minute:              ev.minute ?? 0,
@@ -544,7 +584,7 @@ export class SyncService {
         const isStarting = lp.type_id === 11 || lp.type?.name?.toLowerCase() === 'lineup';
 
         await this.prisma.matchLineup.upsert({
-          where:  { sportmonks_id: lp.id },
+          where:  { sportmonks_id: BigInt(lp.id) },
           update: {
             player_name:     lp.player_name ?? lp.player?.display_name ?? 'Unknown',
             player_photo:    lp.player?.image_path ?? null,
@@ -554,7 +594,7 @@ export class SyncService {
             is_starting:     isStarting,
           },
           create: {
-            sportmonks_id:        lp.id,
+            sportmonks_id:        BigInt(lp.id),
             match_id:             matchId,
             team_id:              teamId,
             player_name:          lp.player_name ?? lp.player?.display_name ?? 'Unknown',

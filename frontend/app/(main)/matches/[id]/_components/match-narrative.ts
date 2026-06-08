@@ -2,93 +2,36 @@ import type { MatchView } from './phase'
 import { getViewMeta } from './view-meta'
 import { formatMatchDate, formatKickoff } from '@/lib/utils'
 
-// ─── Auto-narrative ──────────────────────────────────────────────────────────
+// ─── TBD fallback narrative ──────────────────────────────────────────────────
 //
-// The narrative is present in every phase (see docs/match-page-spec.md) — what
-// changes is the wording and the tab label. This is pure text generation; the
-// NarrativeTab component renders the result.
+// Every settled phase (upcoming/live/finished/postponed/cancelled) is served by
+// useMatchNarrative — LLM-authored, structured text generated once and locked
+// into the DB (see docs/match-page-spec.md §5). TBD placeholders are the one
+// exception: they're knockout ties with no real Match row yet, so there's
+// nothing for the LLM pipeline to attach text to. This static blurb mirrors the
+// LLM shape (intro/highlights/closing) so NarrativeBody renders both identically.
 
 export interface Narrative {
-  /** Tab label for this phase: "Preview" | "Report" | "Info". */
-  label: string
-  /** Body paragraphs, already composed from the match metadata. */
-  paragraphs: string[]
+  label:      string
+  intro:      string
+  highlights: string[]
+  closing?:   string
 }
 
-function whenStr(date: string | null): string {
-  if (!date) return ''
-  return `${formatMatchDate(date)} · ${formatKickoff(date)}`
-}
-
-function competition(league: string | null, stage: string | null): string {
-  if (!league) return 'this competition'
-  return stage ? `${league} ${stage}` : league
-}
-
-export function getNarrative(view: MatchView): Narrative {
+export function getTbdNarrative(view: Extract<MatchView, { phase: 'tbd' }>): Narrative {
   const m = getViewMeta(view)
   const at = m.venueName ? ` at ${m.venueName}` : ''
-  const when = whenStr(m.date)
-  const onWhen = when ? ` on ${when}` : ''
-  const comp = competition(m.league, m.stage)
+  const when = m.date ? `${formatMatchDate(m.date)} · ${formatKickoff(m.date)}` : ''
+  const comp = m.league ? (m.stage ? `${m.league} ${m.stage}` : m.league) : 'this competition'
 
-  switch (view.phase) {
-    case 'tbd':
-      return {
-        label: 'Preview',
-        paragraphs: [
-          `${m.home} faces ${m.away}${at}${onWhen}, as part of the ${comp}.`,
-          'The teams will be confirmed once the earlier rounds are played. Check back for line-ups, stats and live updates closer to kick-off.',
-        ],
-      }
+  const highlights: string[] = [`Competition: ${comp}`]
+  if (when) highlights.push(`Kickoff: ${when}`)
+  if (m.venueName) highlights.push(`Venue: ${m.venueName}`)
 
-    case 'upcoming':
-      return {
-        label: 'Preview',
-        paragraphs: [
-          `${m.home} host ${m.away}${at}${onWhen} in the ${comp}.`,
-          'Line-ups are typically confirmed about an hour before kick-off. Check back for team news, stats and live commentary as the game approaches.',
-        ],
-      }
-
-    case 'live':
-      return {
-        label: 'Preview',
-        paragraphs: [
-          `${m.home} vs ${m.away} is underway${at} in the ${comp}.`,
-          'The summary, line-ups and stats above are updating live as the match progresses.',
-        ],
-      }
-
-    case 'finished': {
-      const hs = m.homeScore ?? 0
-      const as = m.awayScore ?? 0
-      const verb = hs > as ? 'beat' : hs < as ? 'lost to' : 'drew with'
-      return {
-        label: 'Report',
-        paragraphs: [
-          `${m.home} ${verb} ${m.away} ${hs}–${as}${at}${onWhen} in the ${comp}.`,
-          'See the summary, line-ups and full match statistics above for how the game unfolded.',
-        ],
-      }
-    }
-
-    case 'postponed':
-      return {
-        label: 'Info',
-        paragraphs: [
-          `The ${comp} match between ${m.home} and ${m.away}${when ? `, scheduled for ${when}` : ''}${at}, has been postponed.`,
-          'A new date is yet to be confirmed. Check back for the rescheduled fixture.',
-        ],
-      }
-
-    case 'cancelled':
-      return {
-        label: 'Info',
-        paragraphs: [
-          `The ${comp} match between ${m.home} and ${m.away}${when ? `, scheduled for ${when}` : ''}${at}, has been cancelled.`,
-          'This fixture will not be played.',
-        ],
-      }
+  return {
+    label: 'Preview',
+    intro: `${m.home} faces ${m.away}${at}, with the line-up still to be decided.`,
+    highlights,
+    closing: 'Check back closer to kick-off for confirmed teams, line-ups and live updates.',
   }
 }

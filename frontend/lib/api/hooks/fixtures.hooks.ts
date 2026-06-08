@@ -1,6 +1,6 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { api } from '../instance'
-import type { Match, MatchStatus, FeaturedMatchResponse, Bracket, MatchPreview } from '../domain'
+import type { Match, MatchStatus, FeaturedMatchResponse, Bracket, MatchPreview, H2HResponse, MatchNarrative, ChatMessage, ChatReply } from '../domain'
 
 export const fixtureKeys = {
   all: ['fixtures'] as const,
@@ -71,6 +71,33 @@ export function useBracket(leagueId: string) {
     queryFn:  () => api.get<Bracket | null>(`/fixtures/bracket/${leagueId}`, { silent: true }),
     enabled:  !!leagueId,
     retry:    false,
+  })
+}
+
+export function useHeadToHead(matchId: string) {
+  return useQuery({
+    queryKey: ['fixtures', 'h2h', matchId],
+    queryFn:  () => api.get<H2HResponse | null>(`/fixtures/${matchId}/h2h`, { silent: true }),
+    enabled:  !!matchId,
+    staleTime: 30 * 60_000,
+    retry:    false,
+  })
+}
+
+export function useMatchNarrative(matchId: string) {
+  return useQuery({
+    queryKey: ['fixtures', 'narrative', matchId],
+    queryFn:  () => api.get<MatchNarrative | null>(`/fixtures/${matchId}/narrative`, { silent: true }),
+    enabled:  !!matchId,
+    staleTime: Infinity, // generate-once-lock-in — this never changes once written
+    retry:    false,
+  })
+}
+
+export function useMatchChat(matchId: string) {
+  return useMutation({
+    mutationFn: (messages: ChatMessage[]) =>
+      api.post<ChatReply | null>(`/fixtures/${matchId}/chat`, { messages }, { silent: true }),
   })
 }
 

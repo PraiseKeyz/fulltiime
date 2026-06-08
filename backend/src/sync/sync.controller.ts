@@ -48,4 +48,11 @@ export class SyncController {
     await this.syncService.syncStandings();
     return { message: 'Standings sync completed' };
   }
+
+  @Post('lineups')
+  @HttpCode(200)
+  async syncLineups() {
+    await this.syncService.syncLineups();
+    return { message: 'Lineups sync completed' };
+  }
 }
