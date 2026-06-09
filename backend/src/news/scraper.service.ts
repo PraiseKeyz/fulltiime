@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import axios from 'axios';
-import { load, type CheerioAPI, type Cheerio, type Element } from 'cheerio';
+import { load, type CheerioAPI } from 'cheerio';
 
 export type ScrapedArticle = {
   content:  string;
@@ -132,7 +132,8 @@ export class ScraperService {
   }
 
   // Strip every attribute except href (on <a>) and src/alt (on <img>)
-  private stripAttribs($: CheerioAPI, $el: Cheerio<Element>): void {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private stripAttribs($: CheerioAPI, $el: any): void {
     $el.find('*').addBack().each((_, node) => {
       if (node.type !== 'tag') return;
       const keep = node.name === 'a'   ? ['href']           :
