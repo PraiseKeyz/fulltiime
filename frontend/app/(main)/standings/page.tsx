@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useLeagues } from '@/lib/api/hooks/leagues.hooks'
 import { useLeagueStandings } from '@/lib/api/hooks/standings.hooks'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
 
@@ -22,21 +23,18 @@ export default function StandingsPage() {
       {leagues && leagues.length > 0 && (
         <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
           {leagues.map((league) => (
-            <button
+            <Button
               key={league.id}
               onClick={() => setSelectedLeagueId(league.id)}
-              className={cn(
-                'flex shrink-0 items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium transition-colors',
-                activeLeagueId === league.id
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted text-muted-foreground hover:text-foreground',
-              )}
+              variant={activeLeagueId === league.id ? 'primary' : 'secondary'}
+              size="sm"
+              className={cn('shrink-0 gap-2 rounded-full px-4 text-sm', activeLeagueId !== league.id && 'text-muted-foreground')}
             >
               {league.logo_url && (
                 <img src={league.logo_url} alt="" className="h-4 w-4 object-contain" />
               )}
               {league.short_name ?? league.name}
-            </button>
+            </Button>
           ))}
         </div>
       )}

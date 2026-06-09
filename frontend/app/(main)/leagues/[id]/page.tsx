@@ -10,6 +10,7 @@ import { useLeague } from '@/lib/api/hooks/leagues.hooks'
 import { useUpcomingFixtures, useBracket } from '@/lib/api/hooks/fixtures.hooks'
 import { cn, formatMatchDate, formatKickoff } from '@/lib/utils'
 import type { Match, Standing, StandingsResponse } from '@/lib/api/domain'
+import { Button } from '@/components/ui/button'
 import { KnockoutBracket } from './_components/knockout-bracket'
 
 const GRADIENTS: Record<string, string> = {
@@ -249,36 +250,39 @@ export default function CompetitionHubPage() {
         {/* Tabs */}
         <div className="flex gap-1 border-b border-border mb-6">
           {hasStandings && (
-            <button
+            <Button
               onClick={() => selectTab('table')}
+              variant="ghost"
               className={cn(
-                'px-5 py-2.5 text-[13px] font-bold transition-colors border-b-2 -mb-px',
+                'h-auto rounded-none border-b-2 -mb-px px-5 py-2.5 text-[13px] hover:bg-transparent',
                 tab === 'table' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground',
               )}
             >
               {tableLabel}
-            </button>
+            </Button>
           )}
           {hasBracket && (
-            <button
+            <Button
               onClick={() => selectTab('knockout')}
+              variant="ghost"
               className={cn(
-                'px-5 py-2.5 text-[13px] font-bold transition-colors border-b-2 -mb-px',
+                'h-auto rounded-none border-b-2 -mb-px px-5 py-2.5 text-[13px] hover:bg-transparent',
                 tab === 'knockout' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground',
               )}
             >
               Knockout
-            </button>
+            </Button>
           )}
-          <button
+          <Button
             onClick={() => selectTab('fixtures')}
+            variant="ghost"
             className={cn(
-              'px-5 py-2.5 text-[13px] font-bold transition-colors border-b-2 -mb-px',
+              'h-auto rounded-none border-b-2 -mb-px px-5 py-2.5 text-[13px] hover:bg-transparent',
               tab === 'fixtures' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground',
             )}
           >
             Fixtures &amp; Results
-          </button>
+          </Button>
         </div>
 
         {tab === 'knockout' && hasBracket && bracket && (

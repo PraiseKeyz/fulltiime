@@ -17,6 +17,8 @@ export function useArticles(filters: { category?: ArticleCategory; page?: number
           Object.entries(filters).filter(([, v]) => v !== undefined),
         ) as Record<string, string | number>,
       }),
+    staleTime: 60_000,  // treat fetched page as fresh for 1 min — no redundant refetches
+    gcTime:    30_000,  // drop cached page from memory 30s after it's no longer viewed
   })
 }
 

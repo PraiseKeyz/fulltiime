@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { api } from '../instance'
-import type { Match, MatchStatus, FeaturedMatchResponse, Bracket, MatchPreview, H2HResponse, MatchNarrative, ChatMessage, ChatReply } from '../domain'
+import type { Match, MatchStatus, FeaturedMatchResponse, Bracket, MatchPreview, H2HResponse, MatchNarrative, ChatMessage, ChatReply, MatchForm } from '../domain'
 
 export const fixtureKeys = {
   all: ['fixtures'] as const,
@@ -70,6 +70,16 @@ export function useBracket(leagueId: string) {
     queryKey: ['fixtures', 'bracket', leagueId],
     queryFn:  () => api.get<Bracket | null>(`/fixtures/bracket/${leagueId}`, { silent: true }),
     enabled:  !!leagueId,
+    retry:    false,
+  })
+}
+
+export function useMatchForm(matchId: string) {
+  return useQuery({
+    queryKey: ['fixtures', 'form', matchId],
+    queryFn:  () => api.get<MatchForm | null>(`/fixtures/${matchId}/form`, { silent: true }),
+    enabled:  !!matchId,
+    staleTime: 60 * 60_000,
     retry:    false,
   })
 }

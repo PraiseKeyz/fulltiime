@@ -5,8 +5,9 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { Lock, Eye, EyeOff } from 'lucide-react'
-import { AuthShell, authInput, authButton } from '../_components/auth-shell'
+import { AuthShell, authInput } from '../_components/auth-shell'
 import { useResetPassword } from '@/lib/api/hooks/auth.hooks'
+import { Button } from '@/components/ui/button'
 
 function ResetPasswordInner() {
   const router = useRouter()
@@ -101,9 +102,15 @@ function ResetPasswordInner() {
 
         {error && <p className="text-[13px] font-medium text-red-600">{error}</p>}
 
-        <button type="submit" disabled={isPending} className={authButton}>
+        <Button
+          type="submit"
+          variant="primary"
+          size="lg"
+          disabled={isPending}
+          className="w-full font-black uppercase tracking-wide"
+        >
           {isPending ? 'Resetting…' : 'Reset password'}
-        </button>
+        </Button>
       </form>
 
       <p className="mt-6 text-center text-[13px] text-zinc-500">

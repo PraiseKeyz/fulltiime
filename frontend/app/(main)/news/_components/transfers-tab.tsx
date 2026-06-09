@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { ArrowRight, Zap } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
 
 type TransferType = 'DONE DEAL' | 'CONFIRMED' | 'RUMOUR'
 type Filter = 'ALL' | 'DONE DEAL' | 'CONFIRMED' | 'RUMOUR'
@@ -120,18 +121,15 @@ export function TransfersTab() {
       {/* Filters */}
       <div className="flex items-center gap-2 flex-wrap">
         {FILTERS.map(f => (
-          <button
+          <Button
             key={f.value}
             onClick={() => setFilter(f.value)}
-            className={cn(
-              'px-5 py-1.5 rounded-full text-[12px] font-bold transition-colors border',
-              filter === f.value
-                ? 'bg-primary text-primary-foreground border-primary'
-                : 'text-muted-foreground border-border hover:text-foreground',
-            )}
+            variant={filter === f.value ? 'primary' : 'outline'}
+            size="sm"
+            className={cn('rounded-full px-5 text-[12px]', filter !== f.value && 'text-muted-foreground')}
           >
             {f.label}
-          </button>
+          </Button>
         ))}
       </div>
 

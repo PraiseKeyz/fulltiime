@@ -1,5 +1,6 @@
 import { Trophy } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
 import type { League } from '@/lib/api/domain'
 
 function LeagueRailButton({
@@ -13,11 +14,12 @@ function LeagueRailButton({
   onClick: () => void
 }) {
   return (
-    <button
+    <Button
+      variant="ghost"
       onClick={onClick}
       className={cn(
-        'flex w-full items-center gap-2.5 px-3 py-2.5 text-left transition-colors',
-        active ? 'bg-primary/10' : 'hover:bg-muted/50',
+        'h-auto w-full justify-start gap-2.5 rounded-none px-3 py-2.5 text-left',
+        active ? 'bg-primary/10 hover:bg-primary/10' : 'hover:bg-muted/50',
       )}
     >
       <div className="h-7 w-7 shrink-0 flex items-center justify-center">{logo}</div>
@@ -33,7 +35,7 @@ function LeagueRailButton({
           {count}
         </span>
       )}
-    </button>
+    </Button>
   )
 }
 

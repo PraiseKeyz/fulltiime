@@ -5,6 +5,7 @@ import { ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 import { cn, formatKickoff } from '@/lib/utils'
 import { useTodayFixtures } from '@/lib/api/hooks/fixtures.hooks'
+import { Button } from '@/components/ui/button'
 import type { Match } from '@/lib/api/domain'
 
 const TABS = [
@@ -179,18 +180,15 @@ export function ScoresStrip() {
         {/* League tabs */}
         <div className="flex gap-1 overflow-x-auto scrollbar-none mb-3">
           {TABS.map(t => (
-            <button
+            <Button
               key={t.key}
               onClick={() => setTab(t.key)}
-              className={cn(
-                'shrink-0 px-3 py-1 rounded-md text-[11px] font-bold transition-colors',
-                tab === t.key
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted',
-              )}
+              variant={tab === t.key ? 'primary' : 'ghost'}
+              size="sm"
+              className={cn('shrink-0 rounded-md text-[11px]', tab !== t.key && 'text-muted-foreground')}
             >
               {t.label}
-            </button>
+            </Button>
           ))}
         </div>
 

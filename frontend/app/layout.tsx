@@ -7,11 +7,11 @@ import { AuthProvider } from '@/providers/auth-provider'
 import { SITE_URL, SITE_NAME, SITE_DESCRIPTION, DEFAULT_OG_IMAGE, TWITTER_HANDLE } from '@/lib/seo'
 import './globals.css'
 
-const anton = Anton({
-  subsets: ['latin'],
-  weight: '400',
-  variable: '--font-anton',
-})
+// const anton = Anton({
+//   subsets: ['latin'],
+//   weight: '400',
+//   variable: '--font-anton',
+// })
 
 const inter = Inter({
   subsets: ['latin'],
@@ -62,7 +62,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${anton.variable} ${inter.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`${inter.variable}`} suppressHydrationWarning>
       <body className="min-h-screen bg-background text-foreground antialiased" suppressHydrationWarning>
         <ThemeProvider>
           <QueryProvider>

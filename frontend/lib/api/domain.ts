@@ -173,6 +173,22 @@ export interface MatchPreview {
   roundFixtures?: BracketTie[]
 }
 
+// ─── Team form ────────────────────────────────────────────────────────────────
+
+export interface FormMatch {
+  id:         string
+  home_team:  Pick<TeamSummary, 'id' | 'name' | 'short_name' | 'logo_url'>
+  away_team:  Pick<TeamSummary, 'id' | 'name' | 'short_name' | 'logo_url'>
+  home_score: number | null
+  away_score: number | null
+  kickoff_at: string
+}
+
+export interface MatchForm {
+  home: FormMatch[]
+  away: FormMatch[]
+}
+
 // ─── Head-to-head ──────────────────────────────────────────────────────────────
 
 export interface H2HFixture {

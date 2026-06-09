@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Trophy, ChevronRight } from 'lucide-react'
 import { useStandingsSnapshot } from '@/lib/api/hooks/standings.hooks'
 import { useLeagues } from '@/lib/api/hooks/leagues.hooks'
+import { Button } from '@/components/ui/button'
 import type { League, SnapshotEntry } from '@/lib/api/domain'
 
 const TAB_OPTIONS = [
@@ -141,17 +142,19 @@ export default function LeaguesPage() {
 
           <div className="flex gap-2 rounded-full border border-border bg-muted/50 p-1">
             {TAB_OPTIONS.map(tab => (
-              <button
+              <Button
                 key={tab.value}
                 onClick={() => setActiveTab(tab.value)}
-                className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
+                variant="ghost"
+                size="sm"
+                className={`rounded-full px-4 text-sm ${
                   activeTab === tab.value
-                    ? 'bg-card text-foreground shadow-sm'
+                    ? 'bg-card text-foreground shadow-sm hover:bg-card'
                     : 'text-muted-foreground hover:bg-white/10'
                 }`}
               >
                 {tab.label}
-              </button>
+              </Button>
             ))}
           </div>
         </div>

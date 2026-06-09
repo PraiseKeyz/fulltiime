@@ -92,6 +92,15 @@ export class SportMonksService {
     });
   }
 
+  // /fixtures/teams/{id} endpoint is not available on all plans.
+  async getTeamRecentFixtures(teamId: number): Promise<any[]> {
+    const to   = new Date().toISOString().split('T')[0];
+    const from = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    return this.getAll<any>(`/fixtures/between/${from}/${to}/${teamId}`, {
+      include: 'participants;scores;state;league;venue',
+    });
+  }
+
   // Lightweight fixture for a preview page (placeholder knockout ties etc.)
   async getFixturePreview(fixtureId: number) {
     return this.get<any>(`/fixtures/${fixtureId}`, {

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import {ChevronRight, Clock } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -193,18 +194,15 @@ export default function LivePage() {
           {/* Filter tabs */}
           <div className="flex items-center gap-2 mt-5">
             {FILTERS.map((f) => (
-              <button
+              <Button
                 key={f.value}
                 onClick={() => setFilter(f.value)}
-                className={cn(
-                  'px-5 py-1.5 rounded-full text-[12px] font-bold transition-colors border',
-                  filter === f.value
-                    ? 'bg-primary text-primary-foreground border-primary'
-                    : 'text-muted-foreground border-border hover:text-foreground hover:border-muted-foreground',
-                )}
+                variant={filter === f.value ? 'primary' : 'outline'}
+                size="sm"
+                className={cn('rounded-full px-5 text-[12px]', filter !== f.value && 'text-muted-foreground')}
               >
                 {f.label}
-              </button>
+              </Button>
             ))}
           </div>
         </div>

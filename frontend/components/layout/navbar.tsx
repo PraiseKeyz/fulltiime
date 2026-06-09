@@ -3,13 +3,14 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useTheme } from 'next-themes'
-import { Search, Bell, Sun, Moon } from 'lucide-react'
+import { Sun, Moon } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
 
 const NAV_LINKS = [
   { href: '/matches', label: 'Matches' },
-  { href: '/news', label: 'News' },
   { href: '/leagues', label: 'Leagues' },
+  { href: '/news', label: 'News' },
 ]
 
 export function Navbar() {
@@ -45,12 +46,12 @@ export function Navbar() {
 
           {/* Right actions */}
           <div className="flex items-center gap-2 justify-end">
-            <button
+            {/* <button
               aria-label="Search"
               className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
             >
               <Search className="h-4 w-4" />
-            </button>
+            </button> */}
 
             {/* <button
               aria-label="Notifications"
@@ -59,21 +60,27 @@ export function Navbar() {
               <Bell className="h-4 w-4" />
             </button> */}
 
-            <button
+            <Button
+              variant="ghost"
+              size="icon"
               aria-label="Toggle theme"
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground"
             >
-              <Sun className="h-4 w-4 hidden dark:block" />
-              <Moon className="h-4 w-4 block dark:hidden" />
-            </button>
+              <Sun className="hidden dark:block" />
+              <Moon className="block dark:hidden" />
+            </Button>
 
-            <Link
-              href="/login"
-              className="flex items-center gap-1.5 rounded-md bg-primary px-4 py-1.5 text-[13px] font-bold text-primary-foreground hover:bg-primary/90 transition-colors"
+            <div className="h-6 w-px bg-border " />
+
+            <Button
+              asChild
+              variant="ghost"
+              size="sm"
+              className="h-auto rounded-none border-b border-foreground! px-0 py-1 text-[13px] hover:bg-transparent hover:text-primary hover:border-primary!"
             >
-              Sign In
-            </Link>
+              <Link href="/login">Sign In</Link>
+            </Button>
           </div>
         </div>
       </div>

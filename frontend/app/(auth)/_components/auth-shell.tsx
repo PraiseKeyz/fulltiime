@@ -37,6 +37,3 @@ export function AuthShell({
 // Shared input class — mirrors the login form fields.
 export const authInput =
   'w-full rounded-lg border border-zinc-200 bg-white pl-9 pr-4 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500'
-
-export const authButton =
-  'w-full rounded-lg bg-green-600 py-3 text-[13px] font-black uppercase tracking-wide text-white hover:bg-green-700 transition-colors disabled:opacity-60'

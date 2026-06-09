@@ -3,8 +3,9 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { Mail, CheckCircle2 } from 'lucide-react'
-import { AuthShell, authInput, authButton } from '../_components/auth-shell'
+import { AuthShell, authInput } from '../_components/auth-shell'
 import { useForgotPassword } from '@/lib/api/hooks/auth.hooks'
+import { Button } from '@/components/ui/button'
 
 export default function ForgotPasswordPage() {
   const { mutate, isPending } = useForgotPassword()
@@ -56,9 +57,15 @@ export default function ForgotPasswordPage() {
           </div>
         </div>
 
-        <button type="submit" disabled={isPending} className={authButton}>
+        <Button
+          type="submit"
+          variant="primary"
+          size="lg"
+          disabled={isPending}
+          className="w-full font-black uppercase tracking-wide"
+        >
           {isPending ? 'Sending…' : 'Send reset link'}
-        </button>
+        </Button>
       </form>
 
       <p className="mt-6 text-center text-[13px] text-zinc-500">

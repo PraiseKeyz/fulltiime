@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
 import { FILTERS, type Filter } from './types'
 import { formatDateLabel } from './utils'
 
@@ -29,38 +30,41 @@ export function MatchesHeader({
           {/* Filter tabs */}
           <div className="flex items-center gap-2 flex-wrap">
             {FILTERS.map(f => (
-              <button
+              <Button
                 key={f.value}
                 onClick={() => onFilterChange(f.value)}
-                className={cn(
-                  'px-5 py-1.5 rounded-full text-[12px] font-bold transition-colors border',
-                  filter === f.value
-                    ? 'bg-primary text-primary-foreground border-primary'
-                    : 'text-muted-foreground border-border hover:text-foreground',
-                )}
+                variant={filter === f.value ? 'primary' : 'outline'}
+                size="sm"
+                className={cn('rounded-full px-5 text-[12px]', filter !== f.value && 'text-muted-foreground')}
               >
                 {f.value === 'LIVE' && liveCount > 0 ? `Live (${liveCount})` : f.label}
-              </button>
+              </Button>
             ))}
           </div>
 
           {/* Date navigator */}
           <div className="flex items-center gap-2">
-            <button
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label="Previous day"
               onClick={() => onDayChange(dayOffset - 1)}
-              className="flex h-8 w-8 items-center justify-center rounded-full border border-border text-muted-foreground hover:text-foreground transition-colors"
+              className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground"
             >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
+              <ChevronLeft />
+            </Button>
             <span className="text-[13px] font-bold min-w-[80px] text-center">
               {formatDateLabel(dayOffset)}
             </span>
-            <button
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label="Next day"
               onClick={() => onDayChange(dayOffset + 1)}
-              className="flex h-8 w-8 items-center justify-center rounded-full border border-border text-muted-foreground hover:text-foreground transition-colors"
+              className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground"
             >
-              <ChevronRight className="h-4 w-4" />
-            </button>
+              <ChevronRight />
+            </Button>
           </div>
         </div>
       </div>

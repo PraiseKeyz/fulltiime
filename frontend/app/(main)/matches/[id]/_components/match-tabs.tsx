@@ -3,6 +3,7 @@
 import { useMemo, useEffect, useCallback } from 'react'
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
 import type { MatchView } from './phase'
 import { getPhasePlan } from './phase.config'
 
@@ -48,18 +49,19 @@ export function MatchTabs({ view }: { view: MatchView }) {
       {showBar && (
         <div className="flex gap-1 border-b border-border mb-6">
           {plan.tabs.map(t => (
-            <button
+            <Button
               key={t.key}
               onClick={() => selectTab(t.key)}
+              variant="ghost"
               className={cn(
-                'px-5 py-2.5 text-[13px] font-bold transition-colors border-b-2 -mb-px',
+                'h-auto rounded-none border-b-2 -mb-px px-5 py-2.5 text-[13px] hover:bg-transparent',
                 t.key === active
                   ? 'border-primary text-primary'
                   : 'border-transparent text-muted-foreground hover:text-foreground',
               )}
             >
               {t.label}
-            </button>
+            </Button>
           ))}
         </div>
       )}

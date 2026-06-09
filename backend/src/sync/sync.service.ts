@@ -677,6 +677,143 @@ export class SyncService {
 
   // ── Manual trigger ────────────────────────────────────────────────────────────
 
+  // ── Sync team form (last 5 finished fixtures per team) ──────────────────────
+  // Written to the dedicated team_form table — never touches matches.
+
+  @Cron('0 4 * * *') // daily at 4am
+  async syncTeamForm() {
+    const teams = await this.prisma.team.findMany({
+      where:  { api_football_id: { not: null }, is_active: true },
+      select: { id: true, api_football_id: true },
+    });
+
+    this.logger.log(`Syncing team form for ${teams.length} teams...`);
+
+    for (const team of teams) {
+      try {
+        const fixtures = await this.api.getTeamRecentFixtures(team.api_football_id!);
+        const finished = fixtures
+          .filter((f: any) => {
+            const code = f.state?.short_name ?? f.state?.state ?? '';
+            return ['FT', 'AET', 'FT_PEN'].includes(code);
+          })
+          .slice(0, 5);
+
+        if (!finished.length) continue;
+
+        // Delete existing form entries for this team, then re-insert fresh
+        await this.prisma.teamForm.deleteMany({ where: { team_id: team.id } });
+
+        for (const f of finished) {
+          const { home, away } = this.getParticipants(f);
+          if (!home || !away) continue;
+
+          const isHome    = home.id === team.api_football_id;
+          const opponentApiId = isHome ? away.id : home.id;
+          const opponent  = await this.prisma.team.findUnique({ where: { api_football_id: opponentApiId } });
+          if (!opponent) continue;
+
+          const scores  = (f.scores ?? []).filter((s: any) => s.description === 'CURRENT');
+          const goals   = (loc: string) =>
+            scores.find((s: any) => s.score?.participant === loc)?.score?.goals ?? null;
+
+          const homeScore = goals('home');
+          const awayScore = goals('away');
+          if (homeScore == null || awayScore == null) continue;
+
+          await this.prisma.teamForm.create({
+            data: {
+              team_id:     team.id,
+              opponent_id: opponent.id,
+              is_home:     isHome,
+              home_score:  homeScore,
+              away_score:  awayScore,
+              kickoff_at:  new Date(f.starting_at),
+              league_name: f.league?.name ?? null,
+              league_logo: f.league?.image_path ?? null,
+            },
+          });
+        }
+      } catch (err: any) {
+        this.logger.error(`Failed syncing form for team ${team.api_football_id}: ${err.message}`);
+      }
+    }
+
+    this.logger.log('Team form sync complete');
+  }
+
+  // ── Sync H2H (pre-populate cache for all known team pairs) ──────────────────
+  // H2H is historical — past results don't change, so weekly is more than enough.
+  // The raw meetings are stored with `homeIsApiId` so getHeadToHead() can compute
+  // the win/draw/loss tally from the correct perspective for each specific fixture.
+
+  @Cron('0 3 * * 0') // weekly, Sunday 3am
+  async syncH2H() {
+    const matches = await this.prisma.match.findMany({
+      where: {
+        home_team: { api_football_id: { not: null } },
+        away_team: { api_football_id: { not: null } },
+      },
+      select: {
+        home_team: { select: { api_football_id: true } },
+        away_team: { select: { api_football_id: true } },
+      },
+    });
+
+    // Deduplicate team pairs — sort ids so A-vs-B and B-vs-A map to the same key
+    const pairMap = new Map<string, [number, number]>();
+    for (const m of matches) {
+      const a = m.home_team.api_football_id!;
+      const b = m.away_team.api_football_id!;
+      const [lo, hi] = a < b ? [a, b] : [b, a];
+      pairMap.set(`${lo}:${hi}`, [lo, hi]);
+    }
+
+    const pairs = [...pairMap.values()];
+    this.logger.log(`Syncing H2H for ${pairs.length} team pair(s)...`);
+
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+
+    for (const [a, b] of pairs) {
+      try {
+        const raw = await this.api.getHeadToHead(a, b);
+
+        const rawMeetings = raw
+          .map((f: any) => {
+            const parts = f.participants ?? [];
+            const home  = parts.find((p: any) => p.meta?.location === 'home');
+            const away  = parts.find((p: any) => p.meta?.location === 'away');
+            if (!home || !away) return null;
+            const scores = (f.scores ?? []).filter((s: any) => s.description === 'CURRENT');
+            const goals  = (loc: string) =>
+              scores.find((s: any) => s.score?.participant === loc)?.score?.goals ?? null;
+            return {
+              id:          f.id,
+              date:        f.starting_at ?? null,
+              league:      f.league ? { name: f.league.name, logo: f.league.image_path } : null,
+              homeTeam:    { name: home.name, logo: home.image_path ?? null },
+              awayTeam:    { name: away.name, logo: away.image_path ?? null },
+              homeScore:   goals('home'),
+              awayScore:   goals('away'),
+              homeIsApiId: home.id,
+            };
+          })
+          .filter((m: any): m is NonNullable<typeof m> => m !== null)
+          .sort((x: any, y: any) => +new Date(y.date ?? 0) - +new Date(x.date ?? 0));
+
+        await this.prisma.cache.upsert({
+          where:  { key: `h2h:${a}:${b}` },
+          update: { payload: { rawMeetings } as any, expires_at: expiresAt },
+          create: { key: `h2h:${a}:${b}`, payload: { rawMeetings } as any, expires_at: expiresAt },
+        });
+      } catch (err: any) {
+        this.logger.error(`Failed syncing H2H for ${a}:${b}: ${err.message}`);
+      }
+    }
+
+    this.logger.log('H2H sync complete');
+  }
+
   async runFullSync() {
     this.logger.log('Running full sync...');
     await this.syncLeagues();
@@ -684,6 +821,8 @@ export class SyncService {
     await this.syncVenues();
     await this.syncFixtures();
     await this.syncStandings();
+    await this.syncTeamForm();
+    await this.syncH2H();
     this.logger.log('Full sync complete');
   }
 }

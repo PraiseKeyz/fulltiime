@@ -46,6 +46,21 @@ export class CacheService {
     return value;
   }
 
+  async get<T>(key: string): Promise<T | null> {
+    const hit = await this.prisma.cache.findUnique({ where: { key } });
+    if (!hit || hit.expires_at <= new Date()) return null;
+    return hit.payload as T;
+  }
+
+  async set<T>(key: string, value: T, ttlMs: number): Promise<void> {
+    const expires_at = new Date(Date.now() + ttlMs);
+    await this.prisma.cache.upsert({
+      where:  { key },
+      update: { payload: value as any, expires_at },
+      create: { key, payload: value as any, expires_at },
+    });
+  }
+
   async invalidate(key: string): Promise<void> {
     await this.prisma.cache.deleteMany({ where: { key } });
   }

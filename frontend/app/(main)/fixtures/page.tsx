@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useFixtures } from '@/lib/api/hooks/fixtures.hooks'
 import { MatchCard } from '@/components/fixtures/match-card'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import type { MatchStatus } from '@/lib/api/domain'
 
@@ -25,18 +26,15 @@ export default function FixturesPage() {
       {/* Filter tabs */}
       <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
         {STATUS_FILTERS.map((f) => (
-          <button
+          <Button
             key={f.label}
             onClick={() => setStatus(f.value)}
-            className={cn(
-              'shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-colors',
-              status === f.value
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-muted text-muted-foreground hover:text-foreground',
-            )}
+            variant={status === f.value ? 'primary' : 'secondary'}
+            size="sm"
+            className={cn('shrink-0 rounded-full px-4 text-sm', status !== f.value && 'text-muted-foreground')}
           >
             {f.label}
-          </button>
+          </Button>
         ))}
       </div>
 

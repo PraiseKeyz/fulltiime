@@ -6,6 +6,7 @@ import {
 } from './match-tab-content'
 import { H2HTab } from './match-h2h'
 import { ChatTab } from './match-chat'
+import { OverviewTab } from './match-overview'
 
 // ─── Phase plan ──────────────────────────────────────────────────────────────
 //
@@ -32,6 +33,10 @@ export interface PhasePlan {
 const hasLineups = (m: Match) => (m.lineups?.length ?? 0) > 0
 const hasStats   = (m: Match) => availableStatRows(m).length > 0
 
+function overviewTab(m: Match): PhaseTab {
+  return { key: 'overview', label: 'Overview', render: () => <OverviewTab match={m} /> }
+}
+
 // H2H needs two real, resolved teams — only meaningful once the fixture is no
 // longer a placeholder (i.e. every phase except 'tbd'). The tab itself fetches
 // lazily and renders an empty state when SportMonks has no shared history.
@@ -53,18 +58,18 @@ export function getPhasePlan(view: MatchView): PhasePlan {
     case 'postponed':
     case 'cancelled': {
       const m = view.match
-      return { tabs: [chatTab(m)], defaultTab: 'chat' }
+      return { tabs: [overviewTab(m), chatTab(m)], defaultTab: 'overview' }
     }
 
     case 'upcoming': {
       const m = view.match
-      const tabs: PhaseTab[] = []
+      const tabs: PhaseTab[] = [overviewTab(m)]
       if (hasLineups(m)) {
         tabs.push({ key: 'lineups', label: 'Line-ups', render: () => <LineupsTab match={m} /> })
       }
       tabs.push(h2hTab(m))
       tabs.push(chatTab(m))
-      return { tabs, defaultTab: tabs[0]?.key ?? 'h2h' }
+      return { tabs, defaultTab: 'overview' }
     }
 
     case 'live':
@@ -79,6 +84,7 @@ export function getPhasePlan(view: MatchView): PhasePlan {
       if (hasStats(m)) {
         tabs.push({ key: 'stats', label: 'Stats', render: () => <StatsTab match={m} /> })
       }
+      tabs.push(overviewTab(m))
       tabs.push(h2hTab(m))
       tabs.push(chatTab(m))
       return { tabs, defaultTab: 'summary' }

@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { toast } from 'sonner'
 import { Zap, Mail, Lock, User, Eye, EyeOff, Check } from 'lucide-react'
 import { useRegister } from '@/lib/api/hooks/auth.hooks'
+import { Button } from '@/components/ui/button'
 
 const PERKS = [
   'Live alerts for your favourite clubs',
@@ -119,20 +120,22 @@ export default function RegisterPage() {
 
           {/* Social */}
           <div className="mt-7 grid grid-cols-2 gap-3">
-            <button
+            <Button
               type="button"
+              variant="outline"
               onClick={soon}
-              className="flex items-center justify-center gap-2 rounded-lg bg-white border border-zinc-200 py-2.5 text-[13px] font-bold text-zinc-800 hover:bg-zinc-50 transition-colors"
+              className="w-full bg-white border-zinc-200 text-zinc-800 hover:bg-zinc-50 hover:text-zinc-800"
             >
               <GoogleIcon /> Google
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              variant="outline"
               onClick={soon}
-              className="flex items-center justify-center gap-2 rounded-lg bg-black py-2.5 text-[13px] font-bold text-white hover:bg-zinc-800 transition-colors"
+              className="w-full bg-black border-transparent text-white hover:bg-zinc-800 hover:text-white"
             >
               <AppleIcon /> Apple
-            </button>
+            </Button>
           </div>
 
           {/* Divider */}
@@ -206,13 +209,15 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            <button
+            <Button
               type="submit"
+              variant="primary"
+              size="lg"
               disabled={isPending}
-              className="w-full rounded-lg bg-green-600 py-3 text-[13px] font-black uppercase tracking-wide text-white hover:bg-green-700 transition-colors disabled:opacity-60"
+              className="w-full font-black uppercase tracking-wide"
             >
               {isPending ? 'Creating account…' : 'Create account'}
-            </button>
+            </Button>
           </form>
 
           <p className="mt-6 text-center text-[13px] text-zinc-500">

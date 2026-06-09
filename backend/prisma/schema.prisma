@@ -159,6 +159,8 @@ model Team {
   statistics      MatchStatistic[]
   lineups         MatchLineup[]
   favorites       User[]           @relation("UserFavoriteTeams")
+  form_entries    TeamForm[]
+  form_as_opponent TeamForm[]      @relation("TeamFormOpponent")
 
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
@@ -189,6 +191,27 @@ model Player {
   updated_at  DateTime @updatedAt
 
   @@map("players")
+}
+
+// ─── Team Form ────────────────────────────────────────────────────────────────
+// Last N finished matches per team, synced independently from the main fixtures.
+// Stored flat so it never pollutes the matches table with historical context data.
+
+model TeamForm {
+  id           String   @id @default(cuid())
+  team_id      String
+  team         Team     @relation(fields: [team_id], references: [id])
+  opponent_id  String
+  opponent     Team     @relation("TeamFormOpponent", fields: [opponent_id], references: [id])
+  is_home      Boolean
+  home_score   Int
+  away_score   Int
+  kickoff_at   DateTime
+  league_name  String?
+  league_logo  String?
+
+  @@index([team_id, kickoff_at])
+  @@map("team_form")
 }
 
 // ─── Match / Fixture ──────────────────────────────────────────────────────────
@@ -387,6 +410,7 @@ model Article {
   author_id    String
   author       User            @relation(fields: [author_id], references: [id])
   tags         String[]
+  source_url   String?  @unique
 
   created_at   DateTime @default(now())
   updated_at   DateTime @updatedAt

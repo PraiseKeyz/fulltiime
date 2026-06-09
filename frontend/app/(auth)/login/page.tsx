@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { toast } from 'sonner'
 import { Zap, Mail, Lock, Eye, EyeOff, Check } from 'lucide-react'
 import { useLogin } from '@/lib/api/hooks/auth.hooks'
+import { Button } from '@/components/ui/button'
 
 const PERKS = [
   'Live alerts for your favourite clubs',
@@ -50,48 +51,14 @@ export default function LoginPage() {
     <div className="min-h-screen grid lg:grid-cols-2">
       {/* ── Brand hero ─────────────────────────────────────────────── */}
       <div className="relative hidden lg:flex flex-col justify-between overflow-hidden bg-gradient-to-br from-[#04140c] via-[#06371f] to-[#0a5c34] p-12 text-white">
-        {/* Optional stadium photo — drop a file at /public/auth-stadium.jpg to show it */}
         <div
-          className="absolute inset-0 bg-cover bg-center opacity-90 mix-blend-luminosity"
-          style={{ backgroundImage: "url('/assets/auth-stadium.jpg')" }}
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: "url('/assets/auth-stadium.png')" }}
         />
-        <div className="absolute inset-0 bg-gradient-to-br from-[#04140c]/80 via-[#06371f]/70 to-[#0a5c34]/60" />
 
-        {/* Logo */}
         <Link href="/" className="relative flex items-center gap-2 w-fit">
-          <span className="flex h-8 w-8 items-center justify-center rounded-md bg-green-500">
-            <Zap className="h-5 w-5 text-black fill-black" />
-          </span>
-          <span className="text-[20px] font-black tracking-wider">FULLTIIME</span>
+        <img src="/logo.svg" alt="Fulltiime" className="h-6 w-auto" />
         </Link>
-
-        {/* Headline + perks */}
-        <div className="relative">
-          <h1 className="text-5xl xl:text-6xl font-black uppercase leading-[0.95] tracking-tight">
-            Football<br />
-            <span className="text-green-400">Organized</span><br />
-            Intelligently.
-          </h1>
-          <p className="mt-5 max-w-md text-[15px] text-white/70 leading-relaxed">
-            Personalized scores, clubs, and analysis. Join the platform built for fans who want more than the noise.
-          </p>
-
-          <ul className="mt-7 space-y-3">
-            {PERKS.map((perk) => (
-              <li key={perk} className="flex items-center gap-3 text-[14px] text-white/90">
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-green-500 shrink-0">
-                  <Check className="h-3 w-3 text-black" strokeWidth={3} />
-                </span>
-                {perk}
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Footer note */}
-        <p className="relative text-[11px] text-white/40">
-          © {new Date().getFullYear()} FULLTIIME — Football organized intelligently.
-        </p>
       </div>
 
       {/* ── Form panel ─────────────────────────────────────────────── */}
@@ -110,20 +77,22 @@ export default function LoginPage() {
 
           {/* Social */}
           <div className="mt-7 grid grid-cols-2 gap-3">
-            <button
+            <Button
               type="button"
+              variant="outline"
               onClick={soon}
-              className="flex items-center justify-center gap-2 rounded-lg bg-white border border-zinc-200 py-2.5 text-[13px] font-bold text-zinc-800 hover:bg-zinc-50 transition-colors"
+              className="w-full bg-white border-zinc-200 text-zinc-800 hover:bg-zinc-50 hover:text-zinc-800"
             >
               <GoogleIcon /> Google
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              variant="outline"
               onClick={soon}
-              className="flex items-center justify-center gap-2 rounded-lg bg-black py-2.5 text-[13px] font-bold text-white hover:bg-zinc-800 transition-colors"
+              className="w-full bg-black border-transparent text-white hover:bg-zinc-800 hover:text-white"
             >
               <AppleIcon /> Apple
-            </button>
+            </Button>
           </div>
 
           {/* Divider */}
@@ -183,13 +152,15 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <button
+            <Button
               type="submit"
+              variant="primary"
+              size="lg"
               disabled={isPending}
-              className="w-full rounded-lg bg-green-600 py-3 text-[13px] font-black uppercase tracking-wide text-white hover:bg-green-700 transition-colors disabled:opacity-60"
+              className="w-full font-black uppercase tracking-wide"
             >
               {isPending ? 'Signing in…' : 'Sign in'}
-            </button>
+            </Button>
           </form>
 
           <p className="mt-6 text-center text-[13px] text-zinc-500">

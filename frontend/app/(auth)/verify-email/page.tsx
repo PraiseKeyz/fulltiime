@@ -4,8 +4,9 @@ import { Suspense, useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Loader2, CheckCircle2, XCircle, Mail } from 'lucide-react'
-import { AuthShell, authInput, authButton } from '../_components/auth-shell'
+import { AuthShell, authInput } from '../_components/auth-shell'
 import { useVerifyEmail, useResendVerification } from '@/lib/api/hooks/auth.hooks'
+import { Button } from '@/components/ui/button'
 
 type Status = 'verifying' | 'success' | 'error'
 
@@ -41,9 +42,15 @@ function ResendForm() {
           placeholder="you@fulltiime.com"
         />
       </div>
-      <button type="submit" disabled={isPending} className={authButton}>
+      <Button
+        type="submit"
+        variant="primary"
+        size="lg"
+        disabled={isPending}
+        className="w-full font-black uppercase tracking-wide"
+      >
         {isPending ? 'Sending…' : 'Resend verification link'}
-      </button>
+      </Button>
     </form>
   )
 }

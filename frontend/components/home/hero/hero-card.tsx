@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { MapPin, ArrowRight, Goal } from 'lucide-react'
+import { MapPin, Goal } from 'lucide-react'
 import { cn, formatMatchDate } from '@/lib/utils'
 import { latestGoal } from './order-hero-matches'
 import type { Match } from '@/lib/api/domain'
@@ -204,7 +204,6 @@ export function HeroCard({ match }: { match: Match }) {
           className="flex items-center justify-center gap-2 rounded-lg bg-primary py-3 text-[13px] font-bold text-primary-foreground hover:bg-primary/90 transition-colors"
         >
           View Match
-          <ArrowRight className="h-4 w-4" />
         </Link>
       </div>
     </div>

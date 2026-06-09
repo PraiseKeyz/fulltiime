@@ -167,14 +167,54 @@ export class FixturesService {
     };
   }
 
+  // ── Team form ─────────────────────────────────────────────────────────────────
+  // Reads from team_form table — pre-populated by SyncService.syncTeamForm().
+
+  async getMatchForm(matchId: string) {
+    const match = await this.prisma.match.findUnique({
+      where:  { id: matchId },
+      select: { home_team_id: true, away_team_id: true },
+    });
+    if (!match) throw new NotFoundException('Match not found');
+
+    const [home, away] = await Promise.all([
+      this.getTeamRecentForm(match.home_team_id),
+      this.getTeamRecentForm(match.away_team_id),
+    ]);
+
+    return { data: { home, away } };
+  }
+
+  private async getTeamRecentForm(teamId: string) {
+    const rows = await this.prisma.teamForm.findMany({
+      where:   { team_id: teamId },
+      orderBy: { kickoff_at: 'desc' },
+      take:    5,
+      include: {
+        team:     { select: { id: true, name: true, short_name: true, logo_url: true } },
+        opponent: { select: { id: true, name: true, short_name: true, logo_url: true } },
+      },
+    });
+
+    return rows.map(r => ({
+      id:         r.id,
+      home_team:  r.is_home ? r.team : r.opponent,
+      away_team:  r.is_home ? r.opponent : r.team,
+      home_score: r.home_score,
+      away_score: r.away_score,
+      kickoff_at: r.kickoff_at.toISOString(),
+    }));
+  }
+
   // ── Head-to-head ──────────────────────────────────────────────────────────────
 
-  // Past meetings change rarely (only when these two teams play again) → cache
-  // for a day, keyed symmetrically so either fixture order hits the same entry.
+  // Served purely from the cache table — pre-populated by SyncService.syncH2H()
+  // (weekly Sunday 3am cron). Returns null when not yet synced; no live SportMonks
+  // call ever happens here.
   async getHeadToHead(matchId: string) {
     const match = await this.prisma.match.findUnique({
-      where:   { id: matchId },
-      select:  {
+      where:  { id: matchId },
+      select: {
         home_team: { select: { api_football_id: true } },
         away_team: { select: { api_football_id: true } },
       },
@@ -186,26 +226,12 @@ export class FixturesService {
     if (!homeApiId || !awayApiId) return { data: null };
 
     const [a, b] = [homeApiId, awayApiId].sort((x, y) => x - y);
-    const data = await this.cache.getOrSet(
-      `h2h:${a}:${b}`,
-      24 * 60 * 60 * 1000, // 24 hours
-      () => this.buildHeadToHead(homeApiId, awayApiId),
-    );
-    return { data };
-  }
+    const cached = await this.cache.get<{ rawMeetings: any[] }>(`h2h:${a}:${b}`);
+    if (!cached?.rawMeetings) return { data: null };
 
-  private async buildHeadToHead(homeApiId: number, awayApiId: number) {
-    const raw = await this.sportmonks.getHeadToHead(homeApiId, awayApiId);
-
-    const meetings = raw
-      .map((f: any) => this.mapH2HFixture(f))
-      .filter((m: any): m is NonNullable<typeof m> => m !== null)
-      .sort((x: any, y: any) => +new Date(y.date ?? 0) - +new Date(x.date ?? 0));
-
-    // Tally relative to THIS fixture's home/away (not each meeting's historical
-    // venue) — so "Real Madrid 3 — Draws 2 — Barcelona 1" reads naturally.
+    // Compute win/draw/loss tally relative to THIS fixture's home/away perspective
     let homeWins = 0, draws = 0, awayWins = 0;
-    for (const m of meetings) {
+    for (const m of cached.rawMeetings) {
       if (m.homeScore == null || m.awayScore == null) continue;
       const homeGoals = m.homeIsApiId === homeApiId ? m.homeScore : m.awayScore;
       const awayGoals = m.homeIsApiId === homeApiId ? m.awayScore : m.homeScore;
@@ -215,32 +241,10 @@ export class FixturesService {
     }
 
     return {
-      meetings: meetings.slice(0, 10).map(({ homeIsApiId, ...m }: any) => m),
-      summary: { played: meetings.length, homeWins, draws, awayWins },
-    };
-  }
-
-  // Map a SportMonks h2h fixture into a compact shape; null when participants
-  // are missing (shouldn't happen, but the API is third-party data).
-  private mapH2HFixture(f: any) {
-    const parts = f.participants ?? [];
-    const home  = parts.find((p: any) => p.meta?.location === 'home');
-    const away  = parts.find((p: any) => p.meta?.location === 'away');
-    if (!home || !away) return null;
-
-    const scores  = (f.scores ?? []).filter((s: any) => s.description === 'CURRENT');
-    const goals   = (loc: string) =>
-      scores.find((s: any) => s.score?.participant === loc)?.score?.goals ?? null;
-
-    return {
-      id:        f.id,
-      date:      f.starting_at ?? null,
-      league:    f.league ? { name: f.league.name, logo: f.league.image_path } : null,
-      homeTeam:  { name: home.name, logo: home.image_path ?? null },
-      awayTeam:  { name: away.name, logo: away.image_path ?? null },
-      homeScore: goals('home'),
-      awayScore: goals('away'),
-      homeIsApiId: home.id, // internal — stripped before returning to the client
+      data: {
+        meetings: cached.rawMeetings.slice(0, 10).map(({ homeIsApiId, ...m }: any) => m),
+        summary:  { played: cached.rawMeetings.length, homeWins, draws, awayWins },
+      },
     };
   }
 

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { MessageCircle, Send, ShieldHalf } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
 import type { Match, ChatMessage } from '@/lib/api/domain'
 import { useMe } from '@/lib/api/hooks/auth.hooks'
 import { useMatchChat } from '@/lib/api/hooks/fixtures.hooks'
@@ -24,12 +25,9 @@ function SignInPrompt({ match }: { match: Match }) {
         Sign in to ask questions about {match.home_team.short_name ?? match.home_team.name} vs{' '}
         {match.away_team.short_name ?? match.away_team.name}.
       </p>
-      <Link
-        href="/login"
-        className="inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground text-[12px] font-bold px-4 py-2 hover:opacity-90 transition-opacity"
-      >
-        Sign in to chat
-      </Link>
+      <Button asChild variant="primary" size="sm" className="px-4">
+        <Link href="/login">Sign in to chat</Link>
+      </Button>
     </div>
   )
 }
@@ -122,14 +120,16 @@ export function ChatTab({ match }: { match: Match }) {
           maxLength={1000}
           className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-[13px] outline-none focus:ring-1 focus:ring-primary"
         />
-        <button
+        <Button
           onClick={send}
           disabled={!draft.trim() || chat.isPending}
-          className="shrink-0 inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground h-9 w-9 disabled:opacity-40 transition-opacity"
+          variant="primary"
+          size="icon"
+          className="h-9 w-9 shrink-0 disabled:opacity-40"
           aria-label="Send"
         >
-          <Send className="h-4 w-4" />
-        </button>
+          <Send />
+        </Button>
       </div>
     </div>
   )

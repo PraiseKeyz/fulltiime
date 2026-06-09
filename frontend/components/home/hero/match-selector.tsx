@@ -1,6 +1,7 @@
 'use client'
 
 import { cn, formatKickoff } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
 import type { Match } from '@/lib/api/domain'
 
 function StatusTag({ match }: { match: Match }) {
@@ -41,12 +42,13 @@ function SelectorRow({ match, active, onSelect }: { match: Match; active: boolea
   const awayWins = (match.away_score ?? 0) < (match.home_score ?? 0)
 
   return (
-    <button
+    <Button
+      variant="ghost"
       onClick={onSelect}
       className={cn(
-        'w-full text-left px-3 py-2.5 border-l-2 transition-colors',
+        'h-auto w-full flex-col items-stretch gap-0 whitespace-normal rounded-none border-l-2 px-3 py-2.5 text-left',
         active
-          ? 'border-primary bg-primary/[0.06]'
+          ? 'border-primary bg-primary/[0.06] hover:bg-primary/[0.06]'
           : 'border-transparent hover:bg-muted/50',
       )}
     >
@@ -65,7 +67,7 @@ function SelectorRow({ match, active, onSelect }: { match: Match; active: boolea
         <Side name={match.home_team.short_name ?? match.home_team.name} logo={match.home_team.logo_url} score={match.home_score} dim={match.status === 'FINISHED' && homeWins} />
         <Side name={match.away_team.short_name ?? match.away_team.name} logo={match.away_team.logo_url} score={match.away_score} dim={match.status === 'FINISHED' && awayWins} />
       </div>
-    </button>
+    </Button>
   )
 }
 

@@ -51,6 +51,11 @@ export class FixturesController {
     return this.fixturesService.getBracket(leagueId);
   }
 
+  @Get(':id/form')
+  getMatchForm(@Param('id') id: string) {
+    return this.fixturesService.getMatchForm(id);
+  }
+
   @Get(':id/h2h')
   getHeadToHead(@Param('id') id: string) {
     return this.fixturesService.getHeadToHead(id);
