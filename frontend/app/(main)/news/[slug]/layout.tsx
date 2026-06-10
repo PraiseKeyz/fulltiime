@@ -1,12 +1,19 @@
 import type { Metadata } from 'next'
 import { buildMetadata, SITE_NAME } from '@/lib/seo'
-import { getArticleBySlug } from '@/data/news'
+import { api } from '@/lib/api/instance'
+import type { Article } from '@/lib/api/domain'
 
 type Props = { params: Promise<{ slug: string }> }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
-  const article = getArticleBySlug(slug)
+
+  let article: Article | null = null
+  try {
+    article = await api.get<Article>(`/news/${slug}`, { silent: true })
+  } catch {
+    article = null
+  }
 
   if (!article) {
     return buildMetadata({
@@ -18,11 +25,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const meta = buildMetadata({
     title: article.title,
-    description: article.excerpt,
+    description: article.excerpt ?? undefined,
     path: `/news/${article.slug}`,
-    image: article.cover || undefined,
+    image: article.cover_url || undefined,
     type: 'article',
   })
+
+  const authorName = article.author.full_name ?? article.author.username
 
   // Enrich the OpenGraph object with article-specific fields.
   return {
@@ -30,13 +39,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     openGraph: {
       ...meta.openGraph,
       type: 'article',
-      publishedTime: article.publishedAt,
-      authors: [article.author],
+      publishedTime: article.published_at ?? undefined,
+      authors: [authorName],
       tags: article.tags,
       section: article.category,
     },
-    authors: [{ name: article.author }],
-    creator: article.author,
+    authors: [{ name: authorName }],
+    creator: authorName,
     publisher: SITE_NAME,
   }
 }

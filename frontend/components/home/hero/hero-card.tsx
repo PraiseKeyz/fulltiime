@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { MapPin, Goal } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { cn, formatMatchDate } from '@/lib/utils'
 import { latestGoal } from './order-hero-matches'
 import type { Match } from '@/lib/api/domain'
@@ -199,12 +200,9 @@ export function HeroCard({ match }: { match: Match }) {
         </div>
 
         {/* CTA — pinned to the bottom */}
-        <Link
-          href={`/matches/${match.id}`}
-          className="flex items-center justify-center gap-2 rounded-lg bg-primary py-3 text-[13px] font-bold text-primary-foreground hover:bg-primary/90 transition-colors"
-        >
-          View Match
-        </Link>
+        <Button asChild size="sm" className="self-center underline underline-offset-4">
+          <Link href={`/matches/${match.id}`}>View Match</Link>
+        </Button>
       </div>
     </div>
   )

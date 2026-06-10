@@ -40,11 +40,6 @@ export function HeroSection() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const activeId = selectedId ?? ordered[0]?.id ?? null
 
-  // Rich detail (events for the scorer line) for whichever match is selected.
-  // Ignore preview shapes — the hero always shows a real fixture. Written as an
-  // `if` (not a ternary) so TS's control-flow analysis actually narrows `detail`
-  // to `Match` — a compound `&&`/`!(... in ...)` condition inside a ternary
-  // doesn't propagate that narrowing into the consequent expression.
   const { data: detail } = useFixture(activeId ?? '')
   let detailMatch: Match | undefined
   if (detail && !('preview' in detail)) detailMatch = detail
@@ -55,8 +50,8 @@ export function HeroSection() {
   if (!ordered.length || !activeMatch) return null
 
   return (
-    <section className="bg-card border-b border-border">
-      <div className="mx-auto max-w-[1400px] px-4 lg:px-6 py-4 grid gap-4 lg:grid-cols-[260px_1fr_300px]">
+    <section className="">
+      <div className="mx-auto max-w-[1400px] px-4 lg:px-6 grid gap-4 lg:grid-cols-[260px_1fr_300px]">
         {/* Col 1 — match selector */}
         <div className="order-2 lg:order-1 lg:h-[400px]">
           <MatchSelector matches={ordered} activeId={activeId} onSelect={setSelectedId} />

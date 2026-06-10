@@ -15,6 +15,34 @@ const BBC_CONTENT_COMPONENTS = [
   '[data-component="ordered-list-block"]',
 ];
 
+// Blocks that are never article prose — remove before extraction
+const BBC_NOISE_COMPONENTS = [
+  '[data-component="ad-slot"]',
+  '[data-component="include-block"]',
+  '[data-component="social-media-block"]',
+  '[data-component="video-block"]',
+  '[data-component="timestamp-block"]',
+  '[data-component="byline-block"]',
+  '[data-component="contributor-block"]',
+  '[data-component="media-block"]',
+  '[data-component="tag-list"]',
+  '[data-component="related-internet-links"]',
+];
+
+// Paragraphs matching these patterns are metadata, not article prose
+const METADATA_PATTERNS = [
+  /^published\s*\d/i,
+  /^\d+\s+(minutes?|hours?|days?)\s+ago/i,
+  /^by\s+[A-Z][a-z]+\s+[A-Z]/,   // "By Jane Smith" bylines
+  /^share\s+(this|page)/i,
+  /^bbc\s+(sport|news)/i,
+  /^watch\s*:/i,
+  /^listen\s*:/i,
+  /^read\s+more\s*:/i,
+];
+
+const MIN_PARAGRAPH_LENGTH = 60; // characters — below this is almost always a caption or label
+
 const SCRAPE_HEADERS = {
   'User-Agent':      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
   'Accept-Language': 'en-GB,en;q=0.9',
@@ -42,11 +70,14 @@ export class ScraperService {
 
     try {
       const $ = load(html);
+
+      // Extract cover image BEFORE cleaning — image blocks are removed afterward
+      const coverUrl = this.extractCoverImage($);
+
       this.cleanDom($);
 
-      const raw      = this.extractContent($);
-      const content  = raw ? this.sanitize(raw) : '';
-      const coverUrl = this.extractCoverImage($);
+      const raw     = this.extractContent($);
+      const content = raw ? this.sanitize(raw) : '';
 
       if (!content) {
         this.logger.warn(`No content extracted from [${url}]`);
@@ -60,13 +91,13 @@ export class ScraperService {
     }
   }
 
-  // ── Remove noise ─────────────────────────────────────────────────────────────
+  // ── DOM cleanup ───────────────────────────────────────────────────────────────
 
   private cleanDom($: CheerioAPI): void {
-    $('script, style, noscript, iframe, nav, header, footer, aside, [data-component="ad-slot"]').remove();
-    $('[data-component="include-block"]').remove();
-    $('[data-component="social-media-block"]').remove();
-    $('[data-component="video-block"]').remove();
+    $('script, style, noscript, iframe, nav, header, footer, aside').remove();
+    $(BBC_NOISE_COMPONENTS.join(',')).remove();
+    // Remove image blocks AFTER cover image is extracted — captions won't leak in
+    $('[data-component="image-block"]').remove();
   }
 
   // ── Content extraction ────────────────────────────────────────────────────────
@@ -87,17 +118,25 @@ export class ScraperService {
   }
 
   private extractFallback($: CheerioAPI): string {
+    // Walk candidate containers and collect only qualifying <p> tags surgically
     for (const selector of ['article', '[class*="article-body"]', '[class*="story-body"]', 'main']) {
       const el = $(selector).first();
       if (!el.length) continue;
-      const html = el.html()?.trim() ?? '';
-      if (html) return html;
+
+      const parts: string[] = [];
+      el.find('p').each((_, p) => {
+        const text = $(p).text().trim();
+        if (this.isQualifyingText(text)) {
+          parts.push($(p).html()?.trim() ?? '');
+        }
+      });
+
+      if (parts.length >= 3) return parts.map(p => `<p>${p}</p>`).join('\n');
     }
     return '';
   }
 
-  // ── Sanitizer — strips BBC wrapper divs and class/id noise ───────────────────
-  // Takes the raw BBC HTML and outputs clean semantic HTML ready to render.
+  // ── Sanitizer ─────────────────────────────────────────────────────────────────
 
   private sanitize(rawHtml: string): string {
     const $ = load(`<body>${rawHtml}</body>`);
@@ -106,38 +145,54 @@ export class ScraperService {
     $('body').find('p, h2, h3, h4, ul, ol').each((_, el) => {
       const $el = $(el);
 
-      // Avoid double-processing: skip items already inside a list we'll handle
       if ((el.name === 'ul' || el.name === 'ol') && $el.parents('ul, ol').length) return;
       if (el.name === 'p' && $el.parents('li').length) return;
 
       if (el.name === 'ul' || el.name === 'ol') {
         const items = $el.find('li').map((_, li) => {
-          return `<li>${$(li).text().trim()}</li>`;
-        }).get();
+          const text = $(li).text().trim();
+          return text ? `<li>${text}</li>` : null;
+        }).get().filter(Boolean);
         if (items.length) out.push(`<${el.name}>${items.join('')}</${el.name}>`);
+
+      } else if (el.name === 'h2' || el.name === 'h3' || el.name === 'h4') {
+        const text = $el.text().trim();
+        if (text.length > 3) out.push(`<${el.name}>${text}</${el.name}>`);
+
       } else {
-        // Strip all attributes, unwrap meaningless wrappers, keep inline formatting
+        // Paragraph — apply full quality gate
+        const text = $el.text().trim();
+        if (!this.isQualifyingText(text)) return;
+
         this.stripAttribs($, $el);
         $el.find('div, span').each((_, wrapper) => {
           $(wrapper).replaceWith($(wrapper).contents());
         });
+
         const html = $el.html()?.trim() ?? '';
-        if (html && $el.text().trim().length > 5) {
-          out.push(`<${el.name}>${html}</${el.name}>`);
-        }
+        if (html) out.push(`<p>${html}</p>`);
       }
     });
 
     return out.join('\n');
   }
 
+  // A paragraph qualifies as real article prose if it:
+  // - meets the minimum length
+  // - doesn't match any known metadata pattern
+  private isQualifyingText(text: string): boolean {
+    if (text.length < MIN_PARAGRAPH_LENGTH) return false;
+    if (METADATA_PATTERNS.some(re => re.test(text))) return false;
+    return true;
+  }
+
   // Strip every attribute except href (on <a>) and src/alt (on <img>)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private stripAttribs($: CheerioAPI, $el: any): void {
-    $el.find('*').addBack().each((_, node) => {
+  private stripAttribs(_$: CheerioAPI, $el: any): void {
+    $el.find('*').addBack().each((__: unknown, node: any) => {
       if (node.type !== 'tag') return;
-      const keep = node.name === 'a'   ? ['href']           :
-                   node.name === 'img' ? ['src', 'alt']     : [];
+      const keep = node.name === 'a'   ? ['href']       :
+                   node.name === 'img' ? ['src', 'alt'] : [];
       for (const attr of Object.keys(node.attribs)) {
         if (!keep.includes(attr)) delete node.attribs[attr];
       }

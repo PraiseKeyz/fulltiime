@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { Newspaper, Clock, ChevronLeft, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
@@ -149,27 +150,52 @@ function ArticleCard({ article }: { article: Article }) {
 const FILTER_TABS: { label: string; value: ArticleCategory | undefined }[] = [
   { label: 'All',          value: undefined       },
   { label: 'News',         value: 'NEWS'          },
-  { label: 'Analysis',     value: 'ANALYSIS'      },
   { label: 'Transfers',    value: 'TRANSFER'      },
-  { label: 'Match Report', value: 'MATCH_REPORT'  },
 ]
+
+const VALID_CATEGORIES = FILTER_TABS.map(t => t.value).filter(Boolean) as ArticleCategory[]
 
 // ─── Main tab ─────────────────────────────────────────────────────────────────
 
 const LIMIT = 10
 
 export function NewsTab() {
-  const [category, setCategory] = useState<ArticleCategory | undefined>(undefined)
-  const [page, setPage]         = useState(1)
+  const router       = useRouter()
+  const pathname     = usePathname()
+  const searchParams = useSearchParams()
+
+  const urlCategory = searchParams.get('category') as ArticleCategory | null
+  const urlPage     = Number(searchParams.get('page')) || 1
+
+  const [category, setCategory] = useState<ArticleCategory | undefined>(
+    urlCategory && VALID_CATEGORIES.includes(urlCategory) ? urlCategory : undefined,
+  )
+  const [page, setPage]         = useState(urlPage)
   const { data, isLoading }     = useArticles({ category, page, limit: LIMIT })
 
   const articles   = data?.articles ?? []
   const totalPages = data?.pages ?? 1
   const [featured, ...rest] = articles
 
+  const updateUrl = (nextCategory: ArticleCategory | undefined, nextPage: number) => {
+    const params = new URLSearchParams(searchParams.toString())
+    if (nextCategory) params.set('category', nextCategory)
+    else params.delete('category')
+    if (nextPage > 1) params.set('page', String(nextPage))
+    else params.delete('page')
+    const qs = params.toString()
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
+  }
+
   const handleCategory = (value: ArticleCategory | undefined) => {
     setCategory(value)
     setPage(1)
+    updateUrl(value, 1)
+  }
+
+  const goToPage = (value: number) => {
+    setPage(value)
+    updateUrl(category, value)
   }
 
   return (
@@ -217,7 +243,7 @@ export function NewsTab() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setPage(p => p - 1)}
+            onClick={() => goToPage(page - 1)}
             disabled={page <= 1}
             className="h-8 gap-1 text-[12px] text-muted-foreground disabled:opacity-30"
           >
@@ -232,7 +258,7 @@ export function NewsTab() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setPage(p => p + 1)}
+            onClick={() => goToPage(page + 1)}
             disabled={page >= totalPages}
             className="h-8 gap-1 text-[12px] text-muted-foreground disabled:opacity-30"
           >

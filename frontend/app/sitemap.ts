@@ -1,6 +1,7 @@
 import type { MetadataRoute } from 'next'
 import { absoluteUrl } from '@/lib/seo'
-import { NEWS } from '@/data/news'
+import { api } from '@/lib/api/instance'
+import type { PaginatedArticles } from '@/lib/api/domain'
 
 const STATIC_ROUTES: Array<{
   path: string
@@ -19,7 +20,7 @@ const STATIC_ROUTES: Array<{
   { path: '/analytics', changeFrequency: 'weekly', priority: 0.6 },
 ]
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date()
 
   const staticEntries: MetadataRoute.Sitemap = STATIC_ROUTES.map((r) => ({
@@ -29,12 +30,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: r.priority,
   }))
 
-  const newsEntries: MetadataRoute.Sitemap = NEWS.map((article) => ({
-    url: absoluteUrl(`/news/${article.slug}`),
-    lastModified: new Date(article.publishedAt),
-    changeFrequency: 'weekly',
-    priority: 0.6,
-  }))
+  let newsEntries: MetadataRoute.Sitemap = []
+  try {
+    const { articles } = await api.get<PaginatedArticles>('/news', { params: { limit: 200 }, silent: true })
+    newsEntries = articles.map((article) => ({
+      url: absoluteUrl(`/news/${article.slug}`),
+      lastModified: article.published_at ? new Date(article.published_at) : now,
+      changeFrequency: 'weekly',
+      priority: 0.6,
+    }))
+  } catch {
+    // Backend unreachable at build time — sitemap still includes static routes
+  }
 
   return [...staticEntries, ...newsEntries]
 }

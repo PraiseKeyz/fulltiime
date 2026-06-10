@@ -3,11 +3,27 @@ import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '@/prisma/prisma.service.js';
 import { RssService } from './rss.service.js';
 import { ScraperService } from './scraper.service.js';
+import { ArticleCategory } from '../../generated/prisma/index.js';
 
 const BBC_FEED_URL    = 'https://feeds.bbci.co.uk/sport/football/rss.xml';
 const BBC_AUTHOR_EMAIL = 'bbc-sport@system.internal';
 const MAX_PER_RUN     = 10;   // cap new articles per cron run to avoid rate-limiting
 const SCRAPE_DELAY_MS = 2000; // pause between article scrapes
+
+// BBC's RSS feed has no per-item <category> tags, so transfer news is
+// detected from the headline itself.
+const TRANSFER_PATTERNS = [
+  /\btransfer(s|red)?\b/i,
+  /\bsigns?\b/i,
+  /\bsigning\b/i,
+  /\bjoins?\b/i,
+  /\bloan\b/i,
+  /\bmoves? to\b/i,
+  /\bagrees? (a |to )?(deal|move|terms)\b/i,
+  /\bin talks\b/i,
+  /\blinked with\b/i,
+  /\b(undergoes|completes) (a |his |her )?medical\b/i,
+];
 
 @Injectable()
 export class NewsSyncService implements OnModuleInit {
@@ -71,7 +87,7 @@ export class NewsSyncService implements OnModuleInit {
             excerpt:      item.excerpt,
             content:      scraped.content,
             cover_url:    item.thumbnail ?? scraped.coverUrl,
-            category:     'NEWS',
+            category:     this.detectCategory(item.title),
             is_published: true,
             published_at: item.pubDate,
             author_id:    this.bbcAuthorId!,
@@ -149,5 +165,9 @@ export class NewsSyncService implements OnModuleInit {
 
   private delay(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  private detectCategory(title: string): ArticleCategory {
+    return TRANSFER_PATTERNS.some(re => re.test(title)) ? 'TRANSFER' : 'NEWS';
   }
 }

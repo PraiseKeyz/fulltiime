@@ -94,6 +94,13 @@ body {
   color: var(--foreground);
 }
 
+.article-prose h2,
+.article-prose h3,
+.article-prose h4 {
+  font-family: var(--font-sans);
+  letter-spacing: normal;
+}
+
 .article-prose h2 {
   font-size: 1.3rem;
   font-weight: 700;
