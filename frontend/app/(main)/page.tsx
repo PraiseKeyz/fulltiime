@@ -6,9 +6,9 @@ import { NewsSection } from '@/components/home/news-section'
 export default function HomePage() {
   return (
     <>
-      <div className="pt-4">
+      {/* <div className="pt-4">
         <ScoresStrip />
-      </div>
+      </div> */}
       <HeroSection />
       <WorldCupSpotlight />
       <NewsSection />

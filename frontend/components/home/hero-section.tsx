@@ -1,17 +1,17 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useMemo } from 'react'
 import type { Match } from '@/lib/api/domain'
 import { useLeagues } from '@/lib/api/hooks/leagues.hooks'
 import { useTodayFixtures, useFixture, useUpcomingFixtures } from '@/lib/api/hooks/fixtures.hooks'
 import { orderHeroMatches } from './hero/order-hero-matches'
-import { MatchSelector } from './hero/match-selector'
+import { LeaguesPanel } from './hero/leagues-panel'
 import { HeroCard } from './hero/hero-card'
 import { HeroNews } from './hero/hero-news'
 
 function HeroSkeleton() {
   return (
-    <section className="bg-card border-b border-border">
+    <section className="">
       <div className="mx-auto max-w-[1400px] px-4 lg:px-6 py-4 grid gap-4 lg:grid-cols-[260px_1fr_300px]">
         <div className="hidden lg:block h-[400px] rounded-xl bg-background-secondary border border-border animate-pulse" />
         <div className="h-[400px] rounded-xl bg-background-secondary border border-border animate-pulse" />
@@ -37,8 +37,8 @@ export function HeroSection() {
     [pool, leagues],
   )
 
-  const [selectedId, setSelectedId] = useState<string | null>(null)
-  const activeId = selectedId ?? ordered[0]?.id ?? null
+  // Fully automatic — always feature the highest-priority match.
+  const activeId = ordered[0]?.id ?? null
 
   const { data: detail } = useFixture(activeId ?? '')
   let detailMatch: Match | undefined
@@ -52,9 +52,9 @@ export function HeroSection() {
   return (
     <section className="">
       <div className="mx-auto max-w-[1400px] px-4 lg:px-6 grid gap-4 lg:grid-cols-[260px_1fr_300px]">
-        {/* Col 1 — match selector */}
+        {/* Col 1 — leagues navigator */}
         <div className="order-2 lg:order-1 lg:h-[400px]">
-          <MatchSelector matches={ordered} activeId={activeId} onSelect={setSelectedId} />
+          <LeaguesPanel />
         </div>
 
         {/* Col 2 — main hero card */}

@@ -1,5 +1,6 @@
 'use client'
 
+import { Suspense } from 'react'
 import { NewsTab } from './_components/news-tab'
 
 export default function NewsPage() {
@@ -12,7 +13,9 @@ export default function NewsPage() {
       </div>
 
       <div className="mx-auto max-w-[1400px] px-4 lg:px-6 py-6">
-        <NewsTab />
+        <Suspense fallback={null}>
+          <NewsTab />
+        </Suspense>
       </div>
     </>
   )
