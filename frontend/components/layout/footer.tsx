@@ -7,9 +7,8 @@ const COLUMNS = [
     links: [
       { label: 'News', href: '/news' },
       { label: 'Matches', href: '/matches' },
+      { label: 'Fixtures', href: '/fixtures' },
       { label: 'Live', href: '/live' },
-      { label: 'Analytics', href: '/news?tab=analytics' },
-      { label: 'Videos', href: '/videos' },
     ],
   },
   {
@@ -17,19 +16,8 @@ const COLUMNS = [
     links: [
       { label: 'All Leagues', href: '/leagues' },
       { label: 'Standings', href: '/standings' },
-      { label: 'Fixtures', href: '/matches' },
-      { label: 'Live Scores', href: '/live' },
-      { label: 'Transfers', href: '/news?tab=transfers' },
-    ],
-  },
-  {
-    title: 'Company',
-    links: [
-      { label: 'About', href: '/about' },
-      { label: 'Careers', href: '/careers' },
-      { label: 'Advertise', href: '/advertise' },
-      { label: 'Privacy Policy', href: '/privacy' },
-      { label: 'Terms of Service', href: '/terms' },
+      { label: 'Teams', href: '/teams' },
+      { label: 'Transfers', href: '/news?category=TRANSFER' },
     ],
   },
 ]
@@ -38,7 +26,7 @@ export function Footer() {
   return (
     <footer className="bg-card border-t border-border mt-auto">
       <div className="mx-auto max-w-[1400px] px-4 lg:px-6 py-10">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-8">
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <Link href="/" className="flex items-center mb-3">
@@ -60,7 +48,6 @@ export function Footer() {
             </div>
           </div>
 
-      
           {COLUMNS.map((col) => (
             <div key={col.title}>
               <h4 className="text-[11px] font-sans uppercase tracking-widest mb-3 text-foreground">
@@ -79,7 +66,7 @@ export function Footer() {
           ))}
         </div>
 
-        <div className="mt-8 pt-6 border-t border-border flex items-center justify-between gap-4 flex-wrap">
+        <div className="mt-8 pt-6 border-t border-border">
           <p className="text-[11px] text-muted-foreground">
             © {new Date().getFullYear()} FULLTIIME. All rights reserved.
           </p>
