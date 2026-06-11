@@ -41,8 +41,8 @@ const COLUMNS = [
     links: [
       { label: 'All Leagues', href: '/leagues' },
       { label: 'Standings', href: '/standings' },
-      { label: 'Teams', href: '/teams' },
-      { label: 'Transfers', href: '/news?category=TRANSFER' },
+      // { label: 'Teams', href: '/teams' },
+      // { label: 'Transfers', href: '/news?category=TRANSFER' },
     ],
   },
 ]
