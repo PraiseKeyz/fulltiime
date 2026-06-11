@@ -36,6 +36,15 @@ const STATUS_MAP: Record<string, MatchStatus> = {
   'TBD':      MatchStatus.SCHEDULED,
 };
 
+// SportMonks returns datetimes as timezone-less UTC strings, e.g. "2026-06-11 19:00:00".
+// Passing those straight to `new Date()` parses them in the SERVER's local timezone, which
+// shifts every kickoff by the offset whenever the box isn't UTC (e.g. a WAT/+1 dev machine
+// stores kickoffs an hour early). Parse them explicitly as UTC instead.
+function smUtcDate(value: string): Date {
+  const hasZone = /[zZ]|[+-]\d{2}:?\d{2}$/.test(value);
+  return new Date(hasZone ? value : value.replace(' ', 'T') + 'Z');
+}
+
 @Injectable()
 export class SyncService {
   private readonly logger = new Logger(SyncService.name);
@@ -155,8 +164,8 @@ export class SyncService {
                 sportmonks_id: season.id,
                 league_id:     dbLeague.id,
                 year,
-                start_date:    season.starting_at ? new Date(season.starting_at) : new Date(),
-                end_date:      season.ending_at   ? new Date(season.ending_at)   : new Date(),
+                start_date:    season.starting_at ? smUtcDate(season.starting_at) : new Date(),
+                end_date:      season.ending_at   ? smUtcDate(season.ending_at)   : new Date(),
                 is_current:    true,
               },
             });
@@ -359,7 +368,7 @@ export class SyncService {
 
   // ── Sync live scores ──────────────────────────────────────────────────────────
 
-  @Cron('*/5 * * * *') // every 5 minutes
+  @Cron('*/2 * * * *') // every 2 minutes
   async syncLiveScores() {
     try {
       const fixtures = await this.api.getLiveFixtures();
@@ -497,6 +506,7 @@ export class SyncService {
           update: {
             status,
             minute,
+            kickoff_at:     smUtcDate(fixture.starting_at),
             home_score:     homeScore,
             away_score:     awayScore,
             home_ht_score:  htHome,
@@ -511,7 +521,7 @@ export class SyncService {
             season_id:       season.id,
             home_team_id:    homeTeam.id,
             away_team_id:    awayTeam.id,
-            kickoff_at:      new Date(fixture.starting_at),
+            kickoff_at:      smUtcDate(fixture.starting_at),
             status,
             venue:           fixture.venue?.name ?? null,
             venue_id:        venueId,
@@ -728,7 +738,7 @@ export class SyncService {
               is_home:     isHome,
               home_score:  homeScore,
               away_score:  awayScore,
-              kickoff_at:  new Date(f.starting_at),
+              kickoff_at:  smUtcDate(f.starting_at),
               league_name: f.league?.name ?? null,
               league_logo: f.league?.image_path ?? null,
             },

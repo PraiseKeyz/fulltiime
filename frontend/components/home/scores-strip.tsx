@@ -3,7 +3,8 @@
 import { useState, useMemo } from 'react'
 import { ChevronRight } from 'lucide-react'
 import Link from 'next/link'
-import { cn, formatKickoff } from '@/lib/utils'
+import { cn } from '@/lib/utils'
+import { useTimeFormat } from '@/lib/hooks/use-time-format'
 import { useTodayFixtures } from '@/lib/api/hooks/fixtures.hooks'
 import { Button } from '@/components/ui/button'
 import type { Match } from '@/lib/api/domain'
@@ -72,6 +73,7 @@ function TeamRow({
 }
 
 function StatusLabel({ match }: { match: Match }) {
+  const { formatKickoff } = useTimeFormat()
   const { status, minute, kickoff_at } = match
   if (status === 'LIVE') {
     return (

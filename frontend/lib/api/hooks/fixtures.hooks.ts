@@ -48,6 +48,25 @@ export function useFixture(id: string) {
     queryKey: fixtureKeys.detail(id),
     queryFn: () => api.get<Match | MatchPreview>(`/fixtures/${id}`),
     enabled: !!id,
+    // Keep a live page fresh on its own. Poll fast while in play; poll slower
+    // around kick-off so a page opened just before the whistle still catches the
+    // SCHEDULED → LIVE flip (the DB is refreshed by a 2-min cron). Finished games
+    // and fixtures days away don't poll at all.
+    refetchInterval: (query) => {
+      const data = query.state.data
+      if (!data || 'preview' in data) return false
+
+      if (data.status === 'LIVE' || data.status === 'HALFTIME') return 30_000
+
+      if (data.status === 'SCHEDULED') {
+        const kickoff = new Date(data.kickoff_at).getTime()
+        const now = Date.now()
+        const nearKickoff = now >= kickoff - 10 * 60_000 && now <= kickoff + 150 * 60_000
+        if (nearKickoff) return 60_000
+      }
+
+      return false
+    },
   })
 }
 

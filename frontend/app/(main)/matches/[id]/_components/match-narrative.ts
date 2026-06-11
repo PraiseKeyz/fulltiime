@@ -18,10 +18,10 @@ export interface Narrative {
   closing?:   string
 }
 
-export function getTbdNarrative(view: Extract<MatchView, { phase: 'tbd' }>): Narrative {
+export function getTbdNarrative(view: Extract<MatchView, { phase: 'tbd' }>, timeZone: string): Narrative {
   const m = getViewMeta(view)
   const at = m.venueName ? ` at ${m.venueName}` : ''
-  const when = m.date ? `${formatMatchDate(m.date)} · ${formatKickoff(m.date)}` : ''
+  const when = m.date ? `${formatMatchDate(m.date, timeZone)} · ${formatKickoff(m.date, timeZone)}` : ''
   const comp = m.league ? (m.stage ? `${m.league} ${m.stage}` : m.league) : 'this competition'
 
   const highlights: string[] = [`Competition: ${comp}`]

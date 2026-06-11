@@ -12,7 +12,6 @@ export interface User {
   updated_at: string
 }
 
-// Tokens are delivered as httpOnly cookies, never in the response body
 export interface AuthResponse {
   user: User
 }

@@ -1,5 +1,8 @@
+'use client'
+
 import Link from 'next/link'
-import { cn, formatKickoff } from '@/lib/utils'
+import { cn } from '@/lib/utils'
+import { useTimeFormat } from '@/lib/hooks/use-time-format'
 import type { Match } from '@/lib/api/domain'
 
 interface MatchCardProps {
@@ -17,6 +20,7 @@ const STATUS_BADGE: Record<string, { label: string; className: string }> = {
 }
 
 export function MatchCard({ match, className }: MatchCardProps) {
+  const { formatKickoff } = useTimeFormat()
   const badge = STATUS_BADGE[match.status] ?? STATUS_BADGE.SCHEDULED
   const isLive = match.status === 'LIVE' || match.status === 'HALFTIME'
   const hasScore = match.home_score !== null && match.away_score !== null

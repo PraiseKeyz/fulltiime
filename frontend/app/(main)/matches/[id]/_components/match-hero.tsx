@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Clock, MapPin, Flag, Shield } from 'lucide-react'
-import { cn, formatMatchDate, formatKickoff } from '@/lib/utils'
+import { cn } from '@/lib/utils'
+import { useTimeFormat } from '@/lib/hooks/use-time-format'
 import type { MatchView } from './phase'
 import { getViewMeta, type ViewMeta } from './view-meta'
 
@@ -63,6 +64,7 @@ function Badge({ tone, children }: { tone: 'live' | 'muted' | 'amber' | 'red'; c
 // ─── Phase-specific center ───────────────────────────────────────────────────
 
 function HeroCenter({ view, meta }: { view: MatchView; meta: ViewMeta }) {
+  const { formatMatchDate, formatKickoff } = useTimeFormat()
   const countdown = useCountdown(view.phase === 'upcoming' ? meta.date : null)
   const score = `${meta.homeScore} – ${meta.awayScore}`
   const hasScore = meta.homeScore !== null && meta.awayScore !== null
@@ -136,6 +138,7 @@ function HeroCenter({ view, meta }: { view: MatchView; meta: ViewMeta }) {
 // ─── Hero ────────────────────────────────────────────────────────────────────
 
 export function MatchHero({ view }: { view: MatchView }) {
+  const { formatMatchDate, formatKickoff } = useTimeFormat()
   const meta = getViewMeta(view)
   const disrupted = view.phase === 'postponed' || view.phase === 'cancelled'
 

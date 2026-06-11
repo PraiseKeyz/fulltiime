@@ -32,7 +32,6 @@ export default function RegisterPage() {
   return (
     <GuestGuard>
     <div className="min-h-screen grid lg:grid-cols-2">
-      {/* ── Brand hero ─────────────────────────────────────────────── */}
       <div className="relative hidden lg:flex flex-col justify-between overflow-hidden bg-gradient-to-br from-[#04140c] via-[#06371f] to-[#0a5c34] p-12 text-white">
         <div
           className="absolute inset-0 bg-cover bg-center"
@@ -44,10 +43,8 @@ export default function RegisterPage() {
         </Link>
       </div>
 
-      {/* ── Form panel ─────────────────────────────────────────────── */}
       <div className="flex items-center justify-center bg-background px-6 py-12">
         <div className="w-full max-w-sm">
-          {/* Mobile logo */}
           <Link href="/" className="mb-8 flex items-center lg:hidden">
             <img src="/logo.svg" alt="Fulltiime" className="h-7 w-auto" />
           </Link>
@@ -55,12 +52,10 @@ export default function RegisterPage() {
           <h2 className="text-4xl font-black uppercase tracking-tight text-foreground">Create account</h2>
           <p className="mt-2 text-[14px] text-muted-foreground">Sign up in seconds. No credit card required.</p>
 
-          {/* Social */}
           <div className="mt-7">
             <GoogleAuthButton />
           </div>
 
-          {/* Divider */}
           <div className="my-6 flex items-center gap-3">
             <span className="h-px flex-1 bg-border" />
             <span className="text-[11px] font-bold tracking-widest text-muted-foreground">OR</span>

@@ -1,7 +1,8 @@
 'use client'
 
 import { Shield, Swords } from 'lucide-react'
-import { cn, formatMatchDate } from '@/lib/utils'
+import { cn } from '@/lib/utils'
+import { useTimeFormat } from '@/lib/hooks/use-time-format'
 import type { Match, H2HFixture } from '@/lib/api/domain'
 import { useHeadToHead } from '@/lib/api/hooks/fixtures.hooks'
 import { EmptyTab } from './match-tab-content'
@@ -65,6 +66,7 @@ function SummaryBar({ match, played, homeWins, draws, awayWins }: {
 }
 
 function MeetingRow({ m }: { m: H2HFixture }) {
+  const { formatMatchDate } = useTimeFormat()
   const hasScore = m.homeScore != null && m.awayScore != null
   return (
     <div className="flex items-center gap-3 px-4 py-3">

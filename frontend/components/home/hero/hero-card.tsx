@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { MapPin, Goal } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { cn, formatMatchDate } from '@/lib/utils'
+import { cn } from '@/lib/utils'
+import { useTimeFormat } from '@/lib/hooks/use-time-format'
 import { latestGoal } from './order-hero-matches'
 import type { Match } from '@/lib/api/domain'
 
@@ -22,12 +23,18 @@ function leagueAccent(name?: string): string {
   return (name && LEAGUE_ACCENT[name]) || '#3b82f6'
 }
 
-function useCountdown(kickoff: string) {
+// Ticks every second so countdowns and the "kicked off but backend hasn't
+// flipped status to LIVE yet" fallback below stay in sync with real time.
+function useKickoffDiff(kickoff: string) {
   const [diff, setDiff] = useState(new Date(kickoff).getTime() - Date.now())
   useEffect(() => {
     const id = setInterval(() => setDiff(new Date(kickoff).getTime() - Date.now()), 1000)
     return () => clearInterval(id)
   }, [kickoff])
+  return diff
+}
+
+function countdownFromDiff(diff: number) {
   if (diff <= 0) return null
   return {
     d: Math.floor(diff / 86_400_000),
@@ -37,18 +44,26 @@ function useCountdown(kickoff: string) {
   }
 }
 
+// Live status comes from the real backend status only — the 2-min sync keeps it
+// current. We deliberately do NOT infer "live" from the clock: a kickoff time
+// that's delayed, mis-timed, or parsed in the wrong timezone would otherwise show
+// a not-yet-started match as live (which is exactly what happened).
+function isMatchLive(match: Match) {
+  return match.status === 'LIVE' || match.status === 'HALFTIME'
+}
+
 function StatusBadge({ match }: { match: Match }) {
-  const isLive = match.status === 'LIVE' || match.status === 'HALFTIME'
-  if (isLive) {
+  const { formatKickoff } = useTimeFormat()
+  if (isMatchLive(match)) {
     return (
       <span className="flex items-center gap-1.5 text-[11px] font-black text-live uppercase tracking-wide">
         <span className="h-1.5 w-1.5 rounded-full bg-live animate-pulse" />
-        {match.status === 'HALFTIME' ? 'Half Time' : `Live · ${match.minute ?? 0}'`}
+        {match.status === 'HALFTIME' ? 'Half Time' : match.status === 'LIVE' ? `Live · ${match.minute ?? 0}'` : 'Live'}
       </span>
     )
   }
   if (match.status === 'FINISHED') return <span className="text-[11px] font-black text-muted-foreground uppercase tracking-wide">Full Time</span>
-  return <span className="text-[11px] font-black text-muted-foreground uppercase tracking-wide">{formatMatchDate(match.kickoff_at)}</span>
+  return <span className="text-[11px] font-black text-muted-foreground uppercase tracking-wide">{formatKickoff(match.kickoff_at)}</span>
 }
 
 function TeamColumn({ name, logo }: { name: string; logo: string | null }) {
@@ -66,8 +81,9 @@ function TeamColumn({ name, logo }: { name: string; logo: string | null }) {
 }
 
 function CenterDisplay({ match }: { match: Match }) {
-  const countdown = useCountdown(match.kickoff_at)
-  const isLive = match.status === 'LIVE' || match.status === 'HALFTIME'
+  const diff = useKickoffDiff(match.kickoff_at)
+  const countdown = countdownFromDiff(diff)
+  const isLive = isMatchLive(match)
 
   if (match.status === 'SCHEDULED' && countdown) {
     return (

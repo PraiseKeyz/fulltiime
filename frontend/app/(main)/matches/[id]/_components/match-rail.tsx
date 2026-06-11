@@ -2,7 +2,8 @@
 
 import Link from 'next/link'
 import { MapPin, Shield } from 'lucide-react'
-import { cn, formatMatchDate, formatKickoff } from '@/lib/utils'
+import { cn } from '@/lib/utils'
+import { useTimeFormat } from '@/lib/hooks/use-time-format'
 import type { Match, MatchPreview, VenueInfo } from '@/lib/api/domain'
 import { useLiveFixtures, useUpcomingFixtures } from '@/lib/api/hooks/fixtures.hooks'
 import type { MatchView } from './phase'
@@ -79,6 +80,7 @@ function Side({ label, logo }: { label: string; logo: string | null }) {
 }
 
 function RailRow({ f }: { f: RailFixture }) {
+  const { formatMatchDate, formatKickoff } = useTimeFormat()
   const hasScore = f.homeScore != null && f.awayScore != null
   return (
     <Link

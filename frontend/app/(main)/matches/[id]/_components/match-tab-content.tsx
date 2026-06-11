@@ -1,5 +1,6 @@
 import { Goal, RectangleVertical, ArrowLeftRight, ShieldHalf } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useTimeZone } from '@/providers/timezone-provider'
 import type { Match } from '@/lib/api/domain'
 import type { MatchView } from './phase'
 import { getTbdNarrative } from './match-narrative'
@@ -60,8 +61,10 @@ function NarrativeSkeleton() {
 // docs/match-page-spec.md §5) — fetched lazily so the one-time generation
 // latency only ever blocks the very first page view of that phase-text.
 export function NarrativeTab({ view }: { view: MatchView }) {
+  const timeZone = useTimeZone()
+
   if (view.phase === 'tbd') {
-    return <NarrativeBody narrative={getTbdNarrative(view)} />
+    return <NarrativeBody narrative={getTbdNarrative(view, timeZone)} />
   }
 
   const { data, isLoading } = useMatchNarrative(view.match.id)

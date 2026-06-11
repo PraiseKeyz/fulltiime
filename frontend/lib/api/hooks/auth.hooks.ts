@@ -52,8 +52,6 @@ export function useGoogleLogin() {
 export function useLogout() {
   const qc = useQueryClient()
   return useMutation({
-    // Hit the backend so the cookies + stored refresh token are cleared, then
-    // wipe the client cache. Ignore network errors — we log out locally regardless.
     mutationFn: () => api.post('/auth/logout', undefined, { silent: true }).catch(() => null),
     onSettled: () => {
       qc.setQueryData(authKeys.me, null)

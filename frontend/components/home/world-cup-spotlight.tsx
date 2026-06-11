@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from 'react'
 import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
-import { formatKickoff, formatMatchDate } from '@/lib/utils'
+import { useTimeFormat } from '@/lib/hooks/use-time-format'
 import { useLeagues } from '@/lib/api/hooks/leagues.hooks'
 import { useUpcomingFixtures } from '@/lib/api/hooks/fixtures.hooks'
 import type { Match } from '@/lib/api/domain'
@@ -43,6 +43,7 @@ function Divider() {
 }
 
 function FixtureRow({ match }: { match: Match }) {
+  const { formatMatchDate, formatKickoff } = useTimeFormat()
   const home = match.home_team
   const away = match.away_team
   return (

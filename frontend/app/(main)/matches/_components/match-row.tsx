@@ -1,9 +1,11 @@
 import Link from 'next/link'
 import { Clock, ChevronRight } from 'lucide-react'
-import { cn, formatKickoff } from '@/lib/utils'
+import { cn } from '@/lib/utils'
+import { useTimeFormat } from '@/lib/hooks/use-time-format'
 import type { Match } from '@/lib/api/domain'
 
 function StatusBadge({ match }: { match: Match }) {
+  const { formatKickoff } = useTimeFormat()
   const { status, minute, kickoff_at } = match
   if (status === 'LIVE') return (
     <span className="flex items-center gap-1 text-[11px] font-black text-live">

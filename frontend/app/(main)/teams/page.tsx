@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { Users, Search } from 'lucide-react'
-import Link from 'next/link'
 import { useTeams } from '@/lib/api/hooks/teams.hooks'
+import { TeamCard } from './_components/team-card'
+import { TeamGridSkeleton } from './_components/team-grid-skeleton'
 
 export default function TeamsPage() {
   const [search, setSearch] = useState('')
@@ -43,11 +44,7 @@ export default function TeamsPage() {
       {/* Grid */}
       <div className="mx-auto max-w-[1400px] px-4 lg:px-6 py-6">
         {isLoading ? (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
-            {Array.from({ length: 12 }).map((_, i) => (
-              <div key={i} className="h-36 rounded-xl border border-border bg-muted animate-pulse" />
-            ))}
-          </div>
+          <TeamGridSkeleton />
         ) : !teams?.length ? (
           <div className="rounded-xl border border-border bg-card p-12 text-center">
             <p className="text-[13px] text-muted-foreground">
@@ -56,33 +53,7 @@ export default function TeamsPage() {
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
-            {teams.map((team) => (
-              <Link
-                key={team.id}
-                href={`/teams/${team.id}`}
-                className="group flex flex-col items-center gap-3 rounded-xl border border-border bg-card p-5 hover:border-primary/40 hover:bg-muted/30 transition-colors text-center"
-              >
-                {team.logo_url ? (
-                  <img
-                    src={team.logo_url}
-                    alt={team.name}
-                    className="h-14 w-14 object-contain group-hover:scale-110 transition-transform duration-200"
-                  />
-                ) : (
-                  <div className="h-14 w-14 rounded-full bg-muted flex items-center justify-center">
-                    <span className="text-xs font-bold text-muted-foreground">
-                      {team.code ?? team.name.slice(0, 3).toUpperCase()}
-                    </span>
-                  </div>
-                )}
-                <div className="min-w-0">
-                  <p className="font-semibold text-[13px] leading-tight truncate w-full">{team.name}</p>
-                  {team.country && (
-                    <p className="text-[11px] text-muted-foreground mt-0.5 truncate">{team.country.name}</p>
-                  )}
-                </div>
-              </Link>
-            ))}
+            {teams.map((team) => <TeamCard key={team.id} team={team} />)}
           </div>
         )}
       </div>

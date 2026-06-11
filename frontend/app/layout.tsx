@@ -4,6 +4,7 @@ import { Toaster } from 'sonner'
 import { QueryProvider } from '@/providers/query-provider'
 import { ThemeProvider } from '@/providers/theme-provider'
 import { AuthProvider } from '@/providers/auth-provider'
+import { TimeZoneProvider } from '@/providers/timezone-provider'
 import { Analytics } from '@/components/analytics/analytics'
 import { ConsentBanner } from '@/components/analytics/consent-banner'
 import { SITE_URL, SITE_NAME, SITE_DESCRIPTION, DEFAULT_OG_IMAGE, TWITTER_HANDLE } from '@/lib/seo'
@@ -69,9 +70,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeProvider>
           <QueryProvider>
             <AuthProvider>
-              {children}
-              <Toaster position="top-right" richColors closeButton />
-              <ConsentBanner />
+              <TimeZoneProvider>
+                {children}
+                <Toaster position="top-right" richColors closeButton />
+                <ConsentBanner />
+              </TimeZoneProvider>
             </AuthProvider>
           </QueryProvider>
         </ThemeProvider>
