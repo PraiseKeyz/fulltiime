@@ -162,12 +162,14 @@ function TbdRail({ preview }: { preview: MatchPreview }) {
   )
 }
 
-/** LIVE — other games currently in play across the app. */
+/** LIVE — other games currently in play across the app. When this is the only
+ *  live match there are no "others" to show, so fall back to the competition's
+ *  fixtures instead of rendering an empty (i.e. invisible) rail. */
 function LiveRail({ match }: { match: Match }) {
   const { data } = useLiveFixtures()
-  const fixtures: RailFixture[] = (data ?? [])
-    .filter(m => m.id !== match.id)
-    .map(m => toRailFixture(m))
+  const others = (data ?? []).filter(m => m.id !== match.id)
+  if (others.length === 0) return <LeagueRail match={match} />
+  const fixtures: RailFixture[] = others.map(m => toRailFixture(m))
   return <RoundFixturesCard title="Live Now" subtitle="In play" fixtures={fixtures} />
 }
 

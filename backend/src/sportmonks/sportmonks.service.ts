@@ -49,7 +49,6 @@ export class SportMonksService {
   }
 
   // ── Leagues ───────────────────────────────────────────────────────────────────
-  // GET /leagues returns only leagues within your subscription — no filtering needed
 
   // currentSeason is included directly — no separate season API calls needed
   async getMyLeagues() {
@@ -57,7 +56,6 @@ export class SportMonksService {
   }
 
   // ── Teams ─────────────────────────────────────────────────────────────────────
-  // Requires SportMonks season ID (not year)
 
   async getTeamsBySeason(sportmonksSeasonId: number) {
     return this.getAll<any>(`/teams/seasons/${sportmonksSeasonId}`, {
@@ -92,6 +90,13 @@ export class SportMonksService {
     });
   }
 
+  // Commentary feed for a specific fixture, if the SportMonks plan exposes it.
+  async getCommentariesByFixtureId(fixtureId: number) {
+    return this.get<any>(`/commentaries/fixtures/${fixtureId}`, {
+      include: 'fixture;player;relatedPlayer',
+    });
+  }
+
   // /fixtures/teams/{id} endpoint is not available on all plans.
   async getTeamRecentFixtures(teamId: number): Promise<any[]> {
     const to   = new Date().toISOString().split('T')[0];
@@ -116,7 +121,6 @@ export class SportMonksService {
   }
 
   // ── Standings ─────────────────────────────────────────────────────────────────
-  // Requires SportMonks season ID (not year)
 
   async getStandings(sportmonksSeasonId: number) {
     return this.getAll<any>(`/standings/seasons/${sportmonksSeasonId}`, {
@@ -125,14 +129,12 @@ export class SportMonksService {
   }
 
   // ── Brackets (knockout structure) ─────────────────────────────────────────────
-  // Returns { stages: [...], edges: [...] } for a season's knockout phase.
 
   async getBrackets(sportmonksSeasonId: number) {
     return this.get<any>(`/seasons/${sportmonksSeasonId}/brackets`);
   }
 
   // ── Venues ────────────────────────────────────────────────────────────────────
-  // Per-season (avoids paginating the full venue list); include country for name.
 
   async getVenuesBySeason(sportmonksSeasonId: number) {
     return this.getAll<any>(`/venues/seasons/${sportmonksSeasonId}`, {

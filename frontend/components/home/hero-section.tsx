@@ -23,13 +23,15 @@ function HeroSkeleton() {
 
 export function HeroSection() {
   const { data: leagues } = useLeagues()
-  const { data: today, isLoading: todayLoading } = useTodayFixtures()
+  const { data: today, isLoading: todayLoading, isError: todayError } = useTodayFixtures()
 
-  // Off-season fallback: when nothing is on today, populate from upcoming fixtures
-  const needFallback = !todayLoading && (today?.length ?? 0) === 0
+  // Fall back to upcoming ONLY when today genuinely returned no games (off-season).
+  // NEVER on a failed/empty-because-errored load — otherwise a flaky connection
+  // swaps the live match for a non-live "vs" placeholder (looks like a TBD).
+  const todayEmpty = !todayLoading && !todayError && (today?.length ?? 0) === 0
   const { data: upcoming, isLoading: upcomingLoading } = useUpcomingFixtures(undefined, 12)
 
-  const pool = (today && today.length > 0) ? today : (upcoming ?? [])
+  const pool = (today && today.length > 0) ? today : (todayEmpty ? (upcoming ?? []) : (today ?? []))
 
   // Live first, then favorites (none yet), then league hotness — see helper
   const ordered = useMemo(
@@ -46,7 +48,7 @@ export function HeroSection() {
   const activeMatch: Match | undefined =
     detailMatch && detailMatch.id === activeId ? detailMatch : ordered.find(m => m.id === activeId)
 
-  if (todayLoading || (needFallback && upcomingLoading)) return <HeroSkeleton />
+  if (todayLoading || (todayEmpty && upcomingLoading)) return <HeroSkeleton />
   if (!ordered.length || !activeMatch) return null
 
   return (

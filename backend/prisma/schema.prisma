@@ -243,6 +243,7 @@ model Match {
   events         MatchEvent[]
   statistics     MatchStatistic[]
   lineups        MatchLineup[]
+  commentary     MatchCommentary[]
   texts          MatchText[]
 
   created_at     DateTime @default(now())
@@ -293,6 +294,29 @@ model MatchEvent {
   created_at  DateTime @default(now())
 
   @@map("match_events")
+}
+
+// ─── Match Commentary ─────────────────────────────────────────────────────────
+// Play-by-play text feed (SportMonks /commentaries). Append-only — a line never
+// changes once published, so we dedupe on sportmonks_id and only insert new ones.
+
+model MatchCommentary {
+  id            String   @id @default(cuid())
+  sportmonks_id BigInt   @unique
+  match_id      String
+  match         Match    @relation(fields: [match_id], references: [id])
+  minute        Int?
+  extra_minute  Int?
+  comment       String
+  is_goal       Boolean  @default(false)
+  is_important  Boolean  @default(false)
+  order         Int
+  player_name   String?
+
+  created_at    DateTime @default(now())
+
+  @@index([match_id, order])
+  @@map("match_commentaries")
 }
 
 // ─── Match Lineup ──────────────────────────────────────────────────────────────

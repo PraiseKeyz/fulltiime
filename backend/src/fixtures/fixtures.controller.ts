@@ -66,6 +66,11 @@ export class FixturesController {
     return this.fixturesService.getNarrative(id);
   }
 
+  @Get(':id/commentary')
+  getCommentary(@Param('id') id: string) {
+    return this.fixturesService.getCommentary(id);
+  }
+
   // Chat is the one auth-gated route on this otherwise-@Public() controller —
   // the class-level @Public() must be explicitly overridden here, or
   // JwtAuthGuard would see it and wave everyone through. Signed-in only is the

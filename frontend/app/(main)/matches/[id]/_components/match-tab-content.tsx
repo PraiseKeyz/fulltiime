@@ -4,7 +4,7 @@ import { useTimeZone } from '@/providers/timezone-provider'
 import type { Match } from '@/lib/api/domain'
 import type { MatchView } from './phase'
 import { getTbdNarrative } from './match-narrative'
-import { useMatchNarrative } from '@/lib/api/hooks/fixtures.hooks'
+import { useMatchNarrative, useMatchCommentary } from '@/lib/api/hooks/fixtures.hooks'
 import { PitchLineups } from './match-pitch'
 
 // ─── Shared empty state ──────────────────────────────────────────────────────
@@ -201,6 +201,62 @@ export function StatsTab({ match }: { match: Match }) {
     <div className="rounded-xl border border-border bg-card p-5 space-y-4">
       {available.map(r => (
         <StatBar key={r.label} label={r.label} home={r.h ?? 0} away={r.a ?? 0} suffix={r.suffix} />
+      ))}
+    </div>
+  )
+}
+
+// ─── Commentary (play-by-play) ─────────────────────────────────────────────────
+
+function CommentarySkeleton() {
+  return (
+    <div className="rounded-xl border border-border bg-card divide-y divide-border">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <div key={i} className="flex gap-3 px-4 py-3">
+          <div className="h-3 w-6 shrink-0 rounded bg-muted animate-pulse" />
+          <div className="h-3 flex-1 rounded bg-muted animate-pulse" />
+        </div>
+      ))}
+    </div>
+  )
+}
+
+export function CommentaryTab({ match }: { match: Match }) {
+  const isLive = match.status === 'LIVE' || match.status === 'HALFTIME'
+  const { data, isLoading } = useMatchCommentary(match.id, isLive)
+
+  if (isLoading) return <CommentarySkeleton />
+
+  const lines = data ?? []
+  if (lines.length === 0) {
+    return (
+      <EmptyTab
+        text={
+          match.status === 'SCHEDULED'
+            ? 'Live commentary will appear here once the match kicks off.'
+            : 'No commentary available for this match.'
+        }
+      />
+    )
+  }
+
+  return (
+    <div className="rounded-xl border border-border bg-card divide-y divide-border overflow-hidden">
+      {lines.map(line => (
+        <div key={line.id} className={cn('flex gap-3 px-4 py-3', line.is_goal && 'bg-primary/[0.06]')}>
+          <span className="w-9 shrink-0 pt-0.5 text-[12px] font-black tabular-nums text-muted-foreground">
+            {line.minute != null ? `${line.minute}${line.extra_minute ? `+${line.extra_minute}` : ''}'` : ''}
+          </span>
+          {line.is_goal && <Goal className="h-4 w-4 shrink-0 mt-0.5 text-primary" />}
+          <p
+            className={cn(
+              'text-[13px] leading-relaxed',
+              line.is_important ? 'font-semibold text-foreground' : 'text-muted-foreground',
+            )}
+          >
+            {line.comment}
+          </p>
+        </div>
       ))}
     </div>
   )

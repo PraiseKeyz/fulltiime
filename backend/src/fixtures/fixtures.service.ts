@@ -58,6 +58,54 @@ export class FixturesService {
     return { data };
   }
 
+  // ── Commentary (play-by-play) ──────────────────────────────────────────────
+  // Stored by the live sync; this just reads it back. For a finished match that
+  // was never synced live (e.g. games from before this feature shipped), do a
+  // one-time backfill so old match pages aren't blank.
+  async getCommentary(matchId: string) {
+    const match = await this.prisma.match.findFirst({
+      where: /^\d+$/.test(matchId)
+        ? { OR: [{ id: matchId }, { api_football_id: Number(matchId) }] }
+        : { id: matchId },
+      select: { id: true, api_football_id: true },
+    });
+    if (!match) return { data: [] };
+
+    const have = await this.prisma.matchCommentary.count({ where: { match_id: match.id } });
+    if (have === 0 && match.api_football_id) {
+      await this.backfillCommentary(match.id, match.api_football_id);
+    }
+
+    const data = await this.prisma.matchCommentary.findMany({
+      where:   { match_id: match.id },
+      orderBy: { order: 'desc' },
+      select: {
+        id: true, minute: true, extra_minute: true, comment: true,
+        is_goal: true, is_important: true, order: true, player_name: true,
+      },
+    });
+    return { data };
+  }
+
+  private async backfillCommentary(matchId: string, apiId: number) {
+    const raw = await this.sportmonks.getCommentariesByFixtureId(apiId);
+    if (!raw?.length) return;
+    await this.prisma.matchCommentary.createMany({
+      data: (raw as any[]).map((c) => ({
+        sportmonks_id: BigInt(c.id),
+        match_id:      matchId,
+        minute:        c.minute ?? null,
+        extra_minute:  c.extra_minute ?? null,
+        comment:       c.comment ?? '',
+        is_goal:       !!c.is_goal,
+        is_important:  !!c.is_important,
+        order:         c.order ?? 0,
+        player_name:   c.player?.display_name ?? c.player?.name ?? null,
+      })),
+      skipDuplicates: true,
+    });
+  }
+
   // ── Chat (signed-in only — see docs §9) ────────────────────────────────────
 
   async chat(matchId: string, messages: ChatMessage[]) {

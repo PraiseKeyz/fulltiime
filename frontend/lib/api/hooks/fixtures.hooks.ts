@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { api } from '../instance'
-import type { Match, MatchStatus, FeaturedMatchResponse, Bracket, MatchPreview, H2HResponse, MatchNarrative, ChatMessage, ChatReply, MatchForm } from '../domain'
+import type { Match, MatchStatus, FeaturedMatchResponse, Bracket, MatchPreview, H2HResponse, MatchNarrative, ChatMessage, ChatReply, MatchForm, CommentaryLine } from '../domain'
 
 export const fixtureKeys = {
   all: ['fixtures'] as const,
@@ -100,6 +100,17 @@ export function useMatchForm(matchId: string) {
     enabled:  !!matchId,
     staleTime: 60 * 60_000,
     retry:    false,
+  })
+}
+
+// Commentary is stored server-side; poll while the match is live, otherwise it's
+// static (a finished game's feed never changes).
+export function useMatchCommentary(matchId: string, live: boolean) {
+  return useQuery({
+    queryKey: ['fixtures', 'commentary', matchId],
+    queryFn:  () => api.get<CommentaryLine[]>(`/fixtures/${matchId}/commentary`, { silent: true }),
+    enabled:  !!matchId,
+    refetchInterval: live ? 20_000 : false,
   })
 }
 

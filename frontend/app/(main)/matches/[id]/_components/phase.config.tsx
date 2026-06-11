@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import type { Match } from '@/lib/api/domain'
 import type { MatchView } from './phase'
 import {
-  SummaryTab, LineupsTab, StatsTab, availableStatRows,
+  SummaryTab, LineupsTab, StatsTab, CommentaryTab, availableStatRows,
 } from './match-tab-content'
 import { H2HTab } from './match-h2h'
 import { ChatTab } from './match-chat'
@@ -77,6 +77,7 @@ export function getPhasePlan(view: MatchView): PhasePlan {
       const m = view.match
       const tabs: PhaseTab[] = [
         { key: 'summary', label: 'Summary', render: () => <SummaryTab match={m} /> },
+        { key: 'commentary', label: 'Commentary', render: () => <CommentaryTab match={m} /> },
       ]
       if (hasLineups(m)) {
         tabs.push({ key: 'lineups', label: 'Line-ups', render: () => <LineupsTab match={m} /> })

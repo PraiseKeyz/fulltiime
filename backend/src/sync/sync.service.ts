@@ -21,19 +21,31 @@ const SHORT_NAMES: Record<number, string> = {
   1107: 'CAF CL',
 };
 
-// SportMonks state short codes → our MatchStatus
+// SportMonks state `short_name` codes → our MatchStatus.
+// In-play halves come through as '1st'/'2nd' (NOT 'LIVE'), which is why a live
+// match would otherwise map to SCHEDULED. Map every in-play code to LIVE.
 const STATUS_MAP: Record<string, MatchStatus> = {
-  'LIVE':     MatchStatus.LIVE,
-  'HT':       MatchStatus.HALFTIME,
-  'ET':       MatchStatus.LIVE,
-  'PEN_LIVE': MatchStatus.LIVE,
-  'FT':       MatchStatus.FINISHED,
-  'AET':      MatchStatus.FINISHED,
-  'FT_PEN':   MatchStatus.FINISHED,
-  'POSTP':    MatchStatus.POSTPONED,
-  'CANCL':    MatchStatus.CANCELLED,
-  'NS':       MatchStatus.SCHEDULED,
-  'TBD':      MatchStatus.SCHEDULED,
+  // In play
+  'INPLAY':    MatchStatus.LIVE,
+  'LIVE':      MatchStatus.LIVE,
+  '1st':       MatchStatus.LIVE,
+  '2nd':       MatchStatus.LIVE,
+  'ET':        MatchStatus.LIVE,
+  'BREAK':     MatchStatus.LIVE,
+  'ET_BREAK':  MatchStatus.LIVE,
+  'PEN_BREAK': MatchStatus.LIVE,
+  'PEN_LIVE':  MatchStatus.LIVE,
+  'HT':        MatchStatus.HALFTIME,
+  // Finished
+  'FT':        MatchStatus.FINISHED,
+  'AET':       MatchStatus.FINISHED,
+  'FT_PEN':    MatchStatus.FINISHED,
+  // Not started / disrupted
+  'NS':        MatchStatus.SCHEDULED,
+  'TBA':       MatchStatus.SCHEDULED,
+  'TBD':       MatchStatus.SCHEDULED,
+  'POSTP':     MatchStatus.POSTPONED,
+  'CANCL':     MatchStatus.CANCELLED,
 };
 
 // SportMonks returns datetimes as timezone-less UTC strings, e.g. "2026-06-11 19:00:00".
@@ -375,10 +387,50 @@ export class SyncService {
       if (!fixtures?.length) return;
 
       this.logger.log(`Updating ${fixtures.length} live fixtures`);
-      // Live payload already carries events, lineups and stats via includes
-      await this.upsertFixtures(fixtures);
+      // Live payload already carries events, lineups and stats via includes.
+      // fromLiveFeed=true lets upsert bridge SportMonks' "still NS after kickoff" lag.
+      await this.upsertFixtures(fixtures, true);
+
+      // Commentary is a separate endpoint (not in the bulk payload) — fetch and
+      // append for each live fixture so it's stored like any other game data.
+      for (const f of fixtures) {
+        await this.syncCommentary(f.id);
+      }
     } catch (err: any) {
       this.logger.error(`Live scores sync failed: ${err.message}`);
+    }
+  }
+
+  // ── Sync commentary (play-by-play text feed) ────────────────────────────────
+  // Append-only: a commentary line never changes once published, so we dedupe on
+  // sportmonks_id and only insert what's new.
+  async syncCommentary(apiFixtureId: number) {
+    try {
+      const match = await this.prisma.match.findUnique({
+        where:  { api_football_id: apiFixtureId },
+        select: { id: true },
+      });
+      if (!match) return;
+
+      const raw = await this.api.getCommentariesByFixtureId(apiFixtureId);
+      if (!raw?.length) return;
+
+      await this.prisma.matchCommentary.createMany({
+        data: (raw as any[]).map((c) => ({
+          sportmonks_id: BigInt(c.id),
+          match_id:      match.id,
+          minute:        c.minute ?? null,
+          extra_minute:  c.extra_minute ?? null,
+          comment:       c.comment ?? '',
+          is_goal:       !!c.is_goal,
+          is_important:  !!c.is_important,
+          order:         c.order ?? 0,
+          player_name:   c.player?.display_name ?? c.player?.name ?? null,
+        })),
+        skipDuplicates: true,
+      });
+    } catch (err: any) {
+      this.logger.error(`Failed syncing commentary for fixture ${apiFixtureId}: ${err.message}`);
     }
   }
 
@@ -467,7 +519,7 @@ export class SyncService {
 
   // ── Upsert fixtures ───────────────────────────────────────────────────────────
 
-  private async upsertFixtures(fixtures: any[]) {
+  private async upsertFixtures(fixtures: any[], fromLiveFeed = false) {
     for (const fixture of fixtures) {
       try {
         const { home, away } = this.getParticipants(fixture);
@@ -487,9 +539,21 @@ export class SyncService {
         if (!season) continue;
 
         const stateCode = fixture.state?.short_name ?? fixture.state?.state ?? 'NS';
-        const status    = this.toMatchStatus(stateCode);
+        let status      = this.toMatchStatus(stateCode);
         const { homeScore, awayScore, htHome, htAway } = this.getCurrentScore(fixture);
-        const minute    = fixture.periods?.find((p: any) => p.ticking)?.minutes ?? null;
+        let minute      = fixture.periods?.find((p: any) => p.ticking)?.minutes ?? null;
+
+        // Bridge SportMonks' live-feed lag: a fixture can sit in /livescores/inplay
+        // with its state still "NS" for minutes after the real kickoff. If it's in the
+        // live feed and kickoff has passed (within a sane window), treat it as live so
+        // the UI doesn't stall on "upcoming". Real state/minute override once they land.
+        if (fromLiveFeed && status === MatchStatus.SCHEDULED) {
+          const elapsedMs = Date.now() - smUtcDate(fixture.starting_at).getTime();
+          if (elapsedMs >= 0 && elapsedMs <= 3 * 60 * 60 * 1000) {
+            status = MatchStatus.LIVE;
+            minute = minute ?? Math.max(1, Math.floor(elapsedMs / 60_000));
+          }
+        }
 
         // Formations — match by participant id
         const formations = fixture.formations ?? [];

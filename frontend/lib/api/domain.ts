@@ -141,6 +141,18 @@ export interface Match {
   statistics?: MatchStatistic[]
 }
 
+// Play-by-play commentary line (SportMonks /commentaries), newest first.
+export interface CommentaryLine {
+  id:           string
+  minute:       number | null
+  extra_minute: number | null
+  comment:      string
+  is_goal:      boolean
+  is_important: boolean
+  order:        number
+  player_name:  string | null
+}
+
 export interface FeaturedMatchResponse {
   match: Match
   type: 'live' | 'upcoming' | 'finished'

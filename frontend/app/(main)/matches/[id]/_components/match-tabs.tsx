@@ -47,14 +47,14 @@ export function MatchTabs({ view }: { view: MatchView }) {
   return (
     <div>
       {showBar && (
-        <div className="flex gap-1 border-b border-border mb-6">
+        <div className="flex gap-1 border-b border-border mb-6 overflow-x-auto scrollbar-none">
           {plan.tabs.map(t => (
             <Button
               key={t.key}
               onClick={() => selectTab(t.key)}
               variant="ghost"
               className={cn(
-                'h-auto rounded-none border-b-2 -mb-px px-5 py-2.5 text-[13px] hover:bg-transparent',
+                'h-auto shrink-0 rounded-none border-b-2 -mb-px px-4 sm:px-5 py-2.5 text-[13px] hover:bg-transparent',
                 t.key === active
                   ? 'border-primary text-primary'
                   : 'border-transparent text-muted-foreground hover:text-foreground',
