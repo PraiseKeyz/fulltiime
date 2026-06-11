@@ -50,10 +50,10 @@ function FeaturedCard({ article }: { article: Article }) {
     >
       <Cover src={article.cover_url} className="h-48 sm:h-full min-h-[200px]" />
       <div className="p-5 flex flex-col justify-center gap-2.5">
-        <span className="text-[10px] font-bold uppercase tracking-wider capitalize" style={{ color: CATEGORY_COLOR[article.category] ?? '#888' }}>
+        <span className="text-[10px] font-bold tracking-wider capitalize" style={{ color: CATEGORY_COLOR[article.category] ?? '#888' }}>
           {article.category.replace(/_/g, ' ').toLowerCase()}
         </span>
-        <h3 className="text-lg font-black leading-snug group-hover:text-primary transition-colors line-clamp-3">
+        <h3 className="text-lg font-semibold leading-snug group-hover:text-primary transition-colors line-clamp-3">
           {article.title}
         </h3>
         {article.excerpt && (
@@ -79,7 +79,7 @@ function CompactCard({ article }: { article: Article }) {
     >
       <Cover src={article.cover_url} className="h-16 w-16 rounded-lg shrink-0" />
       <div className="min-w-0 flex flex-col gap-1">
-        <span className="text-[10px] font-bold uppercase tracking-wider capitalize" style={{ color: CATEGORY_COLOR[article.category] ?? '#888' }}>
+        <span className="text-[10px] font-semibold tracking-wider capitalize" style={{ color: CATEGORY_COLOR[article.category] ?? '#888' }}>
           {article.category.replace(/_/g, ' ').toLowerCase()}
         </span>
         <h4 className="text-[13px] font-bold leading-snug group-hover:text-primary transition-colors line-clamp-2">
@@ -122,7 +122,7 @@ function CompactSkeleton() {
 }
 
 export function NewsSection() {
-  const { data, isLoading } = useArticles({ limit: 5 })
+  const { data, isLoading } = useArticles({ limit: 5, category: 'TRANSFER' })
   const articles = data?.articles ?? []
   const [featured, ...rest] = articles
 
@@ -132,11 +132,10 @@ export function NewsSection() {
     <section className="py-8 bg-background-secondary">
       <div className="mx-auto max-w-[1400px] px-4 lg:px-6">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="flex items-center gap-2 text-lg font-black uppercase tracking-tight">
-            <Newspaper className="h-5 w-5 text-primary" />
-            Latest News
+          <h2 className="text-lg font-black tracking-tight">
+            Transfer News
           </h2>
-          <Link href="/news" className="flex items-center gap-1 text-[12px] font-bold text-primary hover:underline">
+          <Link href="/news?category=TRANSFER" className="flex items-center gap-1 text-[12px] font-bold text-primary hover:underline">
             All News <ChevronRight className="h-3.5 w-3.5" />
           </Link>
         </div>

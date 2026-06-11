@@ -38,6 +38,17 @@ export function useLogin() {
   })
 }
 
+export function useGoogleLogin() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (credential: string) =>
+      api.post<AuthResponse>('/auth/google', { credential }, { successMessage: 'Welcome back!' }),
+    onSuccess: (data) => {
+      qc.setQueryData(authKeys.me, data.user)
+    },
+  })
+}
+
 export function useLogout() {
   const qc = useQueryClient()
   return useMutation({

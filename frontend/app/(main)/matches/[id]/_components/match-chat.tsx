@@ -10,12 +10,6 @@ import { useMe } from '@/lib/api/hooks/auth.hooks'
 import { useMatchChat } from '@/lib/api/hooks/fixtures.hooks'
 
 // ─── Match chat ──────────────────────────────────────────────────────────────
-//
-// Signed-in only (spec §9 — cost/abuse control via auth). Stateless: the
-// client holds the conversation and re-sends it each turn; the server grounds
-// every reply in real match facts (+ whatever LLM-authored text already exists
-// for this fixture). Lives in its own file for the same reason H2H does — it
-// owns its data flow and a meaningfully separate UI.
 
 function SignInPrompt({ match }: { match: Match }) {
   return (
@@ -85,7 +79,7 @@ export function ChatTab({ match }: { match: Match }) {
     <div className="rounded-xl border border-border bg-card overflow-hidden flex flex-col">
       <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
         <MessageCircle className="h-4 w-4 text-muted-foreground" />
-        <p className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">
+        <p className="text-[11px] tracking-tight text-muted-foreground">
           Ask about this match
         </p>
       </div>

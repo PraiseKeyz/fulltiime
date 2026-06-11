@@ -7,6 +7,7 @@ import type { Request, Response } from 'express';
 import { AuthService } from './auth.service.js';
 import { RegisterDto } from './dto/register.dto.js';
 import { LoginDto } from './dto/login.dto.js';
+import { GoogleLoginDto } from './dto/google-login.dto.js';
 import { VerifyEmailDto } from './dto/verify-email.dto.js';
 import { ResendVerificationDto } from './dto/resend-verification.dto.js';
 import { ForgotPasswordDto } from './dto/forgot-password.dto.js';
@@ -71,6 +72,24 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const { user, access_token, refresh_token } = await this.authService.login(dto);
+    res.cookie(ACCESS_COOKIE, access_token, ACCESS_COOKIE_OPTIONS);
+    res.cookie(REFRESH_COOKIE, refresh_token, REFRESH_COOKIE_OPTIONS);
+    return {
+      data:    { user },
+      message: 'Login successful',
+    };
+  }
+
+  // ── Google sign-in ────────────────────────────────────────────────────────────
+
+  @Public()
+  @Post('google')
+  @HttpCode(200)
+  async google(
+    @Body() dto: GoogleLoginDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const { user, access_token, refresh_token } = await this.authService.loginWithGoogle(dto.credential);
     res.cookie(ACCESS_COOKIE, access_token, ACCESS_COOKIE_OPTIONS);
     res.cookie(REFRESH_COOKIE, refresh_token, REFRESH_COOKIE_OPTIONS);
     return {

@@ -9,6 +9,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as argon2 from 'argon2';
 import { randomBytes, createHash } from 'node:crypto';
+import { OAuth2Client } from 'google-auth-library';
 import { PrismaService } from '@/prisma/prisma.service.js';
 import { SafeUserSelect } from '@/common/constants/user-select.constant.js';
 import { EmailService } from '../email/email.service.js';
@@ -21,13 +22,16 @@ const RESET_TOKEN_TTL_MS  = 60 * 60 * 1000;      // 1 hour
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
+  private readonly googleClient: OAuth2Client;
 
   constructor(
     private readonly prisma:      PrismaService,
     private readonly jwtService:  JwtService,
     private readonly config:      ConfigService,
     private readonly emailService: EmailService,
-  ) {}
+  ) {
+    this.googleClient = new OAuth2Client(this.config.get<string>('GOOGLE_CLIENT_ID'));
+  }
 
   // ── Register ──────────────────────────────────────────────────────────────────
 
@@ -160,10 +164,57 @@ export class AuthService {
       where: { OR: [{ email: dto.identifier }, { username: dto.identifier }] },
     });
 
-    if (!user) throw new UnauthorizedException('Invalid credentials');
+    if (!user || !user.password_hash) throw new UnauthorizedException('Invalid credentials');
 
     const valid = await argon2.verify(user.password_hash, dto.password);
     if (!valid) throw new UnauthorizedException('Invalid credentials');
+
+    const safeUser = await this.prisma.user.findUnique({
+      where:  { id: user.id },
+      select: SafeUserSelect,
+    });
+
+    const { access_token, refresh_token } = await this.signAndStoreTokens(user.id, user.email);
+    return { user: safeUser, access_token, refresh_token };
+  }
+
+  // ── Google sign-in ───────────────────────────────────────────────────────────
+
+  async loginWithGoogle(credential: string) {
+    const audience = this.config.get<string>('GOOGLE_CLIENT_ID');
+
+    let payload: { sub: string; email?: string; name?: string; picture?: string; email_verified?: boolean };
+    try {
+      const ticket = await this.googleClient.verifyIdToken({ idToken: credential, audience });
+      const verified = ticket.getPayload();
+      if (!verified?.email) throw new Error('Missing email in Google token');
+      payload = verified;
+    } catch {
+      throw new UnauthorizedException('Invalid Google credential');
+    }
+
+    let user = await this.prisma.user.findFirst({
+      where: { OR: [{ google_id: payload.sub }, { email: payload.email }] },
+    });
+
+    if (!user) {
+      user = await this.prisma.user.create({
+        data: {
+          email:       payload.email!,
+          username:    await this.uniqueUsernameFromEmail(payload.email!),
+          full_name:   payload.name,
+          avatar_url:  payload.picture,
+          google_id:   payload.sub,
+          is_verified: payload.email_verified ?? true,
+        },
+      });
+    } else if (!user.google_id) {
+      // Link the Google account to the existing email/password account
+      user = await this.prisma.user.update({
+        where: { id: user.id },
+        data:  { google_id: payload.sub, is_verified: true },
+      });
+    }
 
     const safeUser = await this.prisma.user.findUnique({
       where:  { id: user.id },
@@ -236,6 +287,18 @@ export class AuthService {
     } catch (error: any) {
       this.logger.warn(`Verification email failed for ${email}: ${error?.message ?? 'unknown'}`);
     }
+  }
+
+  // Derive a username from an email's local-part, appending a random suffix
+  // if it's already taken so Google sign-ups never collide.
+  private async uniqueUsernameFromEmail(email: string): Promise<string> {
+    const base = email.split('@')[0].toLowerCase().replace(/[^a-z0-9_]/g, '') || 'fan';
+    const candidate = base.length >= 3 ? base : `${base}fan`;
+
+    const existing = await this.prisma.user.findUnique({ where: { username: candidate } });
+    if (!existing) return candidate;
+
+    return `${candidate}${randomBytes(3).toString('hex')}`;
   }
 
   // High-entropy token sent in the email link; only its sha256 hash is stored.

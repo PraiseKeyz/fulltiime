@@ -38,6 +38,10 @@ jobs:
           build-args: |
             NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}
             NEXT_PUBLIC_FRONTEND_URL=${{ secrets.NEXT_PUBLIC_FRONTEND_URL }}
+            NEXT_PUBLIC_GA_ID=${{ secrets.NEXT_PUBLIC_GA_ID }}
+            NEXT_PUBLIC_GOOGLE_CLIENT_ID=${{ secrets.NEXT_PUBLIC_GOOGLE_CLIENT_ID }}
+            NEXT_PUBLIC_SITE_URL=${{ secrets.NEXT_PUBLIC_SITE_URL }}
+            NEXT_PUBLIC_COMING_SOON_ENABLED=false
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -76,6 +80,7 @@ jobs:
             export JWT_SECRET="${{ secrets.JWT_SECRET }}"
             export JWT_REFRESH_SECRET="${{ secrets.JWT_REFRESH_SECRET }}"
             export FRONTEND_URL="${{ secrets.FRONTEND_URL }}"
+            export GOOGLE_CLIENT_ID="${{ secrets.GOOGLE_CLIENT_ID }}"
             export SPORTMONKS_API_KEY="${{ secrets.SPORTMONKS_API_KEY }}"
 
             # Docker Hub

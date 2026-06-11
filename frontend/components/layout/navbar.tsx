@@ -7,6 +7,7 @@ import { useTheme } from 'next-themes'
 import { Sun, Moon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { UserMenu } from '@/components/layout/user-menu'
 
 const NAV_LINKS = [
   { href: '/matches', label: 'Matches' },
@@ -27,13 +28,13 @@ export function Navbar() {
   }, [])
 
   return (
-    <header className="sticky top-0 z-50 mb-6">
+    <header className="sticky top-0 z-50 mb-12">
       <div
         className={cn(
           'transition-all duration-300 ease-out',
           scrolled
             ? 'mx-0 mt-0 max-w-none rounded-none border-0 border-b border-border bg-card shadow-none'
-            : 'mx-4 mt-3 max-w-[900px] rounded-2xl border border-border bg-card/60 shadow-lg shadow-black/10 backdrop-blur-xl sm:mx-auto',
+            : 'mx-4 mt-3 max-w-[760px] rounded-2xl border border-border bg-card/60 shadow-lg shadow-black/10 backdrop-blur-xl sm:mx-auto',
         )}
       >
         <div className="mx-auto max-w-[1400px] px-4 lg:px-6">
@@ -90,14 +91,7 @@ export function Navbar() {
 
               <div className="h-6 w-px bg-border mx-1" />
 
-              <Button
-                asChild
-                variant="ghost"
-                size="sm"
-                className="h-auto rounded-none border-b border-foreground! px-0 py-1 text-[13px] hover:bg-transparent hover:text-primary hover:border-primary!"
-              >
-                <Link href="/login">Sign In</Link>
-              </Button>
+              <UserMenu />
             </div>
           </div>
         </div>

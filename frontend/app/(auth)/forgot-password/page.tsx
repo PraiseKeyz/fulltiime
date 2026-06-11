@@ -25,12 +25,12 @@ export default function ForgotPasswordPage() {
     return (
       <AuthShell title="Check your email">
         <div className="flex flex-col items-center text-center">
-          <CheckCircle2 className="h-12 w-12 text-green-600" />
-          <p className="mt-4 text-[14px] text-zinc-600">
-            If an account exists for <span className="font-semibold text-zinc-900">{email}</span>, we’ve sent a
+          <CheckCircle2 className="h-12 w-12 text-primary" />
+          <p className="mt-4 text-[14px] text-muted-foreground">
+            If an account exists for <span className="font-semibold text-foreground">{email}</span>, we’ve sent a
             password reset link. It expires in 1 hour.
           </p>
-          <Link href="/login" className="mt-6 text-[13px] font-bold text-green-600 hover:underline">
+          <Link href="/login" className="mt-6 text-[13px] font-bold text-primary hover:underline">
             Back to sign in
           </Link>
         </div>
@@ -42,9 +42,9 @@ export default function ForgotPasswordPage() {
     <AuthShell title="Forgot password?" subtitle="Enter your email and we’ll send you a reset link.">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-zinc-700">Email</label>
+          <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Email</label>
           <div className="relative">
-            <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+            <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
               type="email"
               required
@@ -52,7 +52,7 @@ export default function ForgotPasswordPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className={authInput}
-              placeholder="you@fulltiime.com"
+              placeholder="you@example.com"
             />
           </div>
         </div>
@@ -62,15 +62,15 @@ export default function ForgotPasswordPage() {
           variant="primary"
           size="lg"
           disabled={isPending}
-          className="w-full font-black uppercase tracking-wide"
+          className="w-full text-foreground uppercase tracking-wide"
         >
           {isPending ? 'Sending…' : 'Send reset link'}
         </Button>
       </form>
 
-      <p className="mt-6 text-center text-[13px] text-zinc-500">
+      <p className="mt-6 text-center text-[13px] text-muted-foreground">
         Remembered it?{' '}
-        <Link href="/login" className="font-bold text-green-600 hover:underline">
+        <Link href="/login" className="font-bold text-primary hover:underline">
           Sign in
         </Link>
       </p>

@@ -1,9 +1,10 @@
 import { Goal, RectangleVertical, ArrowLeftRight, ShieldHalf } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import type { Match, MatchLineup } from '@/lib/api/domain'
+import type { Match } from '@/lib/api/domain'
 import type { MatchView } from './phase'
 import { getTbdNarrative } from './match-narrative'
 import { useMatchNarrative } from '@/lib/api/hooks/fixtures.hooks'
+import { PitchLineups } from './match-pitch'
 
 // ─── Shared empty state ──────────────────────────────────────────────────────
 
@@ -126,52 +127,6 @@ export function SummaryTab({ match }: { match: Match }) {
 
 // ─── Line-ups ────────────────────────────────────────────────────────────────
 
-function PlayerRow({ player }: { player: MatchLineup }) {
-  return (
-    <div className="flex items-center gap-2.5 py-1.5">
-      <span className="text-[11px] font-bold tabular-nums text-muted-foreground w-5 text-center shrink-0">
-        {player.jersey_number ?? '–'}
-      </span>
-      {player.player_photo
-        ? <img src={player.player_photo} alt="" className="h-6 w-6 rounded-full object-cover shrink-0" />
-        : <div className="h-6 w-6 rounded-full bg-muted shrink-0" />
-      }
-      <span className="text-[13px] font-medium truncate">{player.player_name}</span>
-      {player.position && (
-        <span className="ml-auto text-[10px] font-bold text-muted-foreground uppercase shrink-0">{player.position}</span>
-      )}
-    </div>
-  )
-}
-
-function TeamLineup({
-  teamName, logo, formation, starters, bench,
-}: {
-  teamName: string; logo: string | null; formation: string | null
-  starters: MatchLineup[]; bench: MatchLineup[]
-}) {
-  return (
-    <div className="rounded-xl border border-border bg-card overflow-hidden">
-      <div className="flex items-center gap-2.5 px-4 py-3 border-b border-border bg-muted/30">
-        {logo && <img src={logo} alt="" className="h-5 w-5 object-contain" />}
-        <span className="text-[13px] font-black">{teamName}</span>
-        {formation && (
-          <span className="ml-auto text-[11px] font-bold text-muted-foreground">{formation}</span>
-        )}
-      </div>
-      <div className="px-4 py-2">
-        {starters.map(p => <PlayerRow key={p.id} player={p} />)}
-      </div>
-      {bench.length > 0 && (
-        <div className="px-4 py-2 border-t border-border">
-          <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">Substitutes</p>
-          {bench.map(p => <PlayerRow key={p.id} player={p} />)}
-        </div>
-      )}
-    </div>
-  )
-}
-
 export function LineupsTab({ match }: { match: Match }) {
   const lineups = match.lineups ?? []
 
@@ -182,27 +137,7 @@ export function LineupsTab({ match }: { match: Match }) {
     return <EmptyTab text={text} />
   }
 
-  const homeLineups = lineups.filter(l => l.team_id === match.home_team.id)
-  const awayLineups = lineups.filter(l => l.team_id === match.away_team.id)
-
-  return (
-    <div className="grid md:grid-cols-2 gap-4">
-      <TeamLineup
-        teamName={match.home_team.name}
-        logo={match.home_team.logo_url}
-        formation={match.home_formation}
-        starters={homeLineups.filter(l => l.is_starting)}
-        bench={homeLineups.filter(l => !l.is_starting)}
-      />
-      <TeamLineup
-        teamName={match.away_team.name}
-        logo={match.away_team.logo_url}
-        formation={match.away_formation}
-        starters={awayLineups.filter(l => l.is_starting)}
-        bench={awayLineups.filter(l => !l.is_starting)}
-      />
-    </div>
-  )
+  return <PitchLineups match={match} />
 }
 
 // ─── Stats ───────────────────────────────────────────────────────────────────

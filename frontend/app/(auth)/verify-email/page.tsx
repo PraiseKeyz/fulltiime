@@ -17,7 +17,7 @@ function ResendForm() {
 
   if (sent) {
     return (
-      <p className="mt-6 text-center text-[13px] text-zinc-600">
+      <p className="mt-6 text-center text-[13px] text-muted-foreground">
         If an unverified account exists for that email, a fresh verification link is on its way.
       </p>
     )
@@ -32,14 +32,14 @@ function ResendForm() {
       className="mt-6 space-y-3"
     >
       <div className="relative">
-        <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+        <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input
           type="email"
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           className={authInput}
-          placeholder="you@fulltiime.com"
+          placeholder="you@example.com"
         />
       </div>
       <Button
@@ -80,8 +80,8 @@ function VerifyEmailInner() {
     return (
       <AuthShell title="Verifying…">
         <div className="flex flex-col items-center text-center">
-          <Loader2 className="h-12 w-12 animate-spin text-green-600" />
-          <p className="mt-4 text-[14px] text-zinc-600">Confirming your email address.</p>
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+          <p className="mt-4 text-[14px] text-muted-foreground">Confirming your email address.</p>
         </div>
       </AuthShell>
     )
@@ -91,11 +91,11 @@ function VerifyEmailInner() {
     return (
       <AuthShell title="Email verified">
         <div className="flex flex-col items-center text-center">
-          <CheckCircle2 className="h-12 w-12 text-green-600" />
-          <p className="mt-4 text-[14px] text-zinc-600">
+          <CheckCircle2 className="h-12 w-12 text-primary" />
+          <p className="mt-4 text-[14px] text-muted-foreground">
             Your email is confirmed. You’re all set.
           </p>
-          <Link href="/" className="mt-6 text-[13px] font-bold text-green-600 hover:underline">
+          <Link href="/" className="mt-6 text-[13px] font-bold text-primary hover:underline">
             Continue to Fulltiime
           </Link>
         </div>
@@ -106,13 +106,13 @@ function VerifyEmailInner() {
   return (
     <AuthShell title="Verification failed">
       <div className="flex flex-col items-center text-center">
-        <XCircle className="h-12 w-12 text-red-500" />
-        <p className="mt-4 text-[14px] text-zinc-600">{message}</p>
-        <p className="mt-2 text-[13px] text-zinc-500">Enter your email to get a new link:</p>
+        <XCircle className="h-12 w-12 text-destructive" />
+        <p className="mt-4 text-[14px] text-muted-foreground">{message}</p>
+        <p className="mt-2 text-[13px] text-muted-foreground">Enter your email to get a new link:</p>
       </div>
       <ResendForm />
-      <p className="mt-6 text-center text-[13px] text-zinc-500">
-        <Link href="/login" className="font-bold text-green-600 hover:underline">
+      <p className="mt-6 text-center text-[13px] text-muted-foreground">
+        <Link href="/login" className="font-bold text-primary hover:underline">
           Back to sign in
         </Link>
       </p>

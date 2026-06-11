@@ -22,7 +22,7 @@ function ResetPasswordInner() {
   if (!token) {
     return (
       <AuthShell title="Invalid link" subtitle="This password reset link is missing or malformed.">
-        <Link href="/forgot-password" className="block text-center text-[13px] font-bold text-green-600 hover:underline">
+        <Link href="/forgot-password" className="block text-center text-[13px] font-bold text-primary hover:underline">
           Request a new link
         </Link>
       </AuthShell>
@@ -57,11 +57,11 @@ function ResetPasswordInner() {
     <AuthShell title="Reset password" subtitle="Choose a new password for your account.">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-zinc-700">
+          <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
             New password
           </label>
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+            <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
               type={show ? 'text' : 'password'}
               required
@@ -75,7 +75,7 @@ function ResetPasswordInner() {
               type="button"
               onClick={() => setShow((s) => !s)}
               aria-label={show ? 'Hide password' : 'Show password'}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
             >
               {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
@@ -83,11 +83,11 @@ function ResetPasswordInner() {
         </div>
 
         <div>
-          <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-zinc-700">
+          <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
             Confirm password
           </label>
           <div className="relative">
-            <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+            <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
               type={show ? 'text' : 'password'}
               required
@@ -100,7 +100,7 @@ function ResetPasswordInner() {
           </div>
         </div>
 
-        {error && <p className="text-[13px] font-medium text-red-600">{error}</p>}
+        {error && <p className="text-[13px] font-medium text-destructive">{error}</p>}
 
         <Button
           type="submit"
@@ -113,8 +113,8 @@ function ResetPasswordInner() {
         </Button>
       </form>
 
-      <p className="mt-6 text-center text-[13px] text-zinc-500">
-        <Link href="/login" className="font-bold text-green-600 hover:underline">
+      <p className="mt-6 text-center text-[13px] text-muted-foreground">
+        <Link href="/login" className="font-bold text-primary hover:underline">
           Back to sign in
         </Link>
       </p>

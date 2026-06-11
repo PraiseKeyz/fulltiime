@@ -12,7 +12,7 @@ import { HeroNews } from './hero/hero-news'
 function HeroSkeleton() {
   return (
     <section className="">
-      <div className="mx-auto max-w-[1400px] px-4 lg:px-6 py-4 grid gap-4 lg:grid-cols-[260px_1fr_300px]">
+      <div className="mx-auto max-w-[1400px] px-4 lg:px-6 py-4 grid gap-4 lg:grid-cols-[280px_1fr_280px]">
         <div className="hidden lg:block h-[400px] rounded-xl bg-background-secondary border border-border animate-pulse" />
         <div className="h-[400px] rounded-xl bg-background-secondary border border-border animate-pulse" />
         <div className="hidden lg:block h-[400px] rounded-xl bg-background-secondary border border-border animate-pulse" />
@@ -51,7 +51,7 @@ export function HeroSection() {
 
   return (
     <section className="">
-      <div className="mx-auto max-w-[1400px] px-4 lg:px-6 grid gap-4 lg:grid-cols-[260px_1fr_300px]">
+      <div className="mx-auto max-w-[1400px] px-4 lg:px-6 grid gap-4 lg:grid-cols-[280px_1fr_280px]">
         {/* Col 1 — leagues navigator */}
         <div className="order-2 lg:order-1 lg:h-[400px]">
           <LeaguesPanel />

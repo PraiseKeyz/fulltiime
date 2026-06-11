@@ -20,7 +20,7 @@ export default function FixturesPage() {
   const { data: matches, isLoading } = useFixtures({ status })
 
   return (
-    <div>
+    <div className="mx-auto max-w-[1400px] px-4 lg:px-6 py-8">
       <h1 className="text-2xl font-black mb-6">Fixtures</h1>
 
       {/* Filter tabs */}
