@@ -50,7 +50,6 @@ export class SportMonksService {
 
   // ── Leagues ───────────────────────────────────────────────────────────────────
 
-  // currentSeason is included directly — no separate season API calls needed
   async getMyLeagues() {
     return this.getAll<any>('/leagues', { include: 'country;currentSeason' });
   }

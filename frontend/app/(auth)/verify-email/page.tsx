@@ -5,10 +5,10 @@ import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Loader2, CheckCircle2, XCircle, Mail } from 'lucide-react'
 import { AuthShell, authInput } from '../_components/auth-shell'
-import { useVerifyEmail, useResendVerification } from '@/lib/api/hooks/auth.hooks'
+import { useVerifyEmail, useResendVerification, useMe } from '@/lib/api/hooks/auth.hooks'
 import { Button } from '@/components/ui/button'
 
-type Status = 'verifying' | 'success' | 'error'
+type Status = 'verifying' | 'success' | 'error' | 'sent'
 
 function ResendForm() {
   const { mutate, isPending } = useResendVerification()
@@ -55,13 +55,51 @@ function ResendForm() {
   )
 }
 
+// Post-registration "check your email" confirmation (no token in the URL).
+function CheckEmailScreen() {
+  const { data: me } = useMe()
+  const { mutate: resend, isPending } = useResendVerification()
+  const [resent, setResent] = useState(false)
+
+  return (
+    <AuthShell title="Check your email">
+      <div className="flex flex-col items-center text-center">
+        <Mail className="h-12 w-12 text-primary" />
+        <p className="mt-4 text-[14px] text-muted-foreground">
+          We’ve sent a verification link to{' '}
+          <span className="font-semibold text-foreground">{me?.email ?? 'your inbox'}</span>. Click it to
+          confirm your account.
+        </p>
+
+        <Button asChild variant="primary" size="lg" className="mt-6 w-full font-black uppercase tracking-wide">
+          <Link href="/">Continue to Fulltiime</Link>
+        </Button>
+
+        {me?.email ? (
+          <button
+            type="button"
+            disabled={isPending || resent}
+            onClick={() => resend(me.email, { onSuccess: () => setResent(true), onError: () => setResent(true) })}
+            className="mt-4 text-[13px] font-bold text-primary hover:underline disabled:opacity-60"
+          >
+            {resent ? 'Verification link sent ✓' : isPending ? 'Sending…' : 'Didn’t get it? Resend'}
+          </button>
+        ) : (
+          <div className="mt-4 w-full">
+            <p className="text-[13px] text-muted-foreground">Enter your email to get a new link:</p>
+            <ResendForm />
+          </div>
+        )}
+      </div>
+    </AuthShell>
+  )
+}
+
 function VerifyEmailInner() {
   const token = useSearchParams().get('token') ?? ''
   const { mutate: verify } = useVerifyEmail()
-  const [status, setStatus] = useState<Status>(token ? 'verifying' : 'error')
-  const [message, setMessage] = useState(
-    token ? '' : 'This verification link is missing its token.',
-  )
+  const [status, setStatus] = useState<Status>(token ? 'verifying' : 'sent')
+  const [message, setMessage] = useState('')
   const ran = useRef(false)
 
   useEffect(() => {
@@ -103,21 +141,26 @@ function VerifyEmailInner() {
     )
   }
 
-  return (
-    <AuthShell title="Verification failed">
-      <div className="flex flex-col items-center text-center">
-        <XCircle className="h-12 w-12 text-destructive" />
-        <p className="mt-4 text-[14px] text-muted-foreground">{message}</p>
-        <p className="mt-2 text-[13px] text-muted-foreground">Enter your email to get a new link:</p>
-      </div>
-      <ResendForm />
-      <p className="mt-6 text-center text-[13px] text-muted-foreground">
-        <Link href="/login" className="font-bold text-primary hover:underline">
-          Back to sign in
-        </Link>
-      </p>
-    </AuthShell>
-  )
+  if (status === 'error') {
+    return (
+      <AuthShell title="Verification failed">
+        <div className="flex flex-col items-center text-center">
+          <XCircle className="h-12 w-12 text-destructive" />
+          <p className="mt-4 text-[14px] text-muted-foreground">{message}</p>
+          <p className="mt-2 text-[13px] text-muted-foreground">Enter your email to get a new link:</p>
+        </div>
+        <ResendForm />
+        <p className="mt-6 text-center text-[13px] text-muted-foreground">
+          <Link href="/login" className="font-bold text-primary hover:underline">
+            Back to sign in
+          </Link>
+        </p>
+      </AuthShell>
+    )
+  }
+
+  // status === 'sent' — arrived here without a token (e.g. straight after signup).
+  return <CheckEmailScreen />
 }
 
 export default function VerifyEmailPage() {

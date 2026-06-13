@@ -9,15 +9,12 @@ const STATIC_ROUTES: Array<{
   priority: number
 }> = [
   { path: '/',          changeFrequency: 'daily',  priority: 1.0 },
-  { path: '/live',      changeFrequency: 'always', priority: 0.9 },
   { path: '/matches',   changeFrequency: 'daily',  priority: 0.9 },
   { path: '/fixtures',  changeFrequency: 'daily',  priority: 0.8 },
   { path: '/standings', changeFrequency: 'daily',  priority: 0.8 },
   { path: '/leagues',   changeFrequency: 'weekly', priority: 0.8 },
   { path: '/teams',     changeFrequency: 'weekly', priority: 0.7 },
   { path: '/news',      changeFrequency: 'daily',  priority: 0.8 },
-  { path: '/transfers', changeFrequency: 'daily',  priority: 0.7 },
-  { path: '/analytics', changeFrequency: 'weekly', priority: 0.6 },
 ]
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {

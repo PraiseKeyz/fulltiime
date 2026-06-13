@@ -25,7 +25,7 @@ export default function RegisterPage() {
     e.preventDefault()
     register(
       { ...form, username: usernameFromEmail(form.email) },
-      { onSuccess: () => router.push('/') },
+      { onSuccess: () => router.push('/verify-email?sent=1') },
     )
   }
 
