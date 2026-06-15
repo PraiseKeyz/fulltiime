@@ -70,7 +70,12 @@ export function NarrativeTab({ view }: { view: MatchView }) {
   const { data, isLoading } = useMatchNarrative(view.match.id)
 
   if (isLoading) return <NarrativeSkeleton />
-  if (!data) return null
+  if (!data) {
+    const text = view.phase === 'finished'
+      ? 'No match report available for this match.'
+      : 'Match overview will appear here shortly.'
+    return <EmptyTab text={text} />
+  }
 
   return <NarrativeBody narrative={data} />
 }
@@ -229,15 +234,12 @@ export function CommentaryTab({ match }: { match: Match }) {
 
   const lines = data ?? []
   if (lines.length === 0) {
-    return (
-      <EmptyTab
-        text={
-          match.status === 'SCHEDULED'
-            ? 'Live commentary will appear here once the match kicks off.'
-            : 'No commentary available for this match.'
-        }
-      />
-    )
+    const text = match.status === 'SCHEDULED'
+      ? 'Live commentary will appear here once the match kicks off.'
+      : isLive
+        ? 'Commentary is starting up — check back in a moment.'
+        : 'No commentary available for this match.'
+    return <EmptyTab text={text} />
   }
 
   return (

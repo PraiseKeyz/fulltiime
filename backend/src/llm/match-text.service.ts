@@ -131,7 +131,7 @@ export class MatchTextService {
     const league = match.season?.league?.name ?? null;
     const venue  = match.venue_ref?.name ?? match.venue ?? null;
     const when   = new Date(match.kickoff_at).toLocaleString('en-GB', {
-      weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit',
+      weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit', timeZone: 'UTC',
     });
 
     const facts: string[] = [

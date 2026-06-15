@@ -44,7 +44,7 @@ function countdownFromDiff(diff: number) {
   }
 }
 
-// Live status comes from the real backend status only — the 2-min sync keeps it
+// Live status comes from the real backend status only — the 1-min sync keeps it
 // current. We deliberately do NOT infer "live" from the clock: a kickoff time
 // that's delayed, mis-timed, or parsed in the wrong timezone would otherwise show
 // a not-yet-started match as live (which is exactly what happened).

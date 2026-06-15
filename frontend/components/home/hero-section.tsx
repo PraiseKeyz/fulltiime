@@ -25,21 +25,16 @@ export function HeroSection() {
   const { data: leagues } = useLeagues()
   const { data: today, isLoading: todayLoading, isError: todayError } = useTodayFixtures()
 
-  // Fall back to upcoming ONLY when today genuinely returned no games (off-season).
-  // NEVER on a failed/empty-because-errored load — otherwise a flaky connection
-  // swaps the live match for a non-live "vs" placeholder (looks like a TBD).
   const todayEmpty = !todayLoading && !todayError && (today?.length ?? 0) === 0
   const { data: upcoming, isLoading: upcomingLoading } = useUpcomingFixtures(undefined, 12)
 
   const pool = (today && today.length > 0) ? today : (todayEmpty ? (upcoming ?? []) : (today ?? []))
 
-  // Live first, then favorites (none yet), then league hotness — see helper
   const ordered = useMemo(
     () => orderHeroMatches(pool, leagues ?? []),
     [pool, leagues],
   )
 
-  // Fully automatic — always feature the highest-priority match.
   const activeId = ordered[0]?.id ?? null
 
   const { data: detail } = useFixture(activeId ?? '')

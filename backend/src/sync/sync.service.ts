@@ -380,7 +380,7 @@ export class SyncService {
 
   // ── Sync live scores ──────────────────────────────────────────────────────────
 
-  @Cron('*/2 * * * *') // every 2 minutes
+  @Cron('*/1 * * * *') // every 1 minute
   async syncLiveScores() {
     try {
       const fixtures = await this.api.getLiveFixtures();

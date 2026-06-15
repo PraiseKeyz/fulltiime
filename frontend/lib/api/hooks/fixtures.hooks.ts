@@ -50,7 +50,7 @@ export function useFixture(id: string) {
     enabled: !!id,
     // Keep a live page fresh on its own. Poll fast while in play; poll slower
     // around kick-off so a page opened just before the whistle still catches the
-    // SCHEDULED → LIVE flip (the DB is refreshed by a 2-min cron). Finished games
+    // SCHEDULED → LIVE flip (the DB is refreshed by a 1-min cron). Finished games
     // and fixtures days away don't poll at all.
     refetchInterval: (query) => {
       const data = query.state.data
@@ -90,6 +90,7 @@ export function useBracket(leagueId: string) {
     queryFn:  () => api.get<Bracket | null>(`/fixtures/bracket/${leagueId}`, { silent: true }),
     enabled:  !!leagueId,
     retry:    false,
+    refetchInterval: 60_000,
   })
 }
 

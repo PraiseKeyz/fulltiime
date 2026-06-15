@@ -42,6 +42,7 @@ export default function CompetitionHubPage() {
     queryFn:  () => api.get<StandingsResponse>(`/standings/league/${id}`, { silent: true }),
     enabled:  !!id,
     retry:    false,
+    refetchInterval: 60_000,
   })
 
   const { data: upcoming }  = useUpcomingFixtures(id, 10)
