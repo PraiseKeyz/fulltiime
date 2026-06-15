@@ -20,7 +20,7 @@ function LeagueRow({ league, live }: { league: League; live: boolean }) {
         }
         {live && <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-live ring-2 ring-card animate-pulse" />}
       </span>
-      <span className="truncate text-[12px] font-bold">{league.short_name ?? league.name}</span>
+      <span className="truncate text-[12px] font-bold" title={league.name}>{league.name}</span>
       {live && (
         <span className="ml-auto shrink-0 text-[9px] font-black uppercase tracking-wide text-live">Live</span>
       )}
