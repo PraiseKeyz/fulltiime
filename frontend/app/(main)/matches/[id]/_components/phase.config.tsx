@@ -7,6 +7,7 @@ import {
 import { H2HTab } from './match-h2h'
 import { ChatTab } from './match-chat'
 import { OverviewTab } from './match-overview'
+import { LiveChatTab } from './live-chat-tab'
 
 // ─── Phase plan ──────────────────────────────────────────────────────────────
 //
@@ -30,8 +31,9 @@ export interface PhasePlan {
   defaultTab: string
 }
 
-const hasLineups = (m: Match) => (m.lineups?.length ?? 0) > 0
-const hasStats   = (m: Match) => availableStatRows(m).length > 0
+const hasLineups       = (m: Match) => (m.lineups?.length ?? 0) > 0
+const hasStats         = (m: Match) => availableStatRows(m).length > 0
+const fullchatEnabled  = process.env.NEXT_PUBLIC_FULLCHAT_ENABLED === 'true'
 
 function overviewTab(m: Match): PhaseTab {
   return { key: 'overview', label: 'Overview', render: () => <OverviewTab match={m} /> }
@@ -48,6 +50,10 @@ function h2hTab(m: Match): PhaseTab {
 // so it's withheld for 'tbd' placeholders, which have no Match row to ground on.
 function chatTab(m: Match): PhaseTab {
   return { key: 'chat', label: 'Ask', render: () => <ChatTab match={m} /> }
+}
+
+function banterTab(m: Match): PhaseTab {
+  return { key: 'banter', label: 'Fullchat', render: () => <LiveChatTab match={m} /> }
 }
 
 export function getPhasePlan(view: MatchView): PhasePlan {
@@ -69,6 +75,7 @@ export function getPhasePlan(view: MatchView): PhasePlan {
       }
       tabs.push(h2hTab(m))
       tabs.push(chatTab(m))
+      if (fullchatEnabled) tabs.push(banterTab(m))
       return { tabs, defaultTab: 'overview' }
     }
 
@@ -88,6 +95,7 @@ export function getPhasePlan(view: MatchView): PhasePlan {
       tabs.push(overviewTab(m))
       tabs.push(h2hTab(m))
       tabs.push(chatTab(m))
+      if (fullchatEnabled) tabs.push(banterTab(m))
       return { tabs, defaultTab: 'summary' }
     }
   }

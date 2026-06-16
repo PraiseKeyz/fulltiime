@@ -17,6 +17,7 @@ import { TeamsModule } from './teams/teams.module.js';
 import { PlayersModule } from './players/players.module.js';
 import { SportMonksModule } from './sportmonks/sportmonks.module.js';
 import { SyncModule } from './sync/sync.module.js';
+import { LiveChatModule } from './live-chat/live-chat.module.js';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { SyncModule } from './sync/sync.module.js';
     PlayersModule,
     SportMonksModule,
     SyncModule,
+    LiveChatModule,
   ],
   controllers: [AppController],
   providers: [

@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { usePathname, useSearchParams } from 'next/navigation'
 import { LogOut, User as UserIcon } from 'lucide-react'
 import { useAuth } from '@/providers/auth-provider'
 import { Button } from '@/components/ui/button'
@@ -16,6 +17,9 @@ import {
 
 export function UserMenu() {
   const { user, isAuthenticated, isLoading, logout } = useAuth()
+  const pathname     = usePathname()
+  const searchParams = useSearchParams()
+  const currentUrl   = searchParams.toString() ? `${pathname}?${searchParams.toString()}` : pathname
 
   if (isLoading) {
     return <div className="h-8 w-8 rounded-full bg-muted animate-pulse" />
@@ -29,7 +33,7 @@ export function UserMenu() {
         size="sm"
         className="h-auto rounded-none border-b border-foreground! px-0 py-1 text-[13px] hover:bg-transparent hover:text-primary hover:border-primary!"
       >
-        <Link href="/login">Sign In</Link>
+        <Link href={`/login?callbackUrl=${encodeURIComponent(currentUrl)}`}>Sign In</Link>
       </Button>
     )
   }

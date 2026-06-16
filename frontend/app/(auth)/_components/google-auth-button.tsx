@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useTheme } from 'next-themes'
 import { toast } from 'sonner'
 import { GoogleLogin, useGoogleOAuth } from '@react-oauth/google'
@@ -11,6 +11,9 @@ import { useGoogleLogin } from '@/lib/api/hooks/auth.hooks'
 // container (the GIS button only accepts a fixed pixel width).
 export function GoogleAuthButton() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const callbackUrl = searchParams.get('callbackUrl')
+  const redirectTo = callbackUrl?.startsWith('/') ? callbackUrl : '/'
   const { resolvedTheme } = useTheme()
   const { clientId } = useGoogleOAuth()
   const { mutate: loginWithGoogle } = useGoogleLogin()
@@ -33,7 +36,7 @@ export function GoogleAuthButton() {
         <GoogleLogin
           onSuccess={({ credential }) => {
             if (!credential) return
-            loginWithGoogle(credential, { onSuccess: () => router.push('/') })
+            loginWithGoogle(credential, { onSuccess: () => router.push(redirectTo) })
           }}
           onError={() => toast.error('Google sign-in failed')}
           theme={resolvedTheme === 'dark' ? 'filled_black' : 'outline'}

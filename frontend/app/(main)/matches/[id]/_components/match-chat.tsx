@@ -20,7 +20,7 @@ function SignInPrompt({ match }: { match: Match }) {
         {match.away_team.short_name ?? match.away_team.name}.
       </p>
       <Button asChild variant="primary" size="sm" className="px-4">
-        <Link href="/login">Sign in to chat</Link>
+        <Link href={`/login?callbackUrl=${encodeURIComponent(`/matches/${match.id}?tab=chat`)}`}>Sign in to chat</Link>
       </Button>
     </div>
   )

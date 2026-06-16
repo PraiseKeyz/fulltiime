@@ -71,6 +71,7 @@ model User {
   favorite_teams  Team[]    @relation("UserFavoriteTeams")
   favorite_leagues League[] @relation("UserFavoriteLeagues")
   articles        Article[]
+  chat_messages   LiveChatMessage[]
 
   created_at      DateTime  @default(now())
   updated_at      DateTime  @updatedAt
@@ -245,6 +246,7 @@ model Match {
   lineups        MatchLineup[]
   commentary     MatchCommentary[]
   texts          MatchText[]
+  chat_messages  LiveChatMessage[]
 
   created_at     DateTime @default(now())
   updated_at     DateTime @updatedAt
@@ -441,4 +443,19 @@ model Article {
   updated_at   DateTime @updatedAt
 
   @@map("articles")
+}
+
+// ─── Live Chat ────────────────────────────────────────────────────────────────
+
+model LiveChatMessage {
+  id         String   @id @default(cuid())
+  match_id   String
+  match      Match    @relation(fields: [match_id], references: [id], onDelete: Cascade)
+  user_id    String
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  content    String
+  created_at DateTime @default(now())
+
+  @@index([match_id, created_at])
+  @@map("live_chat_messages")
 }

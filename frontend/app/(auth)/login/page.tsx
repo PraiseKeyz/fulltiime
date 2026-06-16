@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react'
 import { useLogin } from '@/lib/api/hooks/auth.hooks'
@@ -11,13 +11,16 @@ import { GuestGuard } from '../_components/guest-guard'
 
 export default function LoginPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const callbackUrl = searchParams.get('callbackUrl')
+  const redirectTo = callbackUrl?.startsWith('/') ? callbackUrl : '/'
   const { mutate: login, isPending } = useLogin()
   const [form, setForm] = useState({ identifier: '', password: '' })
   const [showPassword, setShowPassword] = useState(false)
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    login(form, { onSuccess: () => router.push('/') })
+    login(form, { onSuccess: () => router.push(redirectTo) })
   }
 
   return (
