@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react'
@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { GoogleAuthButton } from '../_components/google-auth-button'
 import { GuestGuard } from '../_components/guest-guard'
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const callbackUrl = searchParams.get('callbackUrl')
@@ -132,5 +132,13 @@ export default function LoginPage() {
       </div>
     </div>
     </GuestGuard>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginContent />
+    </Suspense>
   )
 }
