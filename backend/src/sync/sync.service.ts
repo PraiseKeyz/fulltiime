@@ -409,9 +409,16 @@ export class SyncService {
         }
       }
 
-      // Detect LIVE → FINISHED transitions and fire a targeted standings sync
-      // for just the affected leagues. This keeps standings current within ~1 min
-      // of a match ending without polling every 15 minutes during quiet periods.
+      const liveFeedIds = new Set((fixtures ?? []).map((f: any) => f.id));
+      const droppedIds  = prevLiveApiIds.filter(id => !liveFeedIds.has(id));
+      for (const id of droppedIds) {
+        try {
+          await this.syncFixtureDetail(id);
+        } catch (e: any) {
+          this.logger.error(`Failed re-syncing dropped fixture ${id}: ${e.message}`);
+        }
+      }
+
       if (prevLiveApiIds.length > 0) {
         const justFinished = await this.prisma.match.findMany({
           where:  { api_football_id: { in: prevLiveApiIds }, status: MatchStatus.FINISHED },
@@ -423,6 +430,12 @@ export class SyncService {
           this.syncStandingsForLeagues(leagueIds).catch(e =>
             this.logger.error(`Post-match standings sync failed: ${e.message}`),
           );
+          
+          setTimeout(() => {
+            this.syncStandingsForLeagues(leagueIds).catch(e =>
+              this.logger.error(`Delayed standings re-check failed: ${e.message}`),
+            );
+          }, 5 * 60 * 1000);
         }
       }
     } catch (err: any) {
@@ -431,8 +444,6 @@ export class SyncService {
   }
 
   // ── Sync commentary (play-by-play text feed) ────────────────────────────────
-  // Append-only: a commentary line never changes once published, so we dedupe on
-  // sportmonks_id and only insert what's new.
   async syncCommentary(apiFixtureId: number) {
     try {
       const match = await this.prisma.match.findUnique({
@@ -463,8 +474,6 @@ export class SyncService {
     }
   }
 
-  // SportMonks returns standing `details` as a flat array of { type, value }.
-  // We match the "overall" rows by the type's developer-name/code/name keywords.
   private parseStandingDetails(details: any[]) {
     // Normalise the type identifier; separators vary (_, -, space) across plans.
     const codeOf = (d: any) =>
@@ -492,10 +501,6 @@ export class SyncService {
   }
 
   // ── Sync standings ────────────────────────────────────────────────────────────
-  // Safety-net full sweep — runs every 2 hours to catch anything the event-driven
-  // trigger in syncLiveScores may have missed (e.g. API hiccups, missed transitions).
-  // The real-time path is syncStandingsForLeagues(), called from syncLiveScores when
-  // a match transitions LIVE → FINISHED.
 
   @Cron('0 */2 * * *')
   async syncStandings() {
@@ -592,10 +597,6 @@ export class SyncService {
         const periodCountsFrom = tickingPeriod?.counts_from != null ? Number(tickingPeriod.counts_from) : null;
         const periodLen        = tickingPeriod != null ? pLength : null;
 
-        // Bridge SportMonks' live-feed lag: a fixture can sit in /livescores/inplay
-        // with its state still "NS" for minutes after the real kickoff. If it's in the
-        // live feed and kickoff has passed (within a sane window), treat it as live so
-        // the UI doesn't stall on "upcoming". Real state/minute override once they land.
         if (fromLiveFeed && status === MatchStatus.SCHEDULED) {
           const elapsedMs = Date.now() - smUtcDate(fixture.starting_at).getTime();
           if (elapsedMs >= 0 && elapsedMs <= 3 * 60 * 60 * 1000) {
@@ -805,9 +806,6 @@ export class SyncService {
 
   // ── Manual trigger ────────────────────────────────────────────────────────────
 
-  // ── Sync team form (last 5 finished fixtures per team) ──────────────────────
-  // Written to the dedicated team_form table — never touches matches.
-
   @Cron('0 4 * * *') // daily at 4am
   async syncTeamForm() {
     const teams = await this.prisma.team.findMany({
@@ -871,10 +869,6 @@ export class SyncService {
   }
 
   // ── Sync H2H (pre-populate cache for all known team pairs) ──────────────────
-  // H2H is historical — past results don't change, so weekly is more than enough.
-  // The raw meetings are stored with `homeIsApiId` so getHeadToHead() can compute
-  // the win/draw/loss tally from the correct perspective for each specific fixture.
-
   @Cron('0 3 * * 0') // weekly, Sunday 3am
   async syncH2H() {
     const matches = await this.prisma.match.findMany({
