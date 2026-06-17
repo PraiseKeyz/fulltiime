@@ -383,18 +383,47 @@ export class SyncService {
   @Cron('*/1 * * * *') // every 1 minute
   async syncLiveScores() {
     try {
+      // Snapshot which matches are currently live/halftime before we process anything.
+      // After the upsert we compare to detect which ones just transitioned to FINISHED
+      // so we can trigger a targeted standings sync immediately — rather than waiting
+      // for the scheduled safety-net cron.
+      const previouslyLive = await this.prisma.match.findMany({
+        where:  { status: { in: [MatchStatus.LIVE, MatchStatus.HALFTIME] } },
+        select: { api_football_id: true },
+      });
+      const prevLiveApiIds = previouslyLive
+        .map(m => m.api_football_id)
+        .filter((id): id is number => id !== null);
+
       const fixtures = await this.api.getLiveFixtures();
-      if (!fixtures?.length) return;
+      if (fixtures?.length) {
+        this.logger.log(`Updating ${fixtures.length} live fixtures`);
+        // Live payload already carries events, lineups and stats via includes.
+        // fromLiveFeed=true lets upsert bridge SportMonks' "still NS after kickoff" lag.
+        await this.upsertFixtures(fixtures, true);
 
-      this.logger.log(`Updating ${fixtures.length} live fixtures`);
-      // Live payload already carries events, lineups and stats via includes.
-      // fromLiveFeed=true lets upsert bridge SportMonks' "still NS after kickoff" lag.
-      await this.upsertFixtures(fixtures, true);
+        // Commentary is a separate endpoint (not in the bulk payload) — fetch and
+        // append for each live fixture so it's stored like any other game data.
+        for (const f of fixtures) {
+          await this.syncCommentary(f.id);
+        }
+      }
 
-      // Commentary is a separate endpoint (not in the bulk payload) — fetch and
-      // append for each live fixture so it's stored like any other game data.
-      for (const f of fixtures) {
-        await this.syncCommentary(f.id);
+      // Detect LIVE → FINISHED transitions and fire a targeted standings sync
+      // for just the affected leagues. This keeps standings current within ~1 min
+      // of a match ending without polling every 15 minutes during quiet periods.
+      if (prevLiveApiIds.length > 0) {
+        const justFinished = await this.prisma.match.findMany({
+          where:  { api_football_id: { in: prevLiveApiIds }, status: MatchStatus.FINISHED },
+          select: { season: { select: { league_id: true } } },
+        });
+        if (justFinished.length > 0) {
+          const leagueIds = [...new Set(justFinished.map(m => m.season.league_id))];
+          this.logger.log(`${justFinished.length} match(es) just finished — syncing standings for ${leagueIds.length} league(s)`);
+          this.syncStandingsForLeagues(leagueIds).catch(e =>
+            this.logger.error(`Post-match standings sync failed: ${e.message}`),
+          );
+        }
       }
     } catch (err: any) {
       this.logger.error(`Live scores sync failed: ${err.message}`);
@@ -463,17 +492,28 @@ export class SyncService {
   }
 
   // ── Sync standings ────────────────────────────────────────────────────────────
+  // Safety-net full sweep — runs every 2 hours to catch anything the event-driven
+  // trigger in syncLiveScores may have missed (e.g. API hiccups, missed transitions).
+  // The real-time path is syncStandingsForLeagues(), called from syncLiveScores when
+  // a match transitions LIVE → FINISHED.
 
-  @Cron(CronExpression.EVERY_DAY_AT_2AM)
+  @Cron('0 */2 * * *')
   async syncStandings() {
-    this.logger.log('Syncing standings...');
+    this.logger.log('Standings safety-net sweep...');
+    const leagues = await this.prisma.league.findMany({ where: { is_active: true }, select: { id: true } });
+    await this.syncStandingsForLeagues(leagues.map(l => l.id));
+    this.logger.log('Standings sweep complete');
+  }
 
-    const activeLeagues = await this.prisma.league.findMany({
-      where:   { is_active: true },
+  private async syncStandingsForLeagues(leagueIds: string[]) {
+    if (!leagueIds.length) return;
+
+    const leagues = await this.prisma.league.findMany({
+      where:   { id: { in: leagueIds }, is_active: true },
       include: { seasons: { where: { is_current: true }, take: 1 } },
     });
 
-    for (const league of activeLeagues) {
+    for (const league of leagues) {
       const season = league.seasons[0];
       if (!season?.sportmonks_id) continue;
 
@@ -513,8 +553,6 @@ export class SyncService {
         this.logger.error(`Failed syncing standings for ${league.name}: ${err.message}`);
       }
     }
-
-    this.logger.log('Standings sync complete');
   }
 
   // ── Upsert fixtures ───────────────────────────────────────────────────────────
@@ -541,7 +579,18 @@ export class SyncService {
         const stateCode = fixture.state?.short_name ?? fixture.state?.state ?? 'NS';
         let status      = this.toMatchStatus(stateCode);
         const { homeScore, awayScore, htHome, htAway } = this.getCurrentScore(fixture);
-        let minute      = fixture.periods?.find((p: any) => p.ticking)?.minutes ?? null;
+        const tickingPeriod    = fixture.periods?.find((p: any) => p.ticking);
+        const rawMinutes       = tickingPeriod?.minutes ?? null;
+        const pLength          = tickingPeriod?.period_length ?? 45;
+        const normalEnd        = tickingPeriod
+          ? (tickingPeriod.counts_from ?? 0) + pLength
+          : null;
+        const inStoppage       = rawMinutes !== null && normalEnd !== null && rawMinutes > normalEnd;
+        let minute             = inStoppage ? normalEnd : rawMinutes;
+        let extraMinute        = inStoppage ? rawMinutes - normalEnd : null;
+        const periodStartedAt  = tickingPeriod?.started   != null ? Number(tickingPeriod.started)    : null;
+        const periodCountsFrom = tickingPeriod?.counts_from != null ? Number(tickingPeriod.counts_from) : null;
+        const periodLen        = tickingPeriod != null ? pLength : null;
 
         // Bridge SportMonks' live-feed lag: a fixture can sit in /livescores/inplay
         // with its state still "NS" for minutes after the real kickoff. If it's in the
@@ -550,8 +599,9 @@ export class SyncService {
         if (fromLiveFeed && status === MatchStatus.SCHEDULED) {
           const elapsedMs = Date.now() - smUtcDate(fixture.starting_at).getTime();
           if (elapsedMs >= 0 && elapsedMs <= 3 * 60 * 60 * 1000) {
-            status = MatchStatus.LIVE;
-            minute = minute ?? Math.max(1, Math.floor(elapsedMs / 60_000));
+            status      = MatchStatus.LIVE;
+            minute      = minute ?? Math.max(1, Math.floor(elapsedMs / 60_000));
+            extraMinute = extraMinute ?? null;
           }
         }
 
@@ -570,15 +620,19 @@ export class SyncService {
           update: {
             status,
             minute,
-            kickoff_at:     smUtcDate(fixture.starting_at),
-            home_score:     homeScore,
-            away_score:     awayScore,
-            home_ht_score:  htHome,
-            away_ht_score:  htAway,
-            venue:          fixture.venue?.name ?? null,
-            venue_id:       venueId,
-            home_formation: homeFormation,
-            away_formation: awayFormation,
+            extra_minute:       extraMinute,
+            period_started_at:  periodStartedAt,
+            period_counts_from: periodCountsFrom,
+            period_length:      periodLen,
+            kickoff_at:         smUtcDate(fixture.starting_at),
+            home_score:         homeScore,
+            away_score:         awayScore,
+            home_ht_score:      htHome,
+            away_ht_score:      htAway,
+            venue:              fixture.venue?.name ?? null,
+            venue_id:           venueId,
+            home_formation:     homeFormation,
+            away_formation:     awayFormation,
           },
           create: {
             api_football_id: fixture.id,

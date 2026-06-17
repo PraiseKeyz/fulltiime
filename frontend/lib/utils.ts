@@ -7,10 +7,10 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatKickoff(date: string, timeZone: string = DEFAULT_TIME_ZONE): string {
-  return new Intl.DateTimeFormat('en-GB', {
-    hour: '2-digit',
+  return new Intl.DateTimeFormat('en-US', {
+    hour: 'numeric',
     minute: '2-digit',
-    hour12: false,
+    hour12: true,
     timeZone,
   }).format(new Date(date))
 }
@@ -31,6 +31,17 @@ export function formatFullDate(date: string, timeZone: string = DEFAULT_TIME_ZON
     year: 'numeric',
     timeZone,
   }).format(new Date(date))
+}
+
+export function formatMinute(
+  minute: number | null,
+  extraMinute: number | null,
+  seconds?: number | null,
+): string {
+  if (minute === null) return ''
+  const sec = seconds != null ? `:${String(seconds).padStart(2, '0')}` : ''
+  if (extraMinute && extraMinute > 0) return `${minute}+${extraMinute}${sec}'`
+  return `${minute}${sec}'`
 }
 
 export function isToday(date: string): boolean {

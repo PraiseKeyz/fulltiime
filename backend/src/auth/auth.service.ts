@@ -321,7 +321,7 @@ export class AuthService {
   private async signAndStoreTokens(userId: string, email: string) {
     const payload       = { sub: userId, email };
     const access_token  = this.jwtService.sign(payload, { expiresIn: '15m' });
-    const refresh_token = this.jwtService.sign(payload, { expiresIn: '7d' });
+    const refresh_token = this.jwtService.sign(payload, { expiresIn: '30d' });
 
     // Store hashed refresh token so we can invalidate it on logout
     const hashed = await argon2.hash(refresh_token);

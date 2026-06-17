@@ -4,8 +4,9 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { MapPin, Goal } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
+import { cn, formatMinute } from '@/lib/utils'
 import { useTimeFormat } from '@/lib/hooks/use-time-format'
+import { useLiveClock } from '@/lib/hooks/use-live-clock'
 import { latestGoal } from './order-hero-matches'
 import type { Match } from '@/lib/api/domain'
 
@@ -54,11 +55,23 @@ function isMatchLive(match: Match) {
 
 function StatusBadge({ match }: { match: Match }) {
   const { formatKickoff } = useTimeFormat()
-  if (isMatchLive(match)) {
+  const clock = useLiveClock(match)
+  if (match.status === 'HALFTIME') {
     return (
-      <span className="flex items-center gap-1.5 text-[11px] font-black text-live uppercase tracking-wide">
+      <span className="flex items-center gap-1.5 text-[11px] font-black text-primary uppercase tracking-wide">
+        <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+        Half Time
+      </span>
+    )
+  }
+  if (match.status === 'LIVE') {
+    return (
+      <span className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wide">
         <span className="h-1.5 w-1.5 rounded-full bg-live animate-pulse" />
-        {match.status === 'HALFTIME' ? 'Half Time' : match.status === 'LIVE' ? `Live · ${match.minute ?? 0}'` : 'Live'}
+        <span className="text-live">Live</span>
+        {clock.minute != null && (
+          <span className="text-foreground">· {formatMinute(clock.minute, clock.extraMinute, clock.seconds)}</span>
+        )}
       </span>
     )
   }
@@ -204,7 +217,7 @@ export function HeroCard({ match }: { match: Match }) {
             {goal ? (
               <span className="flex items-center gap-1.5 text-[12px] font-semibold text-muted-foreground">
                 <Goal className="h-3.5 w-3.5" />
-                {goal.player_name}{goal.minute ? ` ${goal.minute}'` : ''}
+                {goal.player_name}{goal.minute ? ` ${formatMinute(goal.minute, goal.extra_minute)}` : ''}
               </span>
             ) : match.venue ? (
               <span className="flex items-center gap-1.5 text-[12px] text-muted-foreground">

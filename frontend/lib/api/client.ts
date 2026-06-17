@@ -17,6 +17,9 @@ export class ApiClient {
   private readonly responseInterceptors: ResponseInterceptorFn[] = []
   private readonly errorInterceptors: ErrorInterceptorFn[] = []
 
+  // Holds the in-flight /auth/refresh call, if any (see tryRefresh).
+  private refreshInFlight: Promise<boolean> | null = null
+
   addRequestInterceptor(fn: RequestInterceptorFn): this {
     this.requestInterceptors.push(fn)
     return this
@@ -48,7 +51,21 @@ export class ApiClient {
     if (!silent) toast.error(error.message)
   }
 
-  async request<T = unknown>(endpoint: string, config: RequestConfig = {}): Promise<T> {
+  private tryRefresh(): Promise<boolean> {
+    if (!this.refreshInFlight) {
+      this.refreshInFlight = fetch(this.buildUrl('/auth/refresh'), {
+        method:      'POST',
+        credentials: 'include',
+        headers:     { 'Content-Type': 'application/json' },
+      })
+        .then((res) => res.ok)
+        .catch(() => false)
+        .finally(() => { this.refreshInFlight = null })
+    }
+    return this.refreshInFlight
+  }
+
+  async request<T = unknown>(endpoint: string, config: RequestConfig = {}, attemptRefresh = true): Promise<T> {
     const {
       body,
       params,
@@ -92,6 +109,15 @@ export class ApiClient {
         const error = new ApiError(response.status, message, payload)
 
         if (response.status === 401) {
+          const isAuthRoute =
+            endpoint.startsWith('/auth/login') ||
+            endpoint.startsWith('/auth/register') ||
+            endpoint.startsWith('/auth/refresh')
+
+          if (attemptRefresh && !isAuthRoute && (await this.tryRefresh())) {
+            return this.request<T>(endpoint, config, false)
+          }
+
           this.handleError(error, silent)
           if (!skipAuthRedirect) {
             const publicPaths = ['/', '/login', '/register']

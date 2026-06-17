@@ -36,7 +36,7 @@ const ACCESS_COOKIE_OPTIONS = {
 // Refresh token: only sent to the auth endpoints that need it, long-lived
 const REFRESH_COOKIE_OPTIONS = {
   ...BASE_COOKIE,
-  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
   path:   '/api/v1/auth',
 };
 

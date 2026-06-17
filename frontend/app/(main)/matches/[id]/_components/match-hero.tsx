@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Clock, MapPin, Flag, Shield } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn, formatMinute } from '@/lib/utils'
 import { useTimeFormat } from '@/lib/hooks/use-time-format'
+import { useLiveClock } from '@/lib/hooks/use-live-clock'
 import type { MatchView } from './phase'
 import { getViewMeta, type ViewMeta } from './view-meta'
 
@@ -47,12 +48,13 @@ function TeamColumn({ name, logo }: { name: string; logo: string | null }) {
 
 // ─── Status badge ────────────────────────────────────────────────────────────
 
-function Badge({ tone, children }: { tone: 'live' | 'muted' | 'amber' | 'red'; children: React.ReactNode }) {
+function Badge({ tone, children }: { tone: 'live' | 'muted' | 'amber' | 'red' | 'primary'; children: React.ReactNode }) {
   const toneCls = {
-    live:  'bg-live/15 text-live',
-    muted: 'bg-muted text-muted-foreground',
-    amber: 'bg-amber-500/15 text-amber-600 dark:text-amber-400',
-    red:   'bg-red-500/10 text-red-600 dark:text-red-400',
+    live:    'bg-live/15 text-live',
+    muted:   'bg-muted text-muted-foreground',
+    amber:   'bg-amber-500/15 text-amber-600 dark:text-amber-400',
+    red:     'bg-red-500/10 text-red-600 dark:text-red-400',
+    primary: 'bg-primary/15 text-primary',
   }[tone]
   return (
     <span className={cn('text-[11px] font-black px-2.5 py-1 rounded-full', toneCls)}>
@@ -66,20 +68,33 @@ function Badge({ tone, children }: { tone: 'live' | 'muted' | 'amber' | 'red'; c
 function HeroCenter({ view, meta }: { view: MatchView; meta: ViewMeta }) {
   const { formatMatchDate, formatKickoff } = useTimeFormat()
   const countdown = useCountdown(view.phase === 'upcoming' ? meta.date : null)
+  const clock = useLiveClock(view.phase === 'live' ? view.match : null)
   const score = `${meta.homeScore} – ${meta.awayScore}`
   const hasScore = meta.homeScore !== null && meta.awayScore !== null
 
   switch (view.phase) {
-    case 'live':
+    case 'live': {
+      const isHT = view.match.status === 'HALFTIME'
       return (
         <div className="flex flex-col items-center gap-2 min-w-[120px]">
-          <span className="text-5xl font-black tabular-nums text-live">{hasScore ? score : 'vs'}</span>
-          <Badge tone="live">
-            <span className="inline-block h-1.5 w-1.5 rounded-full bg-live animate-pulse mr-1.5 align-middle" />
-            {view.match.minute ? `${view.match.minute}'` : view.match.status === 'HALFTIME' ? 'HT' : 'LIVE'}
-          </Badge>
+          <span className="text-5xl font-black tabular-nums">{hasScore ? score : 'vs'}</span>
+          {isHT ? (
+            <Badge tone="primary">
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary animate-pulse mr-1.5 align-middle" />
+              HT
+            </Badge>
+          ) : (
+            <Badge tone="live">
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-live animate-pulse mr-1.5 align-middle" />
+              {clock.minute != null
+                ? <span className="text-foreground">{formatMinute(clock.minute, clock.extraMinute, clock.seconds)}</span>
+                : 'LIVE'
+              }
+            </Badge>
+          )}
         </div>
       )
+    }
 
     case 'finished':
       return (

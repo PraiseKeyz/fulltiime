@@ -127,6 +127,10 @@ export interface Match {
   kickoff_at: string
   status: MatchStatus
   minute: number | null
+  extra_minute: number | null
+  period_started_at: number | null
+  period_counts_from: number | null
+  period_length: number | null
   home_score: number | null
   away_score: number | null
   home_ht_score: number | null

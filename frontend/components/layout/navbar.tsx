@@ -4,15 +4,15 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useTheme } from 'next-themes'
-import { Sun, Moon } from 'lucide-react'
+import { Sun, Moon, Goal, Trophy, Newspaper } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { UserMenu } from '@/components/layout/user-menu'
 
 const NAV_LINKS = [
-  { href: '/matches', label: 'Matches' },
-  { href: '/leagues', label: 'Leagues' },
-  { href: '/news', label: 'News' },
+  { href: '/matches', label: 'Matches', icon: Goal },
+  { href: '/leagues', label: 'Leagues', icon: Trophy },
+  { href: '/news', label: 'News', icon: Newspaper },
 ]
 
 export function Navbar() {
@@ -28,6 +28,7 @@ export function Navbar() {
   }, [])
 
   return (
+    <>
     <header className="sticky top-0 z-50 mb-12">
       <div
         className={cn(
@@ -44,22 +45,23 @@ export function Navbar() {
               <img src="/logo.svg" alt="Fulltiime" className="h-6 w-auto" />
             </Link>
 
-            {/* Nav links — centered in the middle column */}
-            <nav className="hidden lg:flex items-center justify-center gap-0.5">
-              {NAV_LINKS.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={cn(
-                    'flex items-center gap-1.5 px-3 py-1.5 rounded text-[13px] font-semibold transition-colors',
-                    pathname === link.href || pathname.startsWith(link.href + '/')
-                      ? 'text-primary'
-                      : 'text-muted-foreground hover:text-foreground',
-                  )}
-                >
-                  {link.label}
-                </Link>
-              ))}
+            {/* Nav links — centered in the middle column (desktop only) */}
+            <nav className="hidden md:flex items-center justify-center gap-0.5">
+              {NAV_LINKS.map((link) => {
+                const active = pathname === link.href || pathname.startsWith(link.href + '/')
+                return (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={cn(
+                      'flex items-center gap-1.5 px-3 py-1.5 rounded text-[13px] font-semibold transition-colors',
+                      active ? 'text-primary' : 'text-muted-foreground hover:text-foreground',
+                    )}
+                  >
+                    {link.label}
+                  </Link>
+                )
+              })}
             </nav>
 
             {/* Right actions */}
@@ -97,5 +99,28 @@ export function Navbar() {
         </div>
       </div>
     </header>
+
+    {/* Mobile bottom tab bar — replaces the hidden desktop nav on small screens */}
+    <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-card/95 backdrop-blur-xl pb-[env(safe-area-inset-bottom)] md:hidden">
+      <div className="grid grid-cols-3">
+        {NAV_LINKS.map((link) => {
+          const active = pathname === link.href || pathname.startsWith(link.href + '/')
+          return (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={cn(
+                'flex flex-col items-center justify-center gap-1 py-2.5 text-[11px] font-semibold transition-colors',
+                active ? 'text-primary' : 'text-muted-foreground hover:text-foreground',
+              )}
+            >
+              <link.icon className={cn('h-5 w-5', active && 'fill-primary/15')} />
+              {link.label}
+            </Link>
+          )
+        })}
+      </div>
+    </nav>
+    </>
   )
 }

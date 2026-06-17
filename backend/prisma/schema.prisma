@@ -229,7 +229,11 @@ model Match {
   away_team      Team        @relation("AwayTeam", fields: [away_team_id], references: [id])
   kickoff_at     DateTime
   status         MatchStatus @default(SCHEDULED)
-  minute         Int?
+  minute              Int?
+  extra_minute        Int?
+  period_started_at   Int?
+  period_counts_from  Int?
+  period_length       Int?
   home_score     Int?
   away_score     Int?
   home_ht_score  Int?

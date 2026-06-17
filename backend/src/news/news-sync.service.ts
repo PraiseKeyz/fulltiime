@@ -64,6 +64,12 @@ export class NewsSyncService implements OnModuleInit {
       // Normalise the source URL — strip tracking query params so dedup is stable
       const cleanUrl = this.cleanUrl(item.link);
 
+      // Skip video and iPlayer URLs — they have no article text
+      if (/\/videos\/|\/iplayer\/|\/watch\?/i.test(item.link)) {
+        this.logger.log(`Skipping non-article: ${item.link}`);
+        continue;
+      }
+
       // Skip if already stored (idempotent — source_url is unique)
       const exists = await this.prisma.article.findUnique({
         where:  { source_url: cleanUrl },

@@ -3,8 +3,9 @@
 import { useState, useMemo } from 'react'
 import { ChevronRight } from 'lucide-react'
 import Link from 'next/link'
-import { cn } from '@/lib/utils'
+import { cn, formatMinute } from '@/lib/utils'
 import { useTimeFormat } from '@/lib/hooks/use-time-format'
+import { useLiveClock } from '@/lib/hooks/use-live-clock'
 import { useTodayFixtures } from '@/lib/api/hooks/fixtures.hooks'
 import { Button } from '@/components/ui/button'
 import type { Match } from '@/lib/api/domain'
@@ -74,16 +75,20 @@ function TeamRow({
 
 function StatusLabel({ match }: { match: Match }) {
   const { formatKickoff } = useTimeFormat()
-  const { status, minute, kickoff_at } = match
+  const clock = useLiveClock(match)
+  const { status, kickoff_at } = match
   if (status === 'LIVE') {
     return (
-      <span className="flex items-center gap-1 text-live text-[10px] font-bold">
+      <span className="flex items-center gap-1 text-[10px] font-bold">
         <span className="h-1.5 w-1.5 rounded-full bg-live animate-pulse" />
-        {minute ? `${minute}'` : 'LIVE'}
+        {clock.minute != null
+          ? <span className="text-foreground">{formatMinute(clock.minute, clock.extraMinute, clock.seconds)}</span>
+          : <span className="text-live">LIVE</span>
+        }
       </span>
     )
   }
-  if (status === 'HALFTIME')  return <span className="text-[10px] font-bold text-orange-400">HT</span>
+  if (status === 'HALFTIME')  return <span className="text-[10px] font-bold text-primary">HT</span>
   if (status === 'FINISHED')  return <span className="text-[10px] font-semibold text-muted-foreground">FT</span>
   if (status === 'SCHEDULED') return <span className="text-[11px] font-semibold">{formatKickoff(kickoff_at)}</span>
   if (status === 'POSTPONED') return <span className="text-[10px] text-muted-foreground font-semibold">PST</span>

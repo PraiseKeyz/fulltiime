@@ -1,19 +1,26 @@
+'use client'
+
 import Link from 'next/link'
 import { Clock, ChevronRight } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn, formatMinute } from '@/lib/utils'
 import { useTimeFormat } from '@/lib/hooks/use-time-format'
+import { useLiveClock } from '@/lib/hooks/use-live-clock'
 import type { Match } from '@/lib/api/domain'
 
 function StatusBadge({ match }: { match: Match }) {
   const { formatKickoff } = useTimeFormat()
-  const { status, minute, kickoff_at } = match
+  const clock = useLiveClock(match)
+  const { status, kickoff_at } = match
   if (status === 'LIVE') return (
-    <span className="flex items-center gap-1 text-[11px] font-black text-live">
+    <span className="flex items-center gap-1 text-[11px] font-black">
       <span className="h-1.5 w-1.5 rounded-full bg-live animate-pulse" />
-      {minute ? `${minute}'` : 'LIVE'}
+      {clock.minute != null
+        ? <span className="text-foreground">{formatMinute(clock.minute, clock.extraMinute, clock.seconds)}</span>
+        : <span className="text-live">LIVE</span>
+      }
     </span>
   )
-  if (status === 'HALFTIME') return <span className="text-[11px] font-black text-orange-400">HT</span>
+  if (status === 'HALFTIME') return <span className="text-[11px] font-black text-primary">HT</span>
   if (status === 'FINISHED')  return <span className="text-[11px] font-semibold text-muted-foreground">FT</span>
   if (status === 'SCHEDULED') return (
     <span className="flex items-center gap-1 text-[11px] font-semibold text-foreground">
