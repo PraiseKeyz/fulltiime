@@ -1,5 +1,6 @@
 'use client'
 
+import { Suspense } from 'react'
 import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { LogOut, User as UserIcon } from 'lucide-react'
@@ -15,7 +16,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 
-export function UserMenu() {
+function UserMenuInner() {
   const { user, isAuthenticated, isLoading, logout } = useAuth()
   const pathname     = usePathname()
   const searchParams = useSearchParams()
@@ -70,5 +71,13 @@ export function UserMenu() {
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
+  )
+}
+
+export function UserMenu() {
+  return (
+    <Suspense fallback={<div className="h-8 w-8 rounded-full bg-muted animate-pulse" />}>
+      <UserMenuInner />
+    </Suspense>
   )
 }

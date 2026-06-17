@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Mail, Lock, User, Eye, EyeOff } from 'lucide-react'
@@ -15,7 +15,7 @@ function usernameFromEmail(email: string) {
   return base.length >= 3 ? base : `${base}fan`
 }
 
-export default function RegisterPage() {
+function RegisterContent() {
   const router = useRouter()
   const { mutate: register, isPending } = useRegister()
   const [form, setForm] = useState({ full_name: '', email: '', password: '' })
@@ -147,5 +147,13 @@ export default function RegisterPage() {
       </div>
     </div>
     </GuestGuard>
+  )
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense>
+      <RegisterContent />
+    </Suspense>
   )
 }
