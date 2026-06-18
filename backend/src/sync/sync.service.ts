@@ -383,10 +383,6 @@ export class SyncService {
   @Cron('*/1 * * * *') // every 1 minute
   async syncLiveScores() {
     try {
-      // Snapshot which matches are currently live/halftime before we process anything.
-      // After the upsert we compare to detect which ones just transitioned to FINISHED
-      // so we can trigger a targeted standings sync immediately — rather than waiting
-      // for the scheduled safety-net cron.
       const previouslyLive = await this.prisma.match.findMany({
         where:  { status: { in: [MatchStatus.LIVE, MatchStatus.HALFTIME] } },
         select: { api_football_id: true },
@@ -397,13 +393,9 @@ export class SyncService {
 
       const fixtures = await this.api.getLiveFixtures();
       if (fixtures?.length) {
-        this.logger.log(`Updating ${fixtures.length} live fixtures`);
-        // Live payload already carries events, lineups and stats via includes.
-        // fromLiveFeed=true lets upsert bridge SportMonks' "still NS after kickoff" lag.
+        this.logger.log(`Processing ${fixtures.length} fixture(s) from the live feed`);
         await this.upsertFixtures(fixtures, true);
 
-        // Commentary is a separate endpoint (not in the bulk payload) — fetch and
-        // append for each live fixture so it's stored like any other game data.
         for (const f of fixtures) {
           await this.syncCommentary(f.id);
         }
