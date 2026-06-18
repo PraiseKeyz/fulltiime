@@ -327,7 +327,12 @@ export class FixturesService {
     tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
 
     const matches = await this.prisma.match.findMany({
-      where: { kickoff_at: { gte: today, lt: tomorrow } },
+      where: {
+        OR: [
+          { kickoff_at: { gte: today, lt: tomorrow } },
+          { status: { in: [MatchStatus.LIVE, MatchStatus.HALFTIME] } },
+        ],
+      },
       include: MATCH_INCLUDE,
       orderBy: { kickoff_at: 'asc' },
     });
