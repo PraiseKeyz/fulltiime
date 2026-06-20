@@ -12,6 +12,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@/prisma/prisma.service.js';
 import { LiveChatService } from './live-chat.service.js';
+import { ChatAttachmentType } from '../../generated/prisma/index.js';
 
 // Socket extended with optional authenticated user
 interface AuthSocket extends Socket {
@@ -88,7 +89,14 @@ export class LiveChatGateway implements OnGatewayConnection, OnGatewayDisconnect
   @SubscribeMessage('send')
   async handleSend(
     @ConnectedSocket() client: AuthSocket,
-    @MessageBody() data: { matchId: string; content: string },
+    @MessageBody() data: {
+      matchId: string;
+      content: string;
+      replyToId?: string;
+      attachmentUrl?: string;
+      attachmentType?: ChatAttachmentType;
+      attachmentDuration?: number;
+    },
   ) {
     if (!client.userId) {
       client.emit('error', 'Sign in to join the conversation.');
@@ -96,7 +104,8 @@ export class LiveChatGateway implements OnGatewayConnection, OnGatewayDisconnect
     }
 
     const content = (data.content ?? '').trim().slice(0, 500);
-    if (!content) return;
+    // A message needs either text or an attachment — never neither.
+    if (!content && !data.attachmentUrl) return;
 
     // 2-second cooldown per user
     const now  = Date.now();
@@ -107,7 +116,15 @@ export class LiveChatGateway implements OnGatewayConnection, OnGatewayDisconnect
     }
     this.lastSent.set(client.userId, now);
 
-    const saved = await this.chat.save(data.matchId, client.userId, content);
+    const saved = await this.chat.save({
+      matchId:            data.matchId,
+      userId:             client.userId,
+      content,
+      replyToId:          data.replyToId,
+      attachmentUrl:      data.attachmentUrl,
+      attachmentType:     data.attachmentType,
+      attachmentDuration: data.attachmentDuration,
+    });
 
     this.server.to(`match:${data.matchId}`).emit('message', saved);
   }

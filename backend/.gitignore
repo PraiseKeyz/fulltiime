@@ -3,6 +3,9 @@
 /node_modules
 /build
 
+# User-uploaded chat attachments (images/voice notes) — local disk storage
+/uploads
+
 # Logs
 logs
 *.log

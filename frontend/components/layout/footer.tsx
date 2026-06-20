@@ -1,5 +1,8 @@
+'use client'
+
 import Link from 'next/link'
 import { Instagram, Youtube } from 'lucide-react'
+import { useImmersive } from '@/providers/immersive-provider'
 
 // Brand glyphs lucide no longer ships as first-class icons (X, TikTok, WhatsApp).
 // Inline SVGs using currentColor so they inherit the same hover colour as the rest.
@@ -48,6 +51,9 @@ const COLUMNS = [
 ]
 
 export function Footer() {
+  const { immersive } = useImmersive()
+  if (immersive) return null
+
   return (
     <footer className="bg-card border-t border-border mt-auto">
       <div className="mx-auto max-w-[1400px] px-4 lg:px-6 py-10">

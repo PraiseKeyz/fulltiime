@@ -75,8 +75,8 @@ export function getPhasePlan(view: MatchView): PhasePlan {
       }
       tabs.push(h2hTab(m))
       tabs.push(chatTab(m))
-      if (fullchatEnabled) tabs.push(banterTab(m))
-      return { tabs, defaultTab: 'overview' }
+      if (fullchatEnabled) tabs.unshift(banterTab(m))
+      return { tabs, defaultTab: fullchatEnabled ? 'banter' : 'overview' }
     }
 
     case 'live':
@@ -95,8 +95,8 @@ export function getPhasePlan(view: MatchView): PhasePlan {
       tabs.push(overviewTab(m))
       tabs.push(h2hTab(m))
       tabs.push(chatTab(m))
-      if (fullchatEnabled) tabs.push(banterTab(m))
-      return { tabs, defaultTab: 'summary' }
+      if (fullchatEnabled) tabs.unshift(banterTab(m))
+      return { tabs, defaultTab: fullchatEnabled ? 'banter' : 'summary' }
     }
   }
 }

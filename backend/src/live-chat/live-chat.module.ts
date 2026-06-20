@@ -3,6 +3,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { LiveChatService } from './live-chat.service.js';
 import { LiveChatGateway } from './live-chat.gateway.js';
+import { ChatUploadController } from './chat-upload.controller.js';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { LiveChatGateway } from './live-chat.gateway.js';
       }),
     }),
   ],
+  controllers: [ChatUploadController],
   providers: [LiveChatService, LiveChatGateway],
 })
 export class LiveChatModule {}

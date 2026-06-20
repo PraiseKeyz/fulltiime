@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 import { useTimeFormat } from '@/lib/hooks/use-time-format'
 import type { Match, MatchPreview, VenueInfo } from '@/lib/api/domain'
 import { useLiveFixtures, useUpcomingFixtures } from '@/lib/api/hooks/fixtures.hooks'
+import { useImmersive } from '@/providers/immersive-provider'
 import type { MatchView } from './phase'
 import { getViewMeta } from './view-meta'
 import { shortSlot } from './labels'
@@ -214,8 +215,11 @@ function RailSlot2({ view }: { view: MatchView }) {
 /** The full right rail: venue (constant) + phase-specific fixtures slot. */
 export function MatchRail({ view }: { view: MatchView }) {
   const { venue } = getViewMeta(view)
+  const { immersive } = useImmersive()
+  if (immersive) return null
+
   return (
-    <aside className="space-y-4">
+    <aside className="space-y-4 lg:sticky lg:top-14">
       <VenueCard venue={venue} />
       <RailSlot2 view={view} />
     </aside>

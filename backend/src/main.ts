@@ -3,6 +3,7 @@ import { AppModule } from './app.module.js';
 import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestExpressApplication } from '@nestjs/platform-express';
+import { join } from 'path';
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter.js';
@@ -11,6 +12,11 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const configService = app.get(ConfigService);
+
+  // Chat attachments (images/voice notes) — saved to disk by ChatUploadController,
+  // served back from here. Registered before setGlobalPrefix so /uploads/* isn't
+  // prefixed with /api.
+  app.useStaticAssets(join(process.cwd(), 'uploads'), { prefix: '/uploads' });
 
   app.setGlobalPrefix('api');
   app.enableVersioning({

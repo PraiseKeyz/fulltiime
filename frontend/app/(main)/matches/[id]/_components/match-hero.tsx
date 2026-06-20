@@ -6,6 +6,7 @@ import { ArrowLeft, Clock, MapPin, Flag, Shield } from 'lucide-react'
 import { cn, formatMinute } from '@/lib/utils'
 import { useTimeFormat } from '@/lib/hooks/use-time-format'
 import { useLiveClock } from '@/lib/hooks/use-live-clock'
+import { useImmersive } from '@/providers/immersive-provider'
 import type { MatchView } from './phase'
 import { getViewMeta, type ViewMeta } from './view-meta'
 
@@ -150,12 +151,63 @@ function HeroCenter({ view, meta }: { view: MatchView; meta: ViewMeta }) {
   }
 }
 
+function CompactHero({ view, meta }: { view: MatchView; meta: ViewMeta }) {
+  const { formatKickoff } = useTimeFormat()
+  const clock = useLiveClock(view.phase === 'live' ? view.match : null)
+  const hasScore = meta.homeScore !== null && meta.awayScore !== null
+
+  let status: React.ReactNode = null
+  if (view.phase === 'live') {
+    const isHT = view.match.status === 'HALFTIME'
+    status = isHT ? (
+      <span className="text-[10px] font-black text-primary">HT</span>
+    ) : (
+      <span className="flex items-center gap-1 text-[10px] font-black">
+        <span className="h-1.5 w-1.5 rounded-full bg-live animate-pulse" />
+        {clock.minute != null
+          ? <span className="text-foreground">{formatMinute(clock.minute, clock.extraMinute, clock.seconds)}</span>
+          : <span className="text-live">LIVE</span>}
+      </span>
+    )
+  } else if (view.phase === 'finished') {
+    status = <span className="text-[10px] font-bold text-muted-foreground">FT</span>
+  } else if (view.phase === 'upcoming') {
+    status = <span className="text-[10px] font-bold text-muted-foreground">{meta.date ? formatKickoff(meta.date) : ''}</span>
+  }
+
+  return (
+    <div className="-mx-4 lg:-mx-6 flex items-center gap-3 bg-card px-4 lg:px-6 py-4">
+      <div className="flex flex-1 min-w-0 items-center justify-end gap-2">
+        <span className="truncate text-[13px] font-bold">{meta.home}</span>
+        {meta.homeLogo
+          ? <img src={meta.homeLogo} alt="" className="h-6 w-6 shrink-0 object-contain" />
+          : <Shield className="h-6 w-6 shrink-0 text-muted-foreground/40" />}
+      </div>
+
+      <div className="flex w-16 shrink-0 flex-col items-center">
+        <span className="text-[16px] font-black tabular-nums">{hasScore ? `${meta.homeScore} – ${meta.awayScore}` : 'vs'}</span>
+        {status}
+      </div>
+
+      <div className="flex flex-1 min-w-0 items-center gap-2">
+        {meta.awayLogo
+          ? <img src={meta.awayLogo} alt="" className="h-6 w-6 shrink-0 object-contain" />
+          : <Shield className="h-6 w-6 shrink-0 text-muted-foreground/40" />}
+        <span className="truncate text-[13px] font-bold">{meta.away}</span>
+      </div>
+    </div>
+  )
+}
+
 // ─── Hero ────────────────────────────────────────────────────────────────────
 
 export function MatchHero({ view }: { view: MatchView }) {
   const { formatMatchDate, formatKickoff } = useTimeFormat()
   const meta = getViewMeta(view)
   const disrupted = view.phase === 'postponed' || view.phase === 'cancelled'
+  const { immersive } = useImmersive()
+
+  if (immersive) return <CompactHero view={view} meta={meta} />
 
   return (
     <div className="rounded-xl border border-border bg-card p-6">

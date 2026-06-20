@@ -8,6 +8,7 @@ import { Sun, Moon, Goal, Trophy, Newspaper } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { UserMenu } from '@/components/layout/user-menu'
+import { useImmersive } from '@/providers/immersive-provider'
 
 const NAV_LINKS = [
   { href: '/matches', label: 'Matches', icon: Goal },
@@ -19,6 +20,7 @@ export function Navbar() {
   const pathname = usePathname()
   const { theme, setTheme } = useTheme()
   const [scrolled, setScrolled] = useState(false)
+  const { immersive } = useImmersive()
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 16)
@@ -29,6 +31,7 @@ export function Navbar() {
 
   return (
     <>
+    {!immersive && (
     <header className="sticky top-0 z-50 mb-12">
       <div
         className={cn(
@@ -99,8 +102,10 @@ export function Navbar() {
         </div>
       </div>
     </header>
+    )}
 
     {/* Mobile bottom tab bar — replaces the hidden desktop nav on small screens */}
+    {!immersive && (
     <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-card/95 backdrop-blur-xl pb-[env(safe-area-inset-bottom)] md:hidden">
       <div className="grid grid-cols-3">
         {NAV_LINKS.map((link) => {
@@ -121,6 +126,7 @@ export function Navbar() {
         })}
       </div>
     </nav>
+    )}
     </>
   )
 }
