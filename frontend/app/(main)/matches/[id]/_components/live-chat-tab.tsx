@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type KeyboardEvent, type PointerEvent } from 'react'
 import Link from 'next/link'
-import { Send, CornerUpLeft, X, Plus, Mic, Play, Pause, Keyboard, Image as ImageIcon, Dices } from 'lucide-react'
+import { Send, CornerUpLeft, X, Plus, Mic, Play, Pause, Keyboard, Image as ImageIcon, Dices, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
@@ -140,7 +140,6 @@ function ChatInput({
       stopWaveform()
       if (pendingPreviewUrl) URL.revokeObjectURL(pendingPreviewUrl)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const suggestions = mentionQuery === null
@@ -442,8 +441,6 @@ function AudioBubble({ url, duration }: { url: string; duration: number | null }
   const [currentTime, setCurrentTime] = useState(0)
   const [totalDuration, setTotalDuration] = useState(duration ?? 0)
 
-  // Stable per-message waveform shape — generated once on mount, not on every
-  // render, or the bars would reshuffle on every timeupdate tick while playing.
   const [barHeights] = useState(() =>
     Array.from({ length: PLAYBACK_BAR_COUNT }, () => 4 + Math.round(Math.random() * 18)),
   )
@@ -455,8 +452,7 @@ function AudioBubble({ url, duration }: { url: string; duration: number | null }
     else audio.play()
   }
 
-  // Reset to the start once playback finishes — next tap plays from the top,
-  // not from a "fully played" dead end.
+
   function handleEnded() {
     setPlaying(false)
     setCurrentTime(0)
@@ -575,13 +571,14 @@ function useSwipeToReply(onTrigger: () => void) {
 }
 
 function MessageRow({
-  msg, isOwn, currentUsername, onReply, isNew,
+  msg, isOwn, currentUsername, onReply, isNew, pending,
 }: {
   msg: LiveChatMessage
   isOwn: boolean
   currentUsername?: string
   onReply: (msg: LiveChatMessage) => void
   isNew: boolean
+  pending?: boolean
 }) {
   const mentionedMe = !isOwn && mentionsUser(msg.content, currentUsername)
   const { dragX, handlers } = useSwipeToReply(() => onReply(msg))
@@ -592,7 +589,7 @@ function MessageRow({
       id={`chat-msg-${msg.id}`}
       className={cn(
         'group relative flex w-fit max-w-[80%]',
-        isOwn && 'ml-auto',
+        isOwn && 'ml-auto -mr-3.5',
         playEntrance && 'animate-message-in',
       )}
     >
@@ -605,7 +602,7 @@ function MessageRow({
       </div>
 
       <div
-        {...handlers}
+        {...(pending ? {} : handlers)}
         style={{
           transform:  `translateX(${dragX}px)`,
           transition: dragX === 0 ? 'transform 150ms ease-out' : undefined,
@@ -618,7 +615,20 @@ function MessageRow({
             <AvatarFallback className="text-[10px]">{getInitials(msg.user.username)}</AvatarFallback>
           </Avatar>
         )}
-        <div className={cn('flex items-center gap-1 min-w-0', isOwn && 'flex-row-reverse')}>
+        <div className={cn('flex items-center gap-0.5 min-w-0', isOwn && 'flex-row-reverse')}>
+          {isOwn && (
+            <span
+              className={cn(
+                'flex h-4 w-4 shrink-0 self-end items-center justify-center rounded-full border',
+                pending
+                  ? 'border-muted-foreground/30'
+                  : 'border-primary/40 bg-primary/15',
+              )}
+            >
+              {!pending && <Check className="h-2.5 w-2.5 text-primary" />}
+            </span>
+          )}
+
           <div
             className={cn(
               'min-w-0 rounded-2xl px-3.5 py-2 text-[13px] leading-relaxed break-words text-foreground border border-border',
@@ -627,6 +637,7 @@ function MessageRow({
                 : mentionedMe
                   ? 'bg-card rounded-bl-sm ring-1 ring-primary/40'
                   : 'bg-card rounded-bl-sm',
+              pending && 'opacity-70',
             )}
           >
             {msg.reply_to && (
@@ -659,14 +670,16 @@ function MessageRow({
             {msg.content && renderWithMentions(msg.content, currentUsername)}
           </div>
 
-          <button
-            type="button"
-            onClick={() => onReply(msg)}
-            aria-label="Reply"
-            className="shrink-0 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity text-muted-foreground hover:text-foreground"
-          >
-            <CornerUpLeft className="h-3.5 w-3.5" />
-          </button>
+          {!pending && (
+            <button
+              type="button"
+              onClick={() => onReply(msg)}
+              aria-label="Reply"
+              className="shrink-0 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity text-muted-foreground hover:text-foreground"
+            >
+              <CornerUpLeft className="h-3.5 w-3.5" />
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -674,6 +687,26 @@ function MessageRow({
 }
 
 // ─── Main tab ─────────────────────────────────────────────────────────────────
+
+function buildOptimisticMessage(
+  tempId: string,
+  content: string,
+  user: LiveChatMessage['user'],
+  replyTo: LiveChatMessage | null,
+): LiveChatMessage {
+  return {
+    id: tempId,
+    content,
+    attachment_url: null,
+    attachment_type: null,
+    attachment_duration: null,
+    created_at: new Date().toISOString(),
+    user,
+    reply_to: replyTo
+      ? { id: replyTo.id, content: replyTo.content, user: { username: replyTo.user.username } }
+      : null,
+  }
+}
 
 export function LiveChatTab({ match }: { match: Match }) {
   const { data: me, isLoading: meLoading } = useMe()
@@ -683,22 +716,45 @@ export function LiveChatTab({ match }: { match: Match }) {
   const [replyTo, setReplyTo]     = useState<LiveChatMessage | null>(null)
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
+
+  const [pending, setPending] = useState<LiveChatMessage[]>([])
   const listRef                = useRef<HTMLDivElement>(null)
 
   const knownUsers = useMemo(() => knownUsersFrom(messages), [messages])
+  const displayMessages = useMemo(() => [...messages, ...pending], [messages, pending])
 
   useEffect(() => {
     const el = listRef.current
     if (!el) return
     el.scrollTop = el.scrollHeight
-  }, [messages.length])
+  }, [displayMessages.length])
+
+  // Once a confirmed message from this same user with the same text shows up
+  // in `messages`, the optimistic placeholder has done its job — drop it so
+  // the real one (with reply-jump support etc.) takes over.
+  useEffect(() => {
+    if (!me || pending.length === 0) return
+    setPending(prev => prev.filter(p =>
+      !messages.some(m => m.user.id === me.id && m.content === p.content),
+    ))
+  }, [messages, me, pending.length])
 
   function handleSend() {
     const content = draft.trim()
-    if (!content) return
+    if (!content || !me) return
+
+    const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2)}`
+    setPending(prev => [...prev, buildOptimisticMessage(tempId, content, me, replyTo)])
+
     send(content, { replyToId: replyTo?.id })
     setDraft('')
     setReplyTo(null)
+
+    // Safety net — if the server never confirms (dropped connection, etc.),
+    // don't leave it looking like it's sending forever.
+    setTimeout(() => {
+      setPending(prev => prev.filter(p => p.id !== tempId))
+    }, 15_000)
   }
 
   async function handleSendImage(file: File, caption: string) {
@@ -734,21 +790,25 @@ export function LiveChatTab({ match }: { match: Match }) {
 
       {/* Message list — visible to everyone */}
       <div ref={listRef} className="flex-1 overflow-y-auto flex flex-col justify-end gap-3 p-4 scrollbar-none">
-        {messages.length === 0 && (
+        {displayMessages.length === 0 && (
           <p className="text-[12px] text-muted-foreground/60 text-center py-10">
             No messages yet — be the first to say something!
           </p>
         )}
-        {messages.map(msg => (
-          <MessageRow
-            key={msg.id}
-            msg={msg}
-            isOwn={msg.user.id === (me?.id ?? '')}
-            currentUsername={me?.username}
-            onReply={setReplyTo}
-            isNew={liveIds.has(msg.id)}
-          />
-        ))}
+        {displayMessages.map(msg => {
+          const isPending = pending.some(p => p.id === msg.id)
+          return (
+            <MessageRow
+              key={msg.id}
+              msg={msg}
+              isOwn={msg.user.id === (me?.id ?? '')}
+              currentUsername={me?.username}
+              onReply={setReplyTo}
+              isNew={!isPending && liveIds.has(msg.id)}
+              pending={isPending}
+            />
+          )
+        })}
       </div>
 
       {/* Error toast */}

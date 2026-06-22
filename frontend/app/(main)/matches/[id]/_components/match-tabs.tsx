@@ -6,6 +6,7 @@ import { ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { useImmersive } from '@/providers/immersive-provider'
+import { useMediaQuery } from '@/lib/hooks/use-media-query'
 import type { MatchView } from './phase'
 import { getPhasePlan, type PhaseTab } from './phase.config'
 
@@ -20,8 +21,9 @@ function useTabState(view: MatchView) {
   const searchParams = useSearchParams()
   const router       = useRouter()
   const pathname     = usePathname()
+  const isDesktop    = useMediaQuery('(min-width: 1024px)')
 
-  const plan = useMemo(() => getPhasePlan(view), [view])
+  const plan = useMemo(() => getPhasePlan(view, isDesktop), [view, isDesktop])
 
   const urlTab = searchParams.get('tab')
   const active = plan.tabs.some(t => t.key === urlTab) ? urlTab! : plan.defaultTab

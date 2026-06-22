@@ -36,24 +36,21 @@ export default function MatchDetailPage() {
     )
   }
 
-  // One decision drives the whole page — see docs/match-page-spec.md.
   const view = getMatchPhase(data)
 
   return (
     <div
       className={cn(
         'mx-auto max-w-[1400px] px-4 lg:px-6 grid gap-6',
-        immersive ? 'py-0 lg:grid-cols-1' : 'py-6 lg:grid-cols-[1fr_320px]',
+        immersive ? 'py-0 lg:grid-cols-1' : 'py-6 lg:grid-cols-[1fr_360px]',
       )}
     >
       {/* Main */}
-      <div className={cn('min-w-0 space-y-6', immersive && 'flex flex-col h-screen')}>
+      <div className={cn('min-w-0 space-y-6 lg:min-h-screen', immersive && 'flex flex-col h-screen')}>
         <div
           className={cn(
             'sticky z-30 bg-background space-y-4 pb-4',
-            // Navbar is gone entirely while immersive (see Navbar), so there's no
-            // header height left to clear — stick straight to the viewport top.
-            immersive ? 'top-0' : 'top-[68px]',
+            immersive ? 'top-0' : 'top-14 pt-[4.5rem]',
           )}
         >
           <MatchHero view={view} />
@@ -61,9 +58,6 @@ export default function MatchDetailPage() {
             <MatchTabBar view={view} />
           </Suspense>
         </div>
-        {/* While immersive this flexes to fill the rest of the viewport, so the
-            chat (and its input) fills real space instead of floating in a fixed
-            height with empty page below it. Otherwise it's just normal flow. */}
         <div className={cn(immersive && 'flex-1 min-h-0')}>
           <Suspense fallback={<div className="h-64 rounded-xl bg-card border border-border animate-pulse" />}>
             <MatchTabPanel view={view} />
@@ -71,7 +65,6 @@ export default function MatchDetailPage() {
         </div>
       </div>
 
-      {/* Rail */}
       <MatchRail view={view} />
     </div>
   )

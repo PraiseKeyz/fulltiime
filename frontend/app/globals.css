@@ -61,6 +61,12 @@ body {
   background-color: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
+  /* Live matches re-fetch and reshuffle event/commentary lists in the
+     background. Without this, the browser's scroll-anchoring tries to
+     "correct" scroll position when that content reflows above the
+     viewport, which can momentarily misalign a row against the sticky
+     navbar/hero. */
+  overflow-anchor: none;
 }
 
 @layer base {

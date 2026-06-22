@@ -9,17 +9,6 @@ import { ChatTab } from './match-chat'
 import { OverviewTab } from './match-overview'
 import { LiveChatTab } from './live-chat-tab'
 
-// ─── Phase plan ──────────────────────────────────────────────────────────────
-//
-// Given a match view, decide WHICH tabs render, in what ORDER, and which is the
-// DEFAULT. This is the declarative heart of the page (see docs/match-page-spec.md
-// §5): a tab only appears when its data exists, so empty boxes never show and the
-// narrative is the default for "quiet" phases but demoted behind Summary for live
-// and finished games.
-//
-// Expressed as a function (not a static map) so each case is fully type-narrowed
-// on the concrete Match/Preview — but it still reads as one block per phase.
-
 export interface PhaseTab {
   key:    string
   label:  string
@@ -35,19 +24,24 @@ const hasLineups       = (m: Match) => (m.lineups?.length ?? 0) > 0
 const hasStats         = (m: Match) => availableStatRows(m).length > 0
 const fullchatEnabled  = process.env.NEXT_PUBLIC_FULLCHAT_ENABLED === 'true'
 
+const FULLCHAT_PRE_KICKOFF_MS = 15 * 60_000
+const isNearKickoff = (m: Match) => Date.now() >= new Date(m.kickoff_at).getTime() - FULLCHAT_PRE_KICKOFF_MS
+
+export function fullchatAvailable(view: MatchView): boolean {
+  if (!fullchatEnabled) return false
+  if (view.phase === 'live' || view.phase === 'finished') return true
+  if (view.phase === 'upcoming') return isNearKickoff(view.match)
+  return false
+}
+
 function overviewTab(m: Match): PhaseTab {
   return { key: 'overview', label: 'Overview', render: () => <OverviewTab match={m} /> }
 }
 
-// H2H needs two real, resolved teams — only meaningful once the fixture is no
-// longer a placeholder (i.e. every phase except 'tbd'). The tab itself fetches
-// lazily and renders an empty state when SportMonks has no shared history.
 function h2hTab(m: Match): PhaseTab {
   return { key: 'h2h', label: 'H2H', render: () => <H2HTab match={m} /> }
 }
 
-// Grounded in a real Match row (MatchChatService does prisma.match.findUnique),
-// so it's withheld for 'tbd' placeholders, which have no Match row to ground on.
 function chatTab(m: Match): PhaseTab {
   return { key: 'chat', label: 'Ask', render: () => <ChatTab match={m} /> }
 }
@@ -56,7 +50,7 @@ function banterTab(m: Match): PhaseTab {
   return { key: 'banter', label: 'Fullchat', render: () => <LiveChatTab match={m} /> }
 }
 
-export function getPhasePlan(view: MatchView): PhasePlan {
+export function getPhasePlan(view: MatchView, isDesktop = false): PhasePlan {
   switch (view.phase) {
     case 'tbd':
       return { tabs: [], defaultTab: '' }
@@ -75,8 +69,9 @@ export function getPhasePlan(view: MatchView): PhasePlan {
       }
       tabs.push(h2hTab(m))
       tabs.push(chatTab(m))
-      if (fullchatEnabled) tabs.unshift(banterTab(m))
-      return { tabs, defaultTab: fullchatEnabled ? 'banter' : 'overview' }
+      const showBanter = !isDesktop && fullchatAvailable(view)
+      if (showBanter) tabs.unshift(banterTab(m))
+      return { tabs, defaultTab: showBanter ? 'banter' : 'overview' }
     }
 
     case 'live':
@@ -95,8 +90,9 @@ export function getPhasePlan(view: MatchView): PhasePlan {
       tabs.push(overviewTab(m))
       tabs.push(h2hTab(m))
       tabs.push(chatTab(m))
-      if (fullchatEnabled) tabs.unshift(banterTab(m))
-      return { tabs, defaultTab: fullchatEnabled ? 'banter' : 'summary' }
+      const showBanter = !isDesktop && fullchatAvailable(view)
+      if (showBanter) tabs.unshift(banterTab(m))
+      return { tabs, defaultTab: showBanter ? 'banter' : 'summary' }
     }
   }
 }

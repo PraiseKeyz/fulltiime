@@ -10,16 +10,19 @@ import { useImmersive } from '@/providers/immersive-provider'
 import type { MatchView } from './phase'
 import { getViewMeta } from './view-meta'
 import { shortSlot } from './labels'
+import { fullchatAvailable } from './phase.config'
+import { LiveChatTab } from './live-chat-tab'
+import { useMediaQuery } from '@/lib/hooks/use-media-query'
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 
 // ── Venue card ──────────────────────────────────────────────────────────────────
 
-export function VenueCard({ venue }: { venue: VenueInfo | null | undefined }) {
+export function VenueCard({ venue, className }: { venue: VenueInfo | null | undefined; className?: string }) {
   if (!venue?.name) return null
   const location = [venue.city, venue.country].filter(Boolean).join(', ')
   return (
-    <div className="rounded-xl border border-border bg-card overflow-hidden">
+    <div className={cn('rounded-xl border border-border bg-card overflow-hidden', className)}>
       {/* Stadium photo */}
       {venue.image_url && (
         <div className="h-28 bg-muted overflow-hidden">
@@ -138,11 +141,6 @@ export function RoundFixturesCard({
 }
 
 // ── Phase-specific rail ───────────────────────────────────────────────────────
-//
-// Slot 1 is always the venue. Slot 2 varies by phase — each variant lives in its
-// own component so its data hook only runs when that phase is actually rendered.
-
-/** TBD — other ties in the same knockout round (from the preview payload). */
 function TbdRail({ preview }: { preview: MatchPreview }) {
   const fixtures: RailFixture[] = (preview.roundFixtures ?? []).map(t => ({
     id:        t.id,
@@ -163,9 +161,6 @@ function TbdRail({ preview }: { preview: MatchPreview }) {
   )
 }
 
-/** LIVE — other games currently in play across the app. When this is the only
- *  live match there are no "others" to show, so fall back to the competition's
- *  fixtures instead of rendering an empty (i.e. invisible) rail. */
 function LiveRail({ match }: { match: Match }) {
   const { data } = useLiveFixtures()
   const others = (data ?? []).filter(m => m.id !== match.id)
@@ -212,16 +207,38 @@ function RailSlot2({ view }: { view: MatchView }) {
   }
 }
 
-/** The full right rail: venue (constant) + phase-specific fixtures slot. */
 export function MatchRail({ view }: { view: MatchView }) {
   const { venue } = getViewMeta(view)
   const { immersive } = useImmersive()
+  // Mobile already has Fullchat as its own tab (with the fullscreen takeover) —
+  // showing it again, stacked below the rail, would just be a confusing duplicate.
+  // Only the permanent desktop sidebar should ever swap fixtures for chat.
+  const isDesktop = useMediaQuery('(min-width: 1024px)')
   if (immersive) return null
 
+  if (view.phase === 'tbd') {
+    return (
+      <aside className="space-y-4 lg:sticky lg:top-32 lg:self-start">
+        <VenueCard venue={venue} className="lg:h-64" />
+        <RailSlot2 view={view} />
+      </aside>
+    )
+  }
+
+  const showChat = isDesktop && fullchatAvailable(view)
+
   return (
-    <aside className="space-y-4 lg:sticky lg:top-14">
-      <VenueCard venue={venue} />
-      <RailSlot2 view={view} />
+    <aside className="space-y-4 lg:sticky lg:top-32 lg:self-start lg:flex lg:h-[calc(100vh-8rem)] lg:flex-col lg:gap-4 lg:space-y-0">
+      <VenueCard venue={venue} className="lg:h-64 lg:shrink-0" />
+      {showChat ? (
+        <div className="h-[530px] overflow-hidden rounded-xl border border-border lg:h-auto lg:flex-1">
+          <LiveChatTab match={view.match} />
+        </div>
+      ) : (
+        <div className="lg:flex-1 lg:min-h-0">
+          <RailSlot2 view={view} />
+        </div>
+      )}
     </aside>
   )
 }
