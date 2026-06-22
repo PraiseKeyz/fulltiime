@@ -729,9 +729,6 @@ export function LiveChatTab({ match }: { match: Match }) {
     el.scrollTop = el.scrollHeight
   }, [displayMessages.length])
 
-  // Once a confirmed message from this same user with the same text shows up
-  // in `messages`, the optimistic placeholder has done its job — drop it so
-  // the real one (with reply-jump support etc.) takes over.
   useEffect(() => {
     if (!me || pending.length === 0) return
     setPending(prev => prev.filter(p =>
@@ -750,8 +747,6 @@ export function LiveChatTab({ match }: { match: Match }) {
     setDraft('')
     setReplyTo(null)
 
-    // Safety net — if the server never confirms (dropped connection, etc.),
-    // don't leave it looking like it's sending forever.
     setTimeout(() => {
       setPending(prev => prev.filter(p => p.id !== tempId))
     }, 15_000)
