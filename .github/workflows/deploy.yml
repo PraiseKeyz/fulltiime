@@ -42,6 +42,7 @@ jobs:
             NEXT_PUBLIC_GOOGLE_CLIENT_ID=${{ secrets.NEXT_PUBLIC_GOOGLE_CLIENT_ID }}
             NEXT_PUBLIC_SITE_URL=${{ secrets.NEXT_PUBLIC_SITE_URL }}
             NEXT_PUBLIC_COMING_SOON_ENABLED=false
+            NEXT_PUBLIC_FULLCHAT_ENABLED=true
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
