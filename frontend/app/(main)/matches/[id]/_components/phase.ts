@@ -46,6 +46,7 @@ export function getMatchPhase(data: Match | MatchPreview): MatchView {
   switch (data.status) {
     case 'LIVE':
     case 'HALFTIME':
+    case 'INTERRUPTED':
       return { phase: 'live', match: data }
     case 'FINISHED':
       return { phase: 'finished', match: data }

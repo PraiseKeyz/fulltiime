@@ -13,6 +13,7 @@ interface MatchCardProps {
 const STATUS_BADGE: Record<string, { label: string; className: string }> = {
   LIVE: { label: 'LIVE', className: 'bg-red-500 text-white animate-pulse' },
   HALFTIME: { label: 'HT', className: 'bg-orange-500 text-white' },
+  INTERRUPTED: { label: 'INT', className: 'bg-amber-500 text-white' },
   FINISHED: { label: 'FT', className: 'bg-muted text-muted-foreground' },
   SCHEDULED: { label: '', className: '' },
   POSTPONED: { label: 'PPD', className: 'bg-muted text-muted-foreground' },
@@ -22,7 +23,7 @@ const STATUS_BADGE: Record<string, { label: string; className: string }> = {
 export function MatchCard({ match, className }: MatchCardProps) {
   const { formatKickoff } = useTimeFormat()
   const badge = STATUS_BADGE[match.status] ?? STATUS_BADGE.SCHEDULED
-  const isLive = match.status === 'LIVE' || match.status === 'HALFTIME'
+  const isLive = match.status === 'LIVE' || match.status === 'HALFTIME' || match.status === 'INTERRUPTED'
   const hasScore = match.home_score !== null && match.away_score !== null
 
   return (

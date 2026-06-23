@@ -50,12 +50,19 @@ function countdownFromDiff(diff: number) {
 // that's delayed, mis-timed, or parsed in the wrong timezone would otherwise show
 // a not-yet-started match as live (which is exactly what happened).
 function isMatchLive(match: Match) {
-  return match.status === 'LIVE' || match.status === 'HALFTIME'
+  return match.status === 'LIVE' || match.status === 'HALFTIME' || match.status === 'INTERRUPTED'
 }
 
 function StatusBadge({ match }: { match: Match }) {
   const { formatKickoff } = useTimeFormat()
   const clock = useLiveClock(match)
+  if (match.status === 'INTERRUPTED') {
+    return (
+      <span className="flex items-center gap-1.5 text-[11px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-wide">
+        Interrupted
+      </span>
+    )
+  }
   if (match.status === 'HALFTIME') {
     return (
       <span className="flex items-center gap-1.5 text-[11px] font-black text-primary uppercase tracking-wide">

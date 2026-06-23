@@ -26,7 +26,7 @@ export default function MatchesPage() {
     queryKey:        ['fixtures', 'date', dateStr],
     queryFn:         () => api.get<Match[]>('/fixtures', { params: { date: dateStr } }),
     refetchInterval: (query) => {
-      const hasLive = query.state.data?.some(m => m.status === 'LIVE' || m.status === 'HALFTIME')
+      const hasLive = query.state.data?.some(m => m.status === 'LIVE' || m.status === 'HALFTIME' || m.status === 'INTERRUPTED')
       return hasLive ? 30_000 : 5 * 60_000
     },
   })
@@ -47,7 +47,7 @@ export default function MatchesPage() {
     return (matches ?? []).filter(m => m.season?.league?.id === selectedLeagueId)
   }, [matches, selectedLeagueId])
 
-  const liveMatches     = useMemo(() => scoped.filter(m => m.status === 'LIVE' || m.status === 'HALFTIME'), [scoped])
+  const liveMatches     = useMemo(() => scoped.filter(m => m.status === 'LIVE' || m.status === 'HALFTIME' || m.status === 'INTERRUPTED'), [scoped])
   const upcomingMatches = useMemo(() => scoped.filter(m => m.status === 'SCHEDULED'), [scoped])
   const finishedMatches = useMemo(() => scoped.filter(m => m.status === 'FINISHED'), [scoped])
 

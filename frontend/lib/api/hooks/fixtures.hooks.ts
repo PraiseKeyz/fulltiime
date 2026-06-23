@@ -52,7 +52,7 @@ export function useFixture(id: string) {
       const data = query.state.data
       if (!data || 'preview' in data) return false
 
-      if (data.status === 'LIVE' || data.status === 'HALFTIME') return 30_000
+      if (data.status === 'LIVE' || data.status === 'HALFTIME' || data.status === 'INTERRUPTED') return 30_000
 
       if (data.status === 'SCHEDULED') {
         const kickoff = new Date(data.kickoff_at).getTime()

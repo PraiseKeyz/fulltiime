@@ -6,7 +6,7 @@ import type { Match } from '@/lib/api/domain'
 function FixtureRow({ match }: { match: Match }) {
   const { formatMatchDate, formatKickoff } = useTimeFormat()
   const hasScore = match.home_score !== null && match.away_score !== null
-  const isLive = match.status === 'LIVE' || match.status === 'HALFTIME'
+  const isLive = match.status === 'LIVE' || match.status === 'HALFTIME' || match.status === 'INTERRUPTED'
 
   return (
     <Link href={`/matches/${match.id}`} className="flex items-center gap-3 px-4 py-3 hover:bg-muted/40 transition-colors">

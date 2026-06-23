@@ -30,7 +30,7 @@ const LEAGUE_SHORT: Record<string, string> = {
 }
 
 const STATUS_ORDER: Record<string, number> = {
-  LIVE: 0, HALFTIME: 1, SCHEDULED: 2, FINISHED: 3, POSTPONED: 4, CANCELLED: 5,
+  LIVE: 0, HALFTIME: 1, INTERRUPTED: 1, SCHEDULED: 2, FINISHED: 3, POSTPONED: 4, CANCELLED: 5,
 }
 
 function sortMatches(matches: Match[]): Match[] {
@@ -89,6 +89,7 @@ function StatusLabel({ match }: { match: Match }) {
     )
   }
   if (status === 'HALFTIME')  return <span className="text-[10px] font-bold text-primary">HT</span>
+  if (status === 'INTERRUPTED') return <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400">INT</span>
   if (status === 'FINISHED')  return <span className="text-[10px] font-semibold text-muted-foreground">FT</span>
   if (status === 'SCHEDULED') return <span className="text-[11px] font-semibold">{formatKickoff(kickoff_at)}</span>
   if (status === 'POSTPONED') return <span className="text-[10px] text-muted-foreground font-semibold">PST</span>
@@ -96,7 +97,7 @@ function StatusLabel({ match }: { match: Match }) {
 }
 
 function StripCard({ match }: { match: Match }) {
-  const isLive      = match.status === 'LIVE' || match.status === 'HALFTIME'
+  const isLive      = match.status === 'LIVE' || match.status === 'HALFTIME' || match.status === 'INTERRUPTED'
   const isScheduled = match.status === 'SCHEDULED'
   const leagueName  = match.season?.league?.name ?? ''
   const leagueShort = LEAGUE_SHORT[leagueName] ?? (leagueName.slice(0, 3).toUpperCase() || '—')
@@ -166,7 +167,7 @@ export function ScoresStrip() {
     return sortMatches(base)
   }, [matches, tab])
 
-  const hasLive = matches?.some(m => m.status === 'LIVE' || m.status === 'HALFTIME') ?? false
+  const hasLive = matches?.some(m => m.status === 'LIVE' || m.status === 'HALFTIME' || m.status === 'INTERRUPTED') ?? false
 
   if (!isLoading && !filtered.length) return null
 

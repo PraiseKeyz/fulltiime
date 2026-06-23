@@ -330,7 +330,7 @@ export class FixturesService {
       where: {
         OR: [
           { kickoff_at: { gte: today, lt: tomorrow } },
-          { status: { in: [MatchStatus.LIVE, MatchStatus.HALFTIME] } },
+          { status: { in: [MatchStatus.LIVE, MatchStatus.HALFTIME, MatchStatus.INTERRUPTED] } },
         ],
       },
       include: MATCH_INCLUDE,
@@ -342,7 +342,7 @@ export class FixturesService {
 
   async findLive() {
     const matches = await this.prisma.match.findMany({
-      where: { status: { in: [MatchStatus.LIVE, MatchStatus.HALFTIME] } },
+      where: { status: { in: [MatchStatus.LIVE, MatchStatus.HALFTIME, MatchStatus.INTERRUPTED] } },
       include: MATCH_INCLUDE,
       orderBy: { kickoff_at: 'asc' },
     });
@@ -368,7 +368,7 @@ export class FixturesService {
   async findFeatured() {
     // 1. Try live / halftime matches first
     const liveMatches = await this.prisma.match.findMany({
-      where: { status: { in: [MatchStatus.LIVE, MatchStatus.HALFTIME] } },
+      where: { status: { in: [MatchStatus.LIVE, MatchStatus.HALFTIME, MatchStatus.INTERRUPTED] } },
       include: FEATURED_INCLUDE,
     });
 

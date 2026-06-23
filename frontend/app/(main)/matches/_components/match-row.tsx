@@ -21,6 +21,7 @@ function StatusBadge({ match }: { match: Match }) {
     </span>
   )
   if (status === 'HALFTIME') return <span className="text-[11px] font-black text-primary">HT</span>
+  if (status === 'INTERRUPTED') return <span className="text-[11px] font-black text-amber-600 dark:text-amber-400">INT</span>
   if (status === 'FINISHED')  return <span className="text-[11px] font-semibold text-muted-foreground">FT</span>
   if (status === 'SCHEDULED') return (
     <span className="flex items-center gap-1 text-[11px] font-semibold text-foreground">
@@ -33,7 +34,7 @@ function StatusBadge({ match }: { match: Match }) {
 }
 
 export function MatchRow({ match }: { match: Match }) {
-  const isLive = match.status === 'LIVE' || match.status === 'HALFTIME'
+  const isLive = match.status === 'LIVE' || match.status === 'HALFTIME' || match.status === 'INTERRUPTED'
   const hasScore = match.home_score !== null && match.away_score !== null
 
   return (

@@ -92,6 +92,7 @@ export type MatchStatus =
   | 'SCHEDULED'
   | 'LIVE'
   | 'HALFTIME'
+  | 'INTERRUPTED'
   | 'FINISHED'
   | 'POSTPONED'
   | 'CANCELLED'

@@ -9,9 +9,10 @@ export interface HeroFavorites {
 
 // Lower bucket = shown first. Live always wins, regardless of favorites.
 const STATUS_BUCKET: Record<string, number> = {
-  LIVE:      0,
-  HALFTIME:  0,
-  SCHEDULED: 1,
+  LIVE:        0,
+  HALFTIME:    0,
+  INTERRUPTED: 0,
+  SCHEDULED:   1,
   FINISHED:  2,
   POSTPONED: 3,
   CANCELLED: 3,
@@ -62,7 +63,7 @@ export function orderHeroMatches(
     if (lr !== 0) return lr
 
     // 4. tie-breaker
-    if (a.status === 'LIVE' || a.status === 'HALFTIME') {
+    if (a.status === 'LIVE' || a.status === 'HALFTIME' || a.status === 'INTERRUPTED') {
       const goals = ((b.home_score ?? 0) + (b.away_score ?? 0)) -
                     ((a.home_score ?? 0) + (a.away_score ?? 0))
       if (goals !== 0) return goals

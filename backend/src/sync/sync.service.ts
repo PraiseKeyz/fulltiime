@@ -36,6 +36,12 @@ const STATUS_MAP: Record<string, MatchStatus> = {
   'PEN_BREAK': MatchStatus.LIVE,
   'PEN_LIVE':  MatchStatus.LIVE,
   'HT':        MatchStatus.HALFTIME,
+  // Play stopped, match not over — SportMonks state for a stoppage (weather,
+  // crowd trouble, injury, etc). Without these, an unmapped code falls back
+  // to SCHEDULED, which the fromLiveFeed safety-net below then force-bumps
+  // back to LIVE — making an interrupted match look like it's still ticking.
+  'INT':       MatchStatus.INTERRUPTED,
+  'SUSP':      MatchStatus.INTERRUPTED,
   // Finished
   'FT':        MatchStatus.FINISHED,
   'AET':       MatchStatus.FINISHED,
@@ -351,7 +357,7 @@ export class SyncService {
           // Already-started matches: only worth re-fetching if we're still missing
           // lineups entirely — the live cron keeps live ones fresh on its own, and
           // finished-match rosters don't change after the fact.
-          { status: { in: [MatchStatus.LIVE, MatchStatus.HALFTIME, MatchStatus.FINISHED] }, kickoff_at: { gte: since }, lineups: { none: {} } },
+          { status: { in: [MatchStatus.LIVE, MatchStatus.HALFTIME, MatchStatus.INTERRUPTED, MatchStatus.FINISHED] }, kickoff_at: { gte: since }, lineups: { none: {} } },
           // Scheduled matches: always re-check, even if we already have a lineup —
           // SportMonks can publish/correct predicted XIs in the days before kickoff,
           // and upsertLineups will overwrite existing rows with the latest data.
@@ -384,7 +390,7 @@ export class SyncService {
   async syncLiveScores() {
     try {
       const previouslyLive = await this.prisma.match.findMany({
-        where:  { status: { in: [MatchStatus.LIVE, MatchStatus.HALFTIME] } },
+        where:  { status: { in: [MatchStatus.LIVE, MatchStatus.HALFTIME, MatchStatus.INTERRUPTED] } },
         select: { api_football_id: true },
       });
       const prevLiveApiIds = previouslyLive

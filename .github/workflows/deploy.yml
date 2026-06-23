@@ -83,6 +83,9 @@ jobs:
             export FRONTEND_URL="${{ secrets.FRONTEND_URL }}"
             export GOOGLE_CLIENT_ID="${{ secrets.GOOGLE_CLIENT_ID }}"
             export SPORTMONKS_API_KEY="${{ secrets.SPORTMONKS_API_KEY }}"
+            export ZEPTOMAIL_API_KEY="${{ secrets.ZEPTOMAIL_API_KEY }}"
+            export ZEPTOMAIL_FROM_EMAIL="${{ secrets.ZEPTOMAIL_FROM_EMAIL }}"
+            export ZEPTOMAIL_FROM_NAME="${{ secrets.ZEPTOMAIL_FROM_NAME }}"
 
             # Docker Hub
             export DOCKERHUB_USERNAME="${{ secrets.DOCKERHUB_USERNAME }}"

@@ -75,11 +75,14 @@ function HeroCenter({ view, meta }: { view: MatchView; meta: ViewMeta }) {
 
   switch (view.phase) {
     case 'live': {
-      const isHT = view.match.status === 'HALFTIME'
+      const isHT          = view.match.status === 'HALFTIME'
+      const isInterrupted = view.match.status === 'INTERRUPTED'
       return (
         <div className="flex flex-col items-center gap-2 min-w-[120px]">
           <span className="text-5xl font-black tabular-nums">{hasScore ? score : 'vs'}</span>
-          {isHT ? (
+          {isInterrupted ? (
+            <Badge tone="amber">Interrupted</Badge>
+          ) : isHT ? (
             <Badge tone="primary">
               <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary animate-pulse mr-1.5 align-middle" />
               HT
@@ -158,8 +161,11 @@ function CompactHero({ view, meta }: { view: MatchView; meta: ViewMeta }) {
 
   let status: React.ReactNode = null
   if (view.phase === 'live') {
-    const isHT = view.match.status === 'HALFTIME'
-    status = isHT ? (
+    const isHT          = view.match.status === 'HALFTIME'
+    const isInterrupted = view.match.status === 'INTERRUPTED'
+    status = isInterrupted ? (
+      <span className="text-[10px] font-black text-amber-600 dark:text-amber-400">Interrupted</span>
+    ) : isHT ? (
       <span className="text-[10px] font-black text-primary">HT</span>
     ) : (
       <span className="flex items-center gap-1 text-[10px] font-black">

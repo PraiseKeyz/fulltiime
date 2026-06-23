@@ -90,7 +90,8 @@ export class MatchTextService {
     switch (status) {
       case MatchStatus.SCHEDULED:               return MatchTextKind.PREVIEW;
       case MatchStatus.LIVE:
-      case MatchStatus.HALFTIME:                return MatchTextKind.ABOUT;
+      case MatchStatus.HALFTIME:
+      case MatchStatus.INTERRUPTED:              return MatchTextKind.ABOUT;
       case MatchStatus.FINISHED:                return MatchTextKind.REPORT;
       case MatchStatus.POSTPONED:
       case MatchStatus.CANCELLED:               return MatchTextKind.INFO;

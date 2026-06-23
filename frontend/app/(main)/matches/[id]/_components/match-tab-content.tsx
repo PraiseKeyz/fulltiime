@@ -95,7 +95,7 @@ export function SummaryTab({ match }: { match: Match }) {
   const events = match.events ?? []
 
   if (events.length === 0) {
-    const text = match.status === 'LIVE' || match.status === 'HALFTIME'
+    const text = match.status === 'LIVE' || match.status === 'HALFTIME' || match.status === 'INTERRUPTED'
       ? 'No key events yet. Goals, cards and substitutions will appear here as they happen.'
       : 'No key events recorded for this match.'
     return <EmptyTab text={text} />
@@ -227,7 +227,7 @@ function CommentarySkeleton() {
 }
 
 export function CommentaryTab({ match }: { match: Match }) {
-  const isLive = match.status === 'LIVE' || match.status === 'HALFTIME'
+  const isLive = match.status === 'LIVE' || match.status === 'HALFTIME' || match.status === 'INTERRUPTED'
   const { data, isLoading } = useMatchCommentary(match.id, isLive)
 
   if (isLoading) return <CommentarySkeleton />
