@@ -50,7 +50,17 @@ export default function MatchDetailPage() {
         <div
           className={cn(
             'sticky z-30 bg-background space-y-4 pb-4',
-            immersive ? 'top-0' : 'top-28',
+            // -mt-[4.5rem] pulls this box's natural (pre-scroll) top edge up
+            // to exactly where it sticks (top-14, the navbar's own bottom
+            // edge) — no mismatch between "natural" and "stuck" position, no
+            // jump, no extra space. pt-[4.5rem] pushes the visible hero
+            // content back down by the same amount, landing it where it'd be
+            // anyway. Net effect: this box's own bg-background continuously
+            // covers the band between navbar and hero in every scroll state,
+            // instead of leaving it uncovered for long Summary/Commentary
+            // lists to scroll through. Scoped here (not navbar.tsx) since no
+            // other page has a second sticky element competing for that band.
+            immersive ? 'top-0' : 'top-14 -mt-[4.5rem] pt-[4.5rem]',
           )}
         >
           <MatchHero view={view} />

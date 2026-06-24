@@ -46,6 +46,11 @@ export class FixturesController {
     return this.fixturesService.findFeatured();
   }
 
+  @Get('sitemap')
+  findForSitemap() {
+    return this.fixturesService.findForSitemap();
+  }
+
   @Get('bracket/:leagueId')
   getBracket(@Param('leagueId') leagueId: string) {
     return this.fixturesService.getBracket(leagueId);

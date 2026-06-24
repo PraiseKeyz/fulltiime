@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import type { Player, PlayerPosition } from '@/lib/api/domain'
 import { POSITION_LABEL } from './constants'
 
@@ -21,7 +22,11 @@ export function SquadList({ squadByPosition }: { squadByPosition: SquadGroup[] }
           </div>
           <div className="divide-y divide-border">
             {players.map((player) => (
-              <div key={player.id} className="flex items-center gap-3 px-4 py-2.5">
+              <Link
+                key={player.id}
+                href={`/players/${player.id}`}
+                className="flex items-center gap-3 px-4 py-2.5 hover:bg-muted/40 transition-colors"
+              >
                 <span className="w-6 text-center text-[12px] font-mono tabular-nums text-muted-foreground shrink-0">
                   {player.number ?? '—'}
                 </span>
@@ -34,7 +39,7 @@ export function SquadList({ squadByPosition }: { squadByPosition: SquadGroup[] }
                 {player.nationality && (
                   <span className="ml-auto text-[11px] text-muted-foreground shrink-0">{player.nationality}</span>
                 )}
-              </div>
+              </Link>
             ))}
           </div>
         </div>

@@ -412,6 +412,21 @@ export class FixturesService {
     return { data: { match: finished ?? null, type: 'finished' as const } };
   }
 
+  async findForSitemap() {
+    const now = new Date();
+    const since = new Date(now);
+    since.setDate(since.getDate() - 90);
+    const until = new Date(now);
+    until.setDate(until.getDate() + 60);
+
+    const matches = await this.prisma.match.findMany({
+      where: { kickoff_at: { gte: since, lte: until } },
+      select: { id: true, updated_at: true },
+      orderBy: { kickoff_at: 'desc' },
+    });
+    return { data: matches };
+  }
+
   private readonly VENUE_SELECT = {
     select: {
       name: true, city: true, country: true,

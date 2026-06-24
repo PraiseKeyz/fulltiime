@@ -265,6 +265,81 @@ export class SyncService {
     this.logger.log('Teams sync complete');
   }
 
+  // ── Sync players (squads) ───────────────────────────────────────────────────────
+  // SportMonks state codes for a player's role on the squads endpoint, mapped to
+  // our PlayerPosition enum — only "ATTACKER" doesn't match our naming directly.
+  private readonly POSITION_MAP: Record<string, any> = {
+    GOALKEEPER: 'GOALKEEPER',
+    DEFENDER:   'DEFENDER',
+    MIDFIELDER: 'MIDFIELDER',
+    ATTACKER:   'FORWARD',
+  };
+
+  @Cron('30 3 * * 1') // every Monday at 3:30am — after syncTeams, before syncVenues
+  async syncPlayers() {
+    this.logger.log('Syncing players...');
+
+    const teams = await this.prisma.team.findMany({
+      where:  { is_active: true, api_football_id: { not: null } },
+      select: { id: true, api_football_id: true, name: true },
+    });
+
+    let totalSynced = 0;
+    for (const team of teams) {
+      try {
+        const squad = await this.api.getSquadByTeamId(team.api_football_id!);
+        if (!squad?.length) continue;
+
+        for (const entry of squad) {
+          const p = entry.player;
+          if (!p) continue;
+
+          const countryRecord = p.country?.name
+            ? await this.upsertCountry(p.country.name, p.country.iso2, p.country.image_path)
+            : null;
+
+          const position = this.POSITION_MAP[p.position?.developer_name] ?? null;
+
+          await this.prisma.player.upsert({
+            where:  { api_football_id: p.id },
+            update: {
+              name:          p.name,
+              first_name:    p.firstname ?? null,
+              last_name:     p.lastname ?? null,
+              photo_url:     p.image_path ?? null,
+              nationality:   p.country?.name ?? null,
+              country_id:    countryRecord?.id,
+              date_of_birth: p.date_of_birth ? new Date(p.date_of_birth) : null,
+              position,
+              number:        entry.jersey_number ?? null,
+              team_id:       team.id,
+              is_active:     true,
+            },
+            create: {
+              api_football_id: p.id,
+              name:             p.name,
+              first_name:       p.firstname ?? null,
+              last_name:        p.lastname ?? null,
+              photo_url:        p.image_path ?? null,
+              nationality:      p.country?.name ?? null,
+              country_id:       countryRecord?.id,
+              date_of_birth:    p.date_of_birth ? new Date(p.date_of_birth) : null,
+              position,
+              number:           entry.jersey_number ?? null,
+              team_id:          team.id,
+              is_active:        true,
+            },
+          });
+          totalSynced++;
+        }
+      } catch (err: any) {
+        this.logger.error(`Failed syncing squad for ${team.name}: ${err.message}`);
+      }
+    }
+
+    this.logger.log(`Players sync complete — ${totalSynced} players processed across ${teams.length} teams`);
+  }
+
   // ── Sync venues ───────────────────────────────────────────────────────────────
 
   @Cron('0 4 * * 1') // every Monday at 4am

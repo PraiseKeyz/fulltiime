@@ -133,7 +133,7 @@ export function RoundFixturesCard({
         </div>
         {logo && <img src={logo} alt="" className="h-6 w-6 object-contain shrink-0" />}
       </div>
-      <div className="divide-y divide-border max-h-[520px] overflow-y-auto scrollbar-none">
+      <div className="divide-y divide-border max-h-[55vh] lg:max-h-[520px] overflow-y-auto scrollbar-none">
         {fixtures.map(f => <RailRow key={f.id} f={f} />)}
       </div>
     </div>
@@ -216,12 +216,11 @@ export function MatchRail({ view }: { view: MatchView }) {
   const isDesktop = useMediaQuery('(min-width: 1024px)')
   if (immersive) return null
 
-  // The navbar's own sticky box now covers the gap down to here (see
-  // navbar.tsx), so this just needs the standard offset every other page
-  // uses — matches the main column's hero wrapper in page.tsx.
+  // Mirrors the main column's hero wrapper in page.tsx — see the comment
+  // there for why -mt-[4.5rem]/pt-[4.5rem] (not navbar.tsx) closes the gap.
   if (view.phase === 'tbd') {
     return (
-      <aside className="space-y-4 lg:sticky lg:top-28 lg:self-start">
+      <aside className="space-y-4 lg:sticky lg:top-14 lg:-mt-[4.5rem] lg:pt-[4.5rem] lg:self-start">
         <VenueCard venue={venue} className="lg:h-64" />
         <RailSlot2 view={view} />
       </aside>
@@ -231,7 +230,7 @@ export function MatchRail({ view }: { view: MatchView }) {
   const showChat = isDesktop && fullchatAvailable(view)
 
   return (
-    <aside className="space-y-4 lg:sticky lg:top-28 lg:self-start lg:flex lg:h-[calc(100vh-7rem)] lg:flex-col lg:gap-4 lg:space-y-0">
+    <aside className="space-y-4 lg:sticky lg:top-14 lg:-mt-[4.5rem] lg:pt-[4.5rem] lg:self-start lg:flex lg:h-[calc(100vh-3.5rem)] lg:flex-col lg:gap-4 lg:space-y-0">
       <VenueCard venue={venue} className="lg:h-64 lg:shrink-0" />
       {showChat ? (
         <div className="h-[530px] overflow-hidden rounded-xl border border-border lg:h-auto lg:flex-1">

@@ -119,6 +119,14 @@ export class SportMonksService {
     });
   }
 
+  // ── Squads ────────────────────────────────────────────────────────────────────
+
+  async getSquadByTeamId(teamId: number) {
+    return this.getAll<any>(`/squads/teams/${teamId}`, {
+      include: 'player.position;player.country',
+    });
+  }
+
   // ── Standings ─────────────────────────────────────────────────────────────────
 
   async getStandings(sportmonksSeasonId: number) {

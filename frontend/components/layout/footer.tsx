@@ -48,6 +48,14 @@ const COLUMNS = [
       // { label: 'Transfers', href: '/news?category=TRANSFER' },
     ],
   },
+  {
+    title: 'Company',
+    links: [
+      { label: 'About', href: '/about' },
+      { label: 'Privacy Policy', href: '/privacy' },
+      { label: 'Terms & Conditions', href: '/terms' },
+    ],
+  },
 ]
 
 export function Footer() {
@@ -57,7 +65,7 @@ export function Footer() {
   return (
     <footer className="bg-card border-t border-border mt-auto">
       <div className="mx-auto max-w-[1400px] px-4 lg:px-6 py-10">
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <Link href="/" className="flex items-center mb-3">

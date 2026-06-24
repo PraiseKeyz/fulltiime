@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next'
 import { absoluteUrl } from '@/lib/seo'
 import { api } from '@/lib/api/instance'
-import type { PaginatedArticles } from '@/lib/api/domain'
+import type { PaginatedArticles, League } from '@/lib/api/domain'
 
 const STATIC_ROUTES: Array<{
   path: string
@@ -13,8 +13,12 @@ const STATIC_ROUTES: Array<{
   { path: '/fixtures',  changeFrequency: 'daily',  priority: 0.8 },
   { path: '/standings', changeFrequency: 'daily',  priority: 0.8 },
   { path: '/leagues',   changeFrequency: 'weekly', priority: 0.8 },
-  { path: '/teams',     changeFrequency: 'weekly', priority: 0.7 },
   { path: '/news',      changeFrequency: 'daily',  priority: 0.8 },
+  { path: '/transfers', changeFrequency: 'daily',  priority: 0.6 },
+  { path: '/analytics', changeFrequency: 'daily',  priority: 0.6 },
+  { path: '/about',     changeFrequency: 'monthly', priority: 0.4 },
+  { path: '/terms',     changeFrequency: 'yearly',  priority: 0.2 },
+  { path: '/privacy',   changeFrequency: 'yearly',  priority: 0.2 },
 ]
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -40,5 +44,31 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // Backend unreachable at build time — sitemap still includes static routes
   }
 
-  return [...staticEntries, ...newsEntries]
+  let leagueEntries: MetadataRoute.Sitemap = []
+  try {
+    const leagues = await api.get<League[]>('/leagues', { silent: true })
+    leagueEntries = leagues.map((league) => ({
+      url: absoluteUrl(`/leagues/${league.id}`),
+      lastModified: now,
+      changeFrequency: 'weekly',
+      priority: 0.6,
+    }))
+  } catch {
+    // Backend unreachable at build time — sitemap still includes static routes
+  }
+
+  let matchEntries: MetadataRoute.Sitemap = []
+  try {
+    const matches = await api.get<{ id: string; updated_at: string }[]>('/fixtures/sitemap', { silent: true })
+    matchEntries = matches.map((match) => ({
+      url: absoluteUrl(`/matches/${match.id}`),
+      lastModified: new Date(match.updated_at),
+      changeFrequency: 'hourly',
+      priority: 0.7,
+    }))
+  } catch {
+    // Backend unreachable at build time — sitemap still includes static routes
+  }
+
+  return [...staticEntries, ...newsEntries, ...leagueEntries, ...matchEntries]
 }
