@@ -50,7 +50,7 @@ export default function MatchDetailPage() {
         <div
           className={cn(
             'sticky z-30 bg-background space-y-4 pb-4',
-            immersive ? 'top-0' : 'top-14 pt-[4.5rem]',
+            immersive ? 'top-0' : 'top-28',
           )}
         >
           <MatchHero view={view} />

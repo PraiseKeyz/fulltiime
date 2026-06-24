@@ -216,15 +216,12 @@ export function MatchRail({ view }: { view: MatchView }) {
   const isDesktop = useMediaQuery('(min-width: 1024px)')
   if (immersive) return null
 
-  // Sticks at the navbar's own bottom edge (top-14) with the same 4.5rem
-  // top-padding the main column's hero wrapper uses (see page.tsx) — keeps
-  // both columns' content starting at the same y both before any scroll
-  // and once stuck, instead of the aside sitting flush at top-32 with no
-  // equivalent padding (which made it appear higher pre-scroll, then snap
-  // into alignment once stuck).
+  // The navbar's own sticky box now covers the gap down to here (see
+  // navbar.tsx), so this just needs the standard offset every other page
+  // uses — matches the main column's hero wrapper in page.tsx.
   if (view.phase === 'tbd') {
     return (
-      <aside className="space-y-4 lg:sticky lg:top-14 lg:pt-[4.5rem] lg:self-start">
+      <aside className="space-y-4 lg:sticky lg:top-28 lg:self-start">
         <VenueCard venue={venue} className="lg:h-64" />
         <RailSlot2 view={view} />
       </aside>
@@ -234,7 +231,7 @@ export function MatchRail({ view }: { view: MatchView }) {
   const showChat = isDesktop && fullchatAvailable(view)
 
   return (
-    <aside className="space-y-4 lg:sticky lg:top-14 lg:pt-[4.5rem] lg:self-start lg:flex lg:h-[calc(100vh-3.5rem)] lg:flex-col lg:gap-4 lg:space-y-0">
+    <aside className="space-y-4 lg:sticky lg:top-28 lg:self-start lg:flex lg:h-[calc(100vh-7rem)] lg:flex-col lg:gap-4 lg:space-y-0">
       <VenueCard venue={venue} className="lg:h-64 lg:shrink-0" />
       {showChat ? (
         <div className="h-[530px] overflow-hidden rounded-xl border border-border lg:h-auto lg:flex-1">

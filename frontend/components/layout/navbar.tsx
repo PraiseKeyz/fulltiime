@@ -32,7 +32,14 @@ export function Navbar() {
   return (
     <>
     {!immersive && (
-    <header className="sticky top-0 z-50 mb-12">
+    // pb-[4.5rem] (replacing what used to be mb-12) + bg-background extends this
+    // sticky box's own opaque coverage down through the breathing-room band below
+    // the floating pill, instead of leaving it as transparent margin. The navbar
+    // is always page-first, so unlike a sticky element further down the page,
+    // there's no scroll-position mismatch to manage — this fully covers the gap
+    // without anything downstream (the match page's hero/rail) needing special
+    // padding or phase-casing to compensate.
+    <header className="sticky top-0 z-50 pb-14 bg-background">
       <div
         className={cn(
           'transition-all duration-300 ease-out',
