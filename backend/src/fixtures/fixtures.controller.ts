@@ -19,13 +19,18 @@ export class FixturesController {
     @Query('leagueId') leagueId?: string,
     @Query('teamId') teamId?: string,
     @Query('date') date?: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
   ) {
-    return this.fixturesService.findAll({ status, leagueId, teamId, date });
+    return this.fixturesService.findAll({ status, leagueId, teamId, date, from, to });
   }
 
   @Get('today')
-  findToday() {
-    return this.fixturesService.findToday();
+  findToday(
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+  ) {
+    return this.fixturesService.findToday(from, to);
   }
 
   @Get('live')

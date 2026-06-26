@@ -1,12 +1,6 @@
 import type { Match } from '@/lib/api/domain'
 import type { LeagueGroup } from './types'
 
-export function getDateString(offset: number): string {
-  const d = new Date()
-  d.setDate(d.getDate() + offset)
-  return d.toISOString().split('T')[0]
-}
-
 export function formatDateLabel(offset: number): string {
   const d = new Date()
   d.setDate(d.getDate() + offset)

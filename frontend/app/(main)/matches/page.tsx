@@ -10,7 +10,8 @@ import { MatchesHeader } from './_components/matches-header'
 import { TopLeaguesRail } from './_components/top-leagues-rail'
 import { StatusSection, SectionHeader, EmptyState, MatchListSkeleton } from './_components/status-section'
 import { LeagueSection } from './_components/league-section'
-import { getDateString, formatDateLabel, groupByLeague } from './_components/utils'
+import { getLocalDayRange } from '@/lib/date-range'
+import { formatDateLabel, groupByLeague } from './_components/utils'
 import type { Filter } from './_components/types'
 
 export default function MatchesPage() {
@@ -18,13 +19,13 @@ export default function MatchesPage() {
   const [dayOffset,        setDayOffset]        = useState(0)
   const [selectedLeagueId, setSelectedLeagueId] = useState<string | null>(null)
 
-  const dateStr = getDateString(dayOffset)
+  const { from, to } = getLocalDayRange(dayOffset)
 
   const { data: leagues } = useLeagues()
 
   const { data: matches, isLoading } = useQuery({
-    queryKey:        ['fixtures', 'date', dateStr],
-    queryFn:         () => api.get<Match[]>('/fixtures', { params: { date: dateStr } }),
+    queryKey:        ['fixtures', 'range', from, to],
+    queryFn:         () => api.get<Match[]>('/fixtures', { params: { from, to } }),
     refetchInterval: (query) => {
       const hasLive = query.state.data?.some(m => m.status === 'LIVE' || m.status === 'HALFTIME' || m.status === 'INTERRUPTED')
       return hasLive ? 30_000 : 5 * 60_000

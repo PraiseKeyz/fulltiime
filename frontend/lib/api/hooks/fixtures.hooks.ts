@@ -1,5 +1,6 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { api } from '../instance'
+import { getLocalDayRange } from '../../date-range'
 import type { Match, MatchStatus, FeaturedMatchResponse, Bracket, MatchPreview, H2HResponse, MatchNarrative, ChatMessage, ChatReply, MatchForm, CommentaryLine } from '../domain'
 
 export const fixtureKeys = {
@@ -30,7 +31,10 @@ export function useFixtures(filters: {
 export function useTodayFixtures() {
   return useQuery({
     queryKey: fixtureKeys.today,
-    queryFn: () => api.get<Match[]>('/fixtures/today'),
+    queryFn: () => {
+      const { from, to } = getLocalDayRange(0)
+      return api.get<Match[]>('/fixtures/today', { params: { from, to } })
+    },
     refetchInterval: 60_000,
   })
 }

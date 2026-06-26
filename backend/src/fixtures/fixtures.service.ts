@@ -256,9 +256,6 @@ export class FixturesService {
 
   // ── Head-to-head ──────────────────────────────────────────────────────────────
 
-  // Served purely from the cache table — pre-populated by SyncService.syncH2H()
-  // (weekly Sunday 3am cron). Returns null when not yet synced; no live SportMonks
-  // call ever happens here.
   async getHeadToHead(matchId: string) {
     const match = await this.prisma.match.findUnique({
       where:  { id: matchId },
@@ -296,7 +293,10 @@ export class FixturesService {
     };
   }
 
-  async findAll(query: { status?: MatchStatus; leagueId?: string; teamId?: string; date?: string }) {
+  async findAll(query: {
+    status?: MatchStatus; leagueId?: string; teamId?: string; date?: string;
+    from?: string; to?: string;
+  }) {
     const where: any = {};
 
     if (query.status) where.status = query.status;
@@ -304,10 +304,18 @@ export class FixturesService {
     if (query.teamId) {
       where.OR = [{ home_team_id: query.teamId }, { away_team_id: query.teamId }];
     }
-    if (query.date) {
-      const day = new Date(query.date);
+    if (query.from && query.to) {
+      // Exact UTC instants for the CLIENT's local calendar day (see
+      // frontend lib/date-range.ts) — preferred over `date`, which can only
+      // ever describe a UTC day server-side and drifts from what the
+      // visitor actually means by "today" once their local day and the UTC
+      // day disagree (i.e. for roughly |their UTC offset| hours every day).
+      where.kickoff_at = { gte: new Date(query.from), lt: new Date(query.to) };
+    } else if (query.date) {
+      const [year, month, dayOfMonth] = query.date.split('-').map(Number);
+      const day     = new Date(Date.UTC(year, month - 1, dayOfMonth));
       const nextDay = new Date(day);
-      nextDay.setDate(nextDay.getDate() + 1);
+      nextDay.setUTCDate(nextDay.getUTCDate() + 1);
       where.kickoff_at = { gte: day, lt: nextDay };
     }
 
@@ -320,11 +328,20 @@ export class FixturesService {
     return { data: matches };
   }
 
-  async findToday() {
-    const now = new Date();
-    const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-    const tomorrow = new Date(today);
-    tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+  async findToday(from?: string, to?: string) {
+    // Prefer the client's exact local-day bounds (see findAll) — falls back
+    // to a UTC day for callers that can't supply them (cron/admin scripts).
+    let today: Date;
+    let tomorrow: Date;
+    if (from && to) {
+      today = new Date(from);
+      tomorrow = new Date(to);
+    } else {
+      const now = new Date();
+      today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+      tomorrow = new Date(today);
+      tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+    }
 
     const matches = await this.prisma.match.findMany({
       where: {

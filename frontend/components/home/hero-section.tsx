@@ -25,10 +25,18 @@ export function HeroSection() {
   const { data: leagues } = useLeagues()
   const { data: today, isLoading: todayLoading, isError: todayError } = useTodayFixtures()
 
-  const todayEmpty = !todayLoading && !todayError && (today?.length ?? 0) === 0
+  // "Today" can be non-empty but still have nothing worth leading with — e.g.
+  // its one match already finished, with the real next match tomorrow. Only
+  // an empty list used to trigger the upcoming fallback, so a finished match
+  // would win by default (it's still the only thing in the pool) instead of
+  // the hero resolving forward to the next live/scheduled fixture.
+  const todayActionable = (today ?? []).filter(m =>
+    m.status === 'LIVE' || m.status === 'HALFTIME' || m.status === 'INTERRUPTED' || m.status === 'SCHEDULED',
+  )
+  const needsUpcomingFallback = !todayLoading && !todayError && todayActionable.length === 0
   const { data: upcoming, isLoading: upcomingLoading } = useUpcomingFixtures(undefined, 12)
 
-  const pool = (today && today.length > 0) ? today : (todayEmpty ? (upcoming ?? []) : (today ?? []))
+  const pool = needsUpcomingFallback ? (upcoming ?? today ?? []) : (today ?? [])
 
   const ordered = useMemo(
     () => orderHeroMatches(pool, leagues ?? []),
@@ -43,7 +51,7 @@ export function HeroSection() {
   const activeMatch: Match | undefined =
     detailMatch && detailMatch.id === activeId ? detailMatch : ordered.find(m => m.id === activeId)
 
-  if (todayLoading || (todayEmpty && upcomingLoading)) return <HeroSkeleton />
+  if (todayLoading || (needsUpcomingFallback && upcomingLoading)) return <HeroSkeleton />
   if (!ordered.length || !activeMatch) return null
 
   return (
