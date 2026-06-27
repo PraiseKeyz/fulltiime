@@ -18,7 +18,7 @@ export function PlayerBanner({ player }: { player: Player }) {
   return (
     <div className="relative bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#334155] border-b border-border">
       <div className="absolute inset-0 bg-black/20" />
-      <div className="relative mx-auto max-w-[1400px] px-4 lg:px-6 py-8">
+      <div className="relative mx-auto max-w-[var(--content-max)] px-4 lg:px-6 py-8">
         <Link
           href={player.team ? `/teams/${player.team.id}` : '/teams'}
           className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-white/70 hover:text-white transition-colors mb-5"

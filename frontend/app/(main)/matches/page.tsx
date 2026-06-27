@@ -65,9 +65,6 @@ export default function MatchesPage() {
     (showUpcoming && upcomingGroups.length > 0) ||
     (showFinished && finishedGroups.length > 0)
 
-  // When the selected scope has no matches for a current/future date, fall back
-  // to upcoming fixtures. We fetch ALL upcoming once (stable key) and filter by
-  // league client-side — so switching leagues never re-fetches or flashes a skeleton.
   const dateIsEmpty  = dayOffset >= 0 && !isLoading && scoped.length === 0
   const showFallback = dateIsEmpty && (filter === 'ALL' || filter === 'UPCOMING')
 
@@ -98,7 +95,7 @@ export default function MatchesPage() {
       />
 
       {/* Two-column body: Top Leagues rail + matches */}
-      <div className="mx-auto max-w-[1400px] px-4 lg:px-6 py-6 grid lg:grid-cols-[260px_1fr] gap-6">
+      <div className="mx-auto max-w-[var(--content-max)] px-4 lg:px-6 py-6 grid lg:grid-cols-[260px_1fr] gap-6">
         <TopLeaguesRail
           leagues={leagues ?? []}
           counts={leagueCounts}

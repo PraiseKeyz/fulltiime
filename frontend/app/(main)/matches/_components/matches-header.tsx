@@ -15,7 +15,7 @@ export function MatchesHeader({
 }) {
   return (
     <div className="bg-card border-b border-border py-6">
-      <div className="mx-auto max-w-[1400px] px-4 lg:px-6">
+      <div className="mx-auto max-w-[var(--content-max)] px-4 lg:px-6">
         <div className="flex items-center gap-3 mb-1">
           <h1 className="text-3xl font-black">Matches</h1>
           {liveCount > 0 && (

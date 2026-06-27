@@ -64,7 +64,7 @@ export function Footer() {
 
   return (
     <footer className="bg-card border-t border-border mt-auto">
-      <div className="mx-auto max-w-[1400px] px-4 lg:px-6 py-10">
+      <div className="mx-auto max-w-[var(--content-max)] px-4 lg:px-6 py-10">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">

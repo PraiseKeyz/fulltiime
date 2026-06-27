@@ -18,7 +18,7 @@ export default function MatchDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="mx-auto max-w-[1400px] px-4 lg:px-6 py-6 space-y-4">
+      <div className="mx-auto max-w-[var(--content-max)] px-4 lg:px-6 py-6 space-y-4">
         <div className="h-48 rounded-xl bg-card border border-border animate-pulse" />
         <div className="h-64 rounded-xl bg-card border border-border animate-pulse" />
       </div>
@@ -27,7 +27,7 @@ export default function MatchDetailPage() {
 
   if (!data) {
     return (
-      <div className="mx-auto max-w-[1400px] px-4 lg:px-6 py-20 text-center">
+      <div className="mx-auto max-w-[var(--content-max)] px-4 lg:px-6 py-20 text-center">
         <p className="text-muted-foreground text-sm">Match not found.</p>
         <Link href="/matches" className="text-primary text-sm font-semibold hover:underline mt-2 inline-block">
           Back to matches
@@ -41,7 +41,7 @@ export default function MatchDetailPage() {
   return (
     <div
       className={cn(
-        'mx-auto max-w-[1400px] px-4 lg:px-6 grid gap-6',
+        'mx-auto max-w-[var(--content-max)] px-4 lg:px-6 grid gap-6',
         immersive ? 'py-0 lg:grid-cols-1' : 'py-6 lg:grid-cols-[1fr_360px]',
       )}
     >

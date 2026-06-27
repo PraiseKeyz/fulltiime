@@ -9,7 +9,7 @@ export function LeagueBanner({ league, currentSeason }: { league: League; curren
   return (
     <div className={`relative bg-gradient-to-br ${gradient} border-b border-border`}>
       <div className="absolute inset-0 bg-black/30" />
-      <div className="relative mx-auto max-w-[1400px] px-4 lg:px-6 py-8">
+      <div className="relative mx-auto max-w-[var(--content-max)] px-4 lg:px-6 py-8">
         <Link href="/leagues" className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-white/70 hover:text-white transition-colors mb-5">
           <ArrowLeft className="h-3.5 w-3.5" /> All Leagues
         </Link>

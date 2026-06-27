@@ -16,7 +16,7 @@ export function VerifyEmailBanner() {
 
   return (
     <div className="bg-amber-500/10 border-b border-amber-500/20 text-amber-700 dark:text-amber-400">
-      <div className="mx-auto flex max-w-[1400px] items-center gap-3 px-4 lg:px-6 py-2 text-[12px]">
+      <div className="mx-auto flex max-w-[var(--content-max)] items-center gap-3 px-4 lg:px-6 py-2 text-[12px]">
         <Mail className="h-4 w-4 shrink-0" />
         <p className="min-w-0 flex-1">
           <span className="font-semibold">Verify your email</span>

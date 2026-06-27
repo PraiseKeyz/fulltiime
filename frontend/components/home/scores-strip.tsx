@@ -173,7 +173,7 @@ export function ScoresStrip() {
 
   return (
     <section className="bg-background-secondary border-b border-border">
-      <div className="mx-auto max-w-[1400px] px-4 lg:px-6 pt-3 pb-0">
+      <div className="mx-auto max-w-[var(--content-max)] px-4 lg:px-6 pt-3 pb-0">
         {/* Header */}
         <div className="flex items-center justify-between mb-2">
           <h2 className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider">

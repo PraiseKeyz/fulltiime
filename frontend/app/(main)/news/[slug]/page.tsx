@@ -20,7 +20,7 @@ export default function ArticlePage() {
 
   if (isError || !article) {
     return (
-      <div className="mx-auto max-w-[1400px] px-4 lg:px-6 py-20 text-center">
+      <div className="mx-auto max-w-[var(--content-max)] px-4 lg:px-6 py-20 text-center">
         <p className="text-muted-foreground text-sm">Article not found.</p>
         <Link href="/news" className="text-primary text-sm font-semibold hover:underline mt-2 inline-block">
           Back to News
@@ -33,7 +33,7 @@ export default function ArticlePage() {
     <>
       {/* Header */}
       <div className="bg-card border-b border-border py-6">
-        <div className="mx-auto max-w-[1400px] px-4 lg:px-6">
+        <div className="mx-auto max-w-[var(--content-max)] px-4 lg:px-6">
           <Link href="/news" className="inline-flex items-center gap-1.5 text-[12px] text-muted-foreground hover:text-foreground transition-colors mb-4">
             <ArrowLeft className="h-3.5 w-3.5" />
             Back to News
@@ -61,7 +61,7 @@ export default function ArticlePage() {
       </div>
 
       {/* Body */}
-      <div className="mx-auto max-w-[1400px] px-4 lg:px-6 py-8">
+      <div className="mx-auto max-w-[var(--content-max)] px-4 lg:px-6 py-8">
         {/* Image floats right at half width — text wraps around it */}
         {article.cover_url ? (
           <img

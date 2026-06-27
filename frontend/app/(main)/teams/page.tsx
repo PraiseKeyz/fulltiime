@@ -22,7 +22,7 @@ export default function TeamsPage() {
     <>
       {/* Header */}
       <div className="bg-card border-b border-border py-6">
-        <div className="mx-auto max-w-[1400px] px-4 lg:px-6">
+        <div className="mx-auto max-w-[var(--content-max)] px-4 lg:px-6">
           <div className="flex items-center gap-3 mb-4">
             <Users className="h-7 w-7 text-primary" />
             <h1 className="text-3xl font-black uppercase tracking-wide">Teams</h1>
@@ -42,7 +42,7 @@ export default function TeamsPage() {
       </div>
 
       {/* Grid */}
-      <div className="mx-auto max-w-[1400px] px-4 lg:px-6 py-6">
+      <div className="mx-auto max-w-[var(--content-max)] px-4 lg:px-6 py-6">
         {isLoading ? (
           <TeamGridSkeleton />
         ) : !teams?.length ? (

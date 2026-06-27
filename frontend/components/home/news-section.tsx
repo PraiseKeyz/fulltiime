@@ -130,7 +130,7 @@ export function NewsSection() {
 
   return (
     <section className="py-8 bg-background-secondary">
-      <div className="mx-auto max-w-[1400px] px-4 lg:px-6">
+      <div className="mx-auto max-w-[var(--content-max)] px-4 lg:px-6">
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-lg font-black tracking-tight">
             Transfer News

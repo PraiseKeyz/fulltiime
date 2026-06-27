@@ -61,7 +61,7 @@ const SOCIALS = [
 
 export default function AboutPage() {
   return (
-    <div className="mx-auto max-w-[1400px] px-4 lg:px-6 py-10 lg:py-16">
+    <div className="mx-auto max-w-[var(--content-max)] px-4 lg:px-6 py-10 lg:py-16">
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
       <section className="relative overflow-hidden rounded-3xl border border-border bg-card">
         <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-primary/20 blur-3xl" />

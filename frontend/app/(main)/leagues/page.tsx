@@ -25,14 +25,14 @@ export default function LeaguesPage() {
   return (
     <>
       <div className="bg-card border-b border-border py-6">
-        <div className="mx-auto max-w-[1400px] px-4 lg:px-6">
+        <div className="mx-auto max-w-[var(--content-max)] px-4 lg:px-6">
           <div className="flex items-center gap-3 mb-1">
             <h1 className="text-3xl font-black uppercase tracking-wide">Competitions</h1>
           </div>
         </div>
       </div>
 
-      <div className="mx-auto max-w-[1400px] px-4 lg:px-6 py-6 space-y-8">
+      <div className="mx-auto max-w-[var(--content-max)] px-4 lg:px-6 py-6 space-y-8">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm text-muted-foreground">Switch between league tables and cup / tournament hubs.</p>

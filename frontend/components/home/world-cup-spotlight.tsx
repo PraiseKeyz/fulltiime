@@ -93,7 +93,7 @@ export function WorldCupSpotlight() {
 
   return (
     <section className="py-8">
-      <div className="mx-auto max-w-[1400px] px-4 lg:px-6">
+      <div className="mx-auto max-w-[var(--content-max)] px-4 lg:px-6">
         <div className="flex items-center justify-between mb-5">
           <h2 className="flex items-center gap-2 text-lg font-black uppercase tracking-tight">
             {wcLeague?.logo_url && (

@@ -32,7 +32,7 @@ export function Navbar() {
   return (
     <>
     {!immersive && (
-    <header className="sticky top-0 z-50 mb-12">
+    <header className="sticky top-0 z-50 mb-4">
       <div
         className={cn(
           'transition-all duration-300 ease-out',
@@ -41,7 +41,7 @@ export function Navbar() {
             : 'mx-4 mt-3 max-w-[760px] rounded-2xl border border-border bg-card/60 shadow-lg shadow-black/10 backdrop-blur-xl sm:mx-auto',
         )}
       >
-        <div className="mx-auto max-w-[1400px] px-4 lg:px-6">
+        <div className="mx-auto max-w-[var(--content-max)] px-4 lg:px-6">
           <div className="grid grid-cols-[auto_1fr_auto] h-14 items-center gap-4">
             {/* Logo */}
             <Link href="/" className="flex items-center shrink-0">

@@ -11,7 +11,7 @@ export default function PlayerPage() {
 
   if (isLoading) {
     return (
-      <div className="mx-auto max-w-[1400px] px-4 lg:px-6 py-8 space-y-4">
+      <div className="mx-auto max-w-[var(--content-max)] px-4 lg:px-6 py-8 space-y-4">
         <div className="h-40 rounded-xl bg-card border border-border animate-pulse" />
       </div>
     )
@@ -19,7 +19,7 @@ export default function PlayerPage() {
 
   if (!player) {
     return (
-      <div className="mx-auto max-w-[1400px] px-4 lg:px-6 py-20 text-center">
+      <div className="mx-auto max-w-[var(--content-max)] px-4 lg:px-6 py-20 text-center">
         <p className="text-muted-foreground text-sm">Player not found.</p>
         <Link href="/teams" className="text-primary text-sm font-semibold hover:underline mt-2 inline-block">
           Back to teams
@@ -32,7 +32,7 @@ export default function PlayerPage() {
     <>
       <PlayerBanner player={player} />
 
-      <div className="mx-auto max-w-[1400px] px-4 lg:px-6 py-6">
+      <div className="mx-auto max-w-[var(--content-max)] px-4 lg:px-6 py-6">
         <div className="rounded-xl border border-border bg-card divide-y divide-border max-w-md">
           {player.team && (
             <div className="flex items-center justify-between px-4 py-3">
