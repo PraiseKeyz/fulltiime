@@ -239,9 +239,6 @@ export interface MatchNarrative {
   closing?:   string
 }
 
-// Match chat — stateless, signed-in only (see docs/match-page-spec.md §9). The
-// client holds the conversation; each turn sends the running history and gets
-// one grounded reply back.
 export interface ChatMessage {
   role:    'user' | 'assistant'
   content: string
@@ -260,6 +257,7 @@ export interface BracketTeam {
 
 export interface BracketTie {
   id:          number
+  matchId:     string | number
   label:       string | null   // "Match 73"
   date:        string | null
   placeholder: boolean

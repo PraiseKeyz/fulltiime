@@ -67,11 +67,9 @@ function TieCardInner({ tie, round }: { tie: BracketTie; round: string }) {
 }
 
 function TieCard({ tie, round }: { tie: BracketTie; round: string }) {
-  // Every tie links to the match page. Real fixtures → full match; placeholders
-  // → a preview page (resolved by the SportMonks fixture id).
   return (
     <Link
-      href={`/matches/${tie.id}`}
+      href={`/matches/${tie.matchId}`}
       className="w-[132px] shrink-0 rounded-md border border-border bg-card overflow-hidden block hover:border-primary/50 transition-colors"
     >
       <TieCardInner tie={tie} round={round} />
@@ -83,7 +81,7 @@ function TieCard({ tie, round }: { tie: BracketTie; round: string }) {
 function TieCardMobile({ tie, round }: { tie: BracketTie; round: string }) {
   return (
     <Link
-      href={`/matches/${tie.id}`}
+      href={`/matches/${tie.matchId}`}
       className="block rounded-md border border-border bg-card overflow-hidden hover:border-primary/50 transition-colors"
     >
       <TieCardInner tie={tie} round={round} />

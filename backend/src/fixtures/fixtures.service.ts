@@ -142,10 +142,27 @@ export class FixturesService {
     const raw = await this.sportmonks.getBrackets(seasonId);
     if (!raw?.stages?.length) return null;
 
+    // tie.id (the SportMonks fixture id) drives the tree structure — edges
+    // reference parent/child fixtures by that same id, so it can't change.
+    // But once a tie resolves into a real Match row, the *link* should go to
+    // our own cuid like every other page in the app does, not leak the raw
+    // SportMonks id into the URL (findOne's fallback-by-api_football_id only
+    // exists for ties that are still genuinely undecided).
+    const allFixtureIds = raw.stages.flatMap((st: any) => (st.fixtures ?? []).map((f: any) => f.id));
+    const existingMatches = await this.prisma.match.findMany({
+      where:  { api_football_id: { in: allFixtureIds } },
+      select: { id: true, api_football_id: true },
+    });
+    const matchIdByFixtureId = new Map(
+      existingMatches
+        .filter((m): m is { id: string; api_football_id: number } => m.api_football_id != null)
+        .map((m) => [m.api_football_id, m.id]),
+    );
+
     const stages = raw.stages.map((st: any) => ({
       id:   st.stage_id,
       name: st.stage_name,
-      ties: (st.fixtures ?? []).map((f: any) => this.mapTie(f)),
+      ties: (st.fixtures ?? []).map((f: any) => this.mapTie(f, matchIdByFixtureId)),
     }));
 
     const edges = (raw.edges ?? []).map((e: any) => ({
@@ -159,13 +176,14 @@ export class FixturesService {
   }
 
   // Map a SportMonks (bracket/placeholder) fixture into a compact tie shape
-  private mapTie(f: any) {
+  private mapTie(f: any, matchIdByFixtureId: Map<number, string>) {
     const [homeSlot, awaySlot] = String(f.name ?? '').split(' vs ');
     const parts = f.participants ?? [];
     const home  = parts.find((p: any) => p.meta?.location === 'home');
     const away  = parts.find((p: any) => p.meta?.location === 'away');
     return {
       id:          f.id,
+      matchId:     matchIdByFixtureId.get(f.id) ?? f.id,
       label:       f.details ?? null,
       date:        f.starting_at ?? null,
       placeholder: f.placeholder ?? true,
@@ -201,17 +219,30 @@ export class FixturesService {
       };
     }
 
-    // Other fixtures in the same knockout round (from the bracket)
+    // Other fixtures in the same knockout round (from the bracket) — some of
+    // these may already be real matches even if `fx` itself isn't, so resolve
+    // cuids for them the same way buildBracket() does.
     let roundFixtures: any[] = [];
+    let matchIdByFixtureId = new Map<number, string>();
     if (fx.season_id && fx.stage_id) {
       const raw = await this.sportmonks.getBrackets(fx.season_id);
       const stage = raw?.stages?.find((s: any) => s.stage_id === fx.stage_id);
-      roundFixtures = (stage?.fixtures ?? []).map((f: any) => this.mapTie(f));
+      const fixtureIds = [fx.id, ...(stage?.fixtures ?? []).map((f: any) => f.id)];
+      const existingMatches = await this.prisma.match.findMany({
+        where:  { api_football_id: { in: fixtureIds } },
+        select: { id: true, api_football_id: true },
+      });
+      matchIdByFixtureId = new Map(
+        existingMatches
+          .filter((m): m is { id: string; api_football_id: number } => m.api_football_id != null)
+          .map((m) => [m.api_football_id, m.id]),
+      );
+      roundFixtures = (stage?.fixtures ?? []).map((f: any) => this.mapTie(f, matchIdByFixtureId));
     }
 
     return {
       preview:       true as const,
-      ...this.mapTie(fx),
+      ...this.mapTie(fx, matchIdByFixtureId),
       name:          fx.name ?? null,
       venue,
       league:        fx.league ? { name: fx.league.name, logo: fx.league.image_path } : null,
