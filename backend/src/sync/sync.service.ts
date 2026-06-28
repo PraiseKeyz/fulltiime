@@ -394,7 +394,7 @@ export class SyncService {
 
   // ── Sync fixtures ─────────────────────────────────────────────────────────────
 
-  @Cron('0 */6 * * *') // every 6 hours
+  @Cron('0 */2 * * *') // every 2 hours
   async syncFixtures() {
     this.logger.log('Syncing fixtures...');
 
@@ -429,13 +429,7 @@ export class SyncService {
       where: {
         api_football_id: { not: null },
         OR: [
-          // Already-started matches: only worth re-fetching if we're still missing
-          // lineups entirely — the live cron keeps live ones fresh on its own, and
-          // finished-match rosters don't change after the fact.
           { status: { in: [MatchStatus.LIVE, MatchStatus.HALFTIME, MatchStatus.INTERRUPTED, MatchStatus.FINISHED] }, kickoff_at: { gte: since }, lineups: { none: {} } },
-          // Scheduled matches: always re-check, even if we already have a lineup —
-          // SportMonks can publish/correct predicted XIs in the days before kickoff,
-          // and upsertLineups will overwrite existing rows with the latest data.
           { status: MatchStatus.SCHEDULED },
         ],
       },
@@ -692,6 +686,8 @@ export class SyncService {
         const dbMatch = await this.prisma.match.upsert({
           where:  { api_football_id: fixture.id },
           update: {
+            home_team_id:       homeTeam.id,
+            away_team_id:       awayTeam.id,
             status,
             minute,
             extra_minute:       extraMinute,

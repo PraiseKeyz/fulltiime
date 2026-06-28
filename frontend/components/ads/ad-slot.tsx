@@ -73,7 +73,7 @@ function ScaledCreative({ src, width, height, align }: AdCreative & { align: Ali
 
   return (
     <div ref={ref} className={cn('flex w-full overflow-hidden', justify)}>
-      <div style={{ width: width * scale, height: height * scale }} className="overflow-hidden rounded-lg">
+      <div style={{ width: width * scale, height: height * scale }} className="overflow-hidden">
         <iframe
           src={src}
           width={width}

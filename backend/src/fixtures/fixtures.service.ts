@@ -115,12 +115,17 @@ export class FixturesService {
 
   // ── Knockout bracket ──────────────────────────────────────────────────────────
 
-  // Bracket structure changes slowly → cache the normalized result for 12h so we
-  // hit SportMonks at most once per competition per half-day (shared across users).
+  // Cache the normalized result briefly so we don't hit SportMonks on every
+  // hub-page view (shared across users). 12h previously — too long once a
+  // tournament is actually in its knockout phase: a placeholder slot ("2nd
+  // Group A") resolves to the real team the moment that group's last match
+  // finishes, and several rounds can resolve within hours of each other, so
+  // a half-day-stale bracket was a real, visible problem, not just a
+  // theoretical one.
   async getBracket(leagueId: string) {
     const data = await this.cache.getOrSet(
       `bracket:${leagueId}`,
-      12 * 60 * 60 * 1000, // 12 hours
+      10 * 60 * 1000, // 10 minutes
       () => this.buildBracket(leagueId),
     );
     return { data };

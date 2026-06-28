@@ -26,7 +26,7 @@ export const CREATIVES = {
   'hero-top-banner': {
     src:    'https://refbanners.com/I?tag=d_5683053m_54035c_&site=5683053&ad=54035',
     width:  810,
-    height: 159,
+    height: 150,
   },
 } satisfies Record<string, AdCreative>
 

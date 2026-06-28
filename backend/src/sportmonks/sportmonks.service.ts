@@ -137,8 +137,14 @@ export class SportMonksService {
 
   // ── Brackets (knockout structure) ─────────────────────────────────────────────
 
+  // include=participants is required or every fixture comes back with an
+  // empty participants array — mapTie() then has nothing to read a real
+  // team's logo/name from and falls back to the plain-text slot name for
+  // every tie, resolved or not (not just the genuinely-undecided ones).
   async getBrackets(sportmonksSeasonId: number) {
-    return this.get<any>(`/seasons/${sportmonksSeasonId}/brackets`);
+    return this.get<any>(`/seasons/${sportmonksSeasonId}/brackets`, {
+      include: 'participants',
+    });
   }
 
   // ── Venues ────────────────────────────────────────────────────────────────────
