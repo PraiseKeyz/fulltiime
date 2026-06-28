@@ -50,7 +50,14 @@ export default function MatchesPage() {
 
   const liveMatches     = useMemo(() => scoped.filter(m => m.status === 'LIVE' || m.status === 'HALFTIME' || m.status === 'INTERRUPTED'), [scoped])
   const upcomingMatches = useMemo(() => scoped.filter(m => m.status === 'SCHEDULED'), [scoped])
-  const finishedMatches = useMemo(() => scoped.filter(m => m.status === 'FINISHED'), [scoped])
+  // Finished matches read most-recently-played-first (the opposite of
+  // live/upcoming, which stay ascending by kickoff) — the backend already
+  // returns everything ascending, so just reverse this one bucket rather
+  // than re-sort what's already correctly ordered.
+  const finishedMatches = useMemo(
+    () => scoped.filter(m => m.status === 'FINISHED').reverse(),
+    [scoped],
+  )
 
   const liveGroups     = useMemo(() => groupByLeague(liveMatches),     [liveMatches])
   const upcomingGroups = useMemo(() => groupByLeague(upcomingMatches), [upcomingMatches])
