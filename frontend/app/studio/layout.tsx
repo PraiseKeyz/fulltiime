@@ -22,10 +22,14 @@ export default function StudioLayout({ children }: { children: React.ReactNode }
   const pathname = usePathname()
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    if (isLoading) return
+    if (!isAuthenticated) {
       router.replace(`/login?callbackUrl=${encodeURIComponent(pathname)}`)
+    } else if (user?.must_change_password) {
+      // Staff with a one-time password must set their own before working.
+      router.replace(`/change-password?callbackUrl=${encodeURIComponent(pathname)}`)
     }
-  }, [isLoading, isAuthenticated, router, pathname])
+  }, [isLoading, isAuthenticated, user, router, pathname])
 
   if (isLoading || !isAuthenticated) {
     return (

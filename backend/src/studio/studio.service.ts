@@ -305,7 +305,7 @@ export class StudioService {
         user.full_name ?? user.username,
         user.role,
         tempPassword,
-        `${this.config.get<string>('FRONTEND_URL') ?? 'https://fulltiime.com'}/login`,
+        `${this.frontendUrl}/login`,
       );
     } catch {
       emailed = false; // already logged in detail by EmailService
@@ -336,6 +336,12 @@ export class StudioService {
   }
 
   // ── Helpers ────────────────────────────────────────────────────────────────
+
+  private get frontendUrl(): string {
+    const raw = this.config.get<string>('FRONTEND_URL') ?? '';
+    const first = raw.split(',').map((s) => s.trim()).find(Boolean);
+    return (first ?? 'https://fulltiime.com').replace(/\/$/, '');
+  }
 
   private async findOrThrow(id: string) {
     const article = await this.prisma.article.findUnique({
