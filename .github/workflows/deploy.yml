@@ -71,11 +71,7 @@ jobs:
             set -e
             cd /var/www/fulltiime
 
-            # Postgres (bundled container; leave DATABASE_URL unset to use it)
-            export POSTGRES_USER="${{ secrets.POSTGRES_USER }}"
-            export POSTGRES_PASSWORD="${{ secrets.POSTGRES_PASSWORD }}"
-            export POSTGRES_DB="${{ secrets.POSTGRES_DB }}"
-            # Optional managed-DB override (e.g. Neon)
+            # Database — full Neon connection string
             export DATABASE_URL="${{ secrets.DATABASE_URL }}"
 
             # Auth

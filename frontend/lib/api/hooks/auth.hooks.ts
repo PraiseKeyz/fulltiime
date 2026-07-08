@@ -19,7 +19,7 @@ export function useMe() {
 export function useRegister() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (body: { email: string; username: string; password: string; full_name: string }) =>
+    mutationFn: (body: { email: string; username: string; password: string; full_name?: string }) =>
       api.post<AuthResponse>('/auth/register', body, { successMessage: 'Account created!' }),
     onSuccess: (data) => {
       qc.setQueryData(authKeys.me, data.user)

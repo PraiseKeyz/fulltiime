@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Anton, Archivo, Space_Mono } from 'next/font/google'
+import { Anton, Archivo, Inter, Space_Mono } from 'next/font/google'
 import { Toaster } from 'sonner'
 import { QueryProvider } from '@/providers/query-provider'
 import { ThemeProvider } from '@/providers/theme-provider'
@@ -25,6 +25,11 @@ const spaceMono = Space_Mono({
   subsets: ['latin'],
   weight: ['400', '700'],
   variable: '--font-space-mono',
+})
+
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-inter',
 })
 
 export const metadata: Metadata = {
@@ -71,7 +76,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${anton.variable} ${archivo.variable} ${spaceMono.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`${anton.variable} ${archivo.variable} ${spaceMono.variable} ${inter.variable}`} suppressHydrationWarning>
       <body className="min-h-screen bg-background text-foreground antialiased" suppressHydrationWarning>
         <ThemeProvider>
           <QueryProvider>

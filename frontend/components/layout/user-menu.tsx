@@ -3,8 +3,9 @@
 import { Suspense } from 'react'
 import Link from 'next/link'
 import { usePathname, useSearchParams } from 'next/navigation'
-import { LogOut, User as UserIcon } from 'lucide-react'
+import { LogOut, PenLine, User as UserIcon } from 'lucide-react'
 import { useAuth } from '@/providers/auth-provider'
+import { roleAtLeast } from '@/lib/roles'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import {
@@ -62,6 +63,17 @@ function UserMenuInner() {
           <p className="truncate text-[12px] font-normal text-muted-foreground">{user.email}</p>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+        {roleAtLeast(user.role, 'WRITER') && (
+          <>
+            <DropdownMenuItem asChild>
+              <Link href="/studio">
+                <PenLine className="h-4 w-4" />
+                Studio
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+          </>
+        )}
         <DropdownMenuItem
           onClick={() => logout()}
           className="text-destructive data-highlighted:text-destructive"

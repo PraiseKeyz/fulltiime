@@ -1,32 +1,57 @@
 'use client'
 
-import { Suspense, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Mail, Lock, User, Eye, EyeOff } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
+import { Mail, Lock, AtSign, Eye, EyeOff, Check, X } from 'lucide-react'
+import { api } from '@/lib/api/instance'
 import { useRegister } from '@/lib/api/hooks/auth.hooks'
 import { Button } from '@/components/ui/button'
 import { GoogleAuthButton } from '../_components/google-auth-button'
 import { GuestGuard } from '../_components/guest-guard'
 
-// Derive a username from the email local-part (the form intentionally omits a username field)
-function usernameFromEmail(email: string) {
-  const base = email.split('@')[0].toLowerCase().replace(/[^a-z0-9_]/g, '')
-  return base.length >= 3 ? base : `${base}fan`
+const USERNAME_RE = /^[a-zA-Z0-9_]{3,20}$/
+
+/** Debounced live check against GET /auth/check-username. */
+function useUsernameAvailability(username: string) {
+  const [debounced, setDebounced] = useState(username)
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(username), 400)
+    return () => clearTimeout(t)
+  }, [username])
+
+  const valid = USERNAME_RE.test(debounced)
+  const query = useQuery({
+    queryKey: ['username-check', debounced],
+    queryFn: () =>
+      api.get<{ available: boolean }>('/auth/check-username', {
+        params: { username: debounced },
+        silent: true,
+      }),
+    enabled: valid,
+    staleTime: 30_000,
+  })
+
+  if (!username) return { state: 'idle' as const }
+  if (!USERNAME_RE.test(username)) return { state: 'invalid' as const }
+  if (username !== debounced || query.isLoading) return { state: 'checking' as const }
+  if (query.data) return { state: query.data.available ? ('available' as const) : ('taken' as const) }
+  return { state: 'idle' as const }
 }
 
 function RegisterContent() {
   const router = useRouter()
   const { mutate: register, isPending } = useRegister()
-  const [form, setForm] = useState({ full_name: '', email: '', password: '' })
+  const [form, setForm] = useState({ username: '', email: '', password: '' })
   const [showPassword, setShowPassword] = useState(false)
+  const availability = useUsernameAvailability(form.username)
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    register(
-      { ...form, username: usernameFromEmail(form.email) },
-      { onSuccess: () => router.push('/verify-email?sent=1') },
-    )
+    if (availability.state === 'taken') return
+    register(form, { onSuccess: () => router.push('/verify-email?sent=1') })
   }
 
   return (
@@ -65,20 +90,44 @@ function RegisterContent() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
-                Full name
+                Username
               </label>
               <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <input
                   type="text"
                   required
-                  autoComplete="name"
-                  value={form.full_name}
-                  onChange={(e) => setForm((f) => ({ ...f, full_name: e.target.value }))}
-                  className="w-full rounded-lg border border-border bg-card pl-9 pr-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
-                  placeholder="Lionel Messi"
+                  minLength={3}
+                  maxLength={20}
+                  pattern="[a-zA-Z0-9_]+"
+                  title="3–20 characters — letters, numbers and underscores only"
+                  autoComplete="username"
+                  value={form.username}
+                  onChange={(e) => setForm((f) => ({ ...f, username: e.target.value }))}
+                  className="w-full rounded-lg border border-border bg-card pl-9 pr-10 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
+                  placeholder="terrace_poet"
                 />
+                {availability.state === 'available' && (
+                  <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" />
+                )}
+                {availability.state === 'taken' && (
+                  <X className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-destructive" />
+                )}
               </div>
+              {availability.state === 'taken' && (
+                <p className="mt-1.5 text-[12px] text-destructive">That username is already taken.</p>
+              )}
+              {availability.state === 'invalid' && (
+                <p className="mt-1.5 text-[12px] text-muted-foreground">
+                  3–20 characters — letters, numbers and underscores only.
+                </p>
+              )}
+              {availability.state === 'checking' && (
+                <p className="mt-1.5 text-[12px] text-muted-foreground">Checking availability…</p>
+              )}
+              {availability.state === 'available' && (
+                <p className="mt-1.5 text-[12px] text-primary">Username available.</p>
+              )}
             </div>
 
             <div>
@@ -130,7 +179,7 @@ function RegisterContent() {
               type="submit"
               variant="primary"
               size="lg"
-              disabled={isPending}
+              disabled={isPending || availability.state === 'taken' || availability.state === 'checking'}
               className="w-full text-foreground uppercase tracking-wide"
             >
               {isPending ? 'Creating account…' : 'Create account'}

@@ -34,6 +34,16 @@ export class AuthService {
   }
 
   // ── Register ──────────────────────────────────────────────────────────────────
+  async checkUsername(username: string) {
+    if (!/^[a-zA-Z0-9_]{3,20}$/.test(username ?? '')) {
+      return { data: { available: false } };
+    }
+    const existing = await this.prisma.user.findFirst({
+      where: { username: { equals: username, mode: 'insensitive' } },
+      select: { id: true },
+    });
+    return { data: { available: !existing } };
+  }
 
   async register(dto: RegisterDto) {
     const existing = await this.prisma.user.findFirst({

@@ -1,6 +1,6 @@
 import {
   Body, Controller, Get, Post,
-  Req, Res, UseGuards, HttpCode,
+  Query, Req, Res, UseGuards, HttpCode,
   UnauthorizedException,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
@@ -45,6 +45,12 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   // ── Register ──────────────────────────────────────────────────────────────────
+
+  @Public()
+  @Get('check-username')
+  checkUsername(@Query('username') username: string) {
+    return this.authService.checkUsername(username);
+  }
 
   @Public()
   @Post('register')

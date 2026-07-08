@@ -1,22 +1,4 @@
 services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: fulltiime-postgres
-    restart: always
-    ports:
-      - "5432:5432"
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   backend:
     image: ${DOCKERHUB_USERNAME}/fulltime:backend
     container_name: fulltiime-backend
@@ -26,9 +8,8 @@ services:
     environment:
       NODE_ENV: production
       PORT: 5000
-      # Defaults to the bundled Postgres; set DATABASE_URL to point at a
-      # managed database (e.g. Neon) instead.
-      DATABASE_URL: ${DATABASE_URL:-postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}}
+      # Full Neon connection string, straight from the DATABASE_URL secret.
+      DATABASE_URL: ${DATABASE_URL}
 
       # Auth
       JWT_SECRET: ${JWT_SECRET}
@@ -49,9 +30,6 @@ services:
       # LLM (AI insights) — anthropic | openai | gemini
       LLM_PROVIDER: ${LLM_PROVIDER:-anthropic}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
-    depends_on:
-      postgres:
-        condition: service_healthy
 
   frontend:
     image: ${DOCKERHUB_USERNAME}/fulltime:frontend
@@ -61,6 +39,3 @@ services:
       - "3000:3000"
     depends_on:
       - backend
-
-volumes:
-  postgres_data:

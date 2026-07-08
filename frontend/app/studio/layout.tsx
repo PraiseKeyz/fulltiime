@@ -55,8 +55,8 @@ export default function StudioLayout({ children }: { children: React.ReactNode }
 
   return (
     <div className="flex min-h-screen flex-col lg:flex-row">
-      {/* Sidebar */}
-      <aside className="flex shrink-0 flex-col border-b border-border bg-background-secondary lg:w-[230px] lg:border-b-0 lg:border-r">
+      {/* Sidebar — pinned on desktop; content scrolls independently */}
+      <aside className="flex shrink-0 flex-col border-b border-border bg-background-secondary lg:sticky lg:top-0 lg:h-screen lg:w-[230px] lg:overflow-y-auto lg:border-b-0 lg:border-r">
         <div className="flex items-center gap-2 px-5 pt-5 pb-4">
           <Link href="/studio/articles" aria-label="Studio home">
             <Wordmark className="text-[21px]" />
