@@ -32,36 +32,4 @@ export class UsersService {
     });
     return { data: user, message: 'Profile updated' };
   }
-
-  async addFavoriteTeam(userId: string, teamId: string) {
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: { favorite_teams: { connect: { id: teamId } } },
-    });
-    return { message: 'Team added to favorites' };
-  }
-
-  async removeFavoriteTeam(userId: string, teamId: string) {
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: { favorite_teams: { disconnect: { id: teamId } } },
-    });
-    return { message: 'Team removed from favorites' };
-  }
-
-  async addFavoriteLeague(userId: string, leagueId: string) {
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: { favorite_leagues: { connect: { id: leagueId } } },
-    });
-    return { message: 'League added to favorites' };
-  }
-
-  async removeFavoriteLeague(userId: string, leagueId: string) {
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: { favorite_leagues: { disconnect: { id: leagueId } } },
-    });
-    return { message: 'League removed from favorites' };
-  }
 }

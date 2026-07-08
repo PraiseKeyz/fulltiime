@@ -1,24 +1,30 @@
 import type { Metadata } from 'next'
-import { Anton, Inter } from 'next/font/google'
+import { Anton, Archivo, Space_Mono } from 'next/font/google'
 import { Toaster } from 'sonner'
 import { QueryProvider } from '@/providers/query-provider'
 import { ThemeProvider } from '@/providers/theme-provider'
 import { AuthProvider } from '@/providers/auth-provider'
-import { TimeZoneProvider } from '@/providers/timezone-provider'
 import { Analytics } from '@/components/analytics/analytics'
 import { ConsentBanner } from '@/components/analytics/consent-banner'
 import { SITE_URL, SITE_NAME, SITE_DESCRIPTION, DEFAULT_OG_IMAGE, TWITTER_HANDLE } from '@/lib/seo'
 import './globals.css'
 
-// const anton = Anton({
-//   subsets: ['latin'],
-//   weight: '400',
-//   variable: '--font-anton',
-// })
-
-const inter = Inter({
+const anton = Anton({
   subsets: ['latin'],
-  variable: '--font-inter',
+  weight: '400',
+  variable: '--font-anton',
+})
+
+const archivo = Archivo({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800'],
+  variable: '--font-archivo',
+})
+
+const spaceMono = Space_Mono({
+  subsets: ['latin'],
+  weight: ['400', '700'],
+  variable: '--font-space-mono',
 })
 
 export const metadata: Metadata = {
@@ -65,16 +71,14 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${inter.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`${anton.variable} ${archivo.variable} ${spaceMono.variable}`} suppressHydrationWarning>
       <body className="min-h-screen bg-background text-foreground antialiased" suppressHydrationWarning>
         <ThemeProvider>
           <QueryProvider>
             <AuthProvider>
-              <TimeZoneProvider>
-                {children}
-                <Toaster position="top-right" richColors closeButton />
-                <ConsentBanner />
-              </TimeZoneProvider>
+              {children}
+              <Toaster position="top-right" richColors closeButton />
+              <ConsentBanner />
             </AuthProvider>
           </QueryProvider>
         </ThemeProvider>

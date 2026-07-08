@@ -80,10 +80,16 @@ export class ApiClient {
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), timeout)
 
+    // FormData bodies (file uploads) must not be JSON-stringified, and the
+    // browser must set the multipart boundary header itself.
+    const isFormData = typeof FormData !== 'undefined' && body instanceof FormData
+
     let interceptedConfig: RequestConfig & { url: string } = {
       url: this.buildUrl(endpoint, params),
       body,
-      headers: { 'Content-Type': 'application/json', ...(headers ?? {}) },
+      headers: isFormData
+        ? { ...(headers ?? {}) }
+        : { 'Content-Type': 'application/json', ...(headers ?? {}) },
       credentials: 'include',
       ...restInit,
     }
@@ -98,7 +104,12 @@ export class ApiClient {
       const response = await fetch(url, {
         ...fetchInit,
         signal: controller.signal,
-        body: reqBody !== undefined ? JSON.stringify(reqBody) : undefined,
+        body:
+          reqBody === undefined
+            ? undefined
+            : isFormData
+              ? (reqBody as FormData)
+              : JSON.stringify(reqBody),
       })
 
       clearTimeout(timer)

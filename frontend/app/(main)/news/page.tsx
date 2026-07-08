@@ -5,18 +5,10 @@ import { NewsTab } from './_components/news-tab'
 
 export default function NewsPage() {
   return (
-    <>
-      <div className="bg-card border-b border-border">
-        <div className="mx-auto max-w-[var(--content-max)] px-4 lg:px-6 py-6">
-          <h1 className="text-3xl font-semibold">News</h1>
-        </div>
-      </div>
-
-      <div className="mx-auto max-w-[var(--content-max)] px-4 lg:px-6 py-6">
-        <Suspense fallback={null}>
-          <NewsTab />
-        </Suspense>
-      </div>
-    </>
+    <div data-bp className="mx-auto max-w-[var(--content-max)] px-4.5 pb-17.5 sm:px-10">
+      <Suspense fallback={null}>
+        <NewsTab />
+      </Suspense>
+    </div>
   )
 }

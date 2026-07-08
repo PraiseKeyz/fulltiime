@@ -42,7 +42,6 @@ jobs:
             NEXT_PUBLIC_GOOGLE_CLIENT_ID=${{ secrets.NEXT_PUBLIC_GOOGLE_CLIENT_ID }}
             NEXT_PUBLIC_SITE_URL=${{ secrets.NEXT_PUBLIC_SITE_URL }}
             NEXT_PUBLIC_COMING_SOON_ENABLED=false
-            NEXT_PUBLIC_FULLCHAT_ENABLED=true
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -72,20 +71,32 @@ jobs:
             set -e
             cd /var/www/fulltiime
 
-            # Postgres
+            # Postgres (bundled container; leave DATABASE_URL unset to use it)
             export POSTGRES_USER="${{ secrets.POSTGRES_USER }}"
             export POSTGRES_PASSWORD="${{ secrets.POSTGRES_PASSWORD }}"
             export POSTGRES_DB="${{ secrets.POSTGRES_DB }}"
+            # Optional managed-DB override (e.g. Neon)
+            export DATABASE_URL="${{ secrets.DATABASE_URL }}"
 
-            # Backend
+            # Auth
             export JWT_SECRET="${{ secrets.JWT_SECRET }}"
             export JWT_REFRESH_SECRET="${{ secrets.JWT_REFRESH_SECRET }}"
             export FRONTEND_URL="${{ secrets.FRONTEND_URL }}"
             export GOOGLE_CLIENT_ID="${{ secrets.GOOGLE_CLIENT_ID }}"
-            export SPORTMONKS_API_KEY="${{ secrets.SPORTMONKS_API_KEY }}"
+
+            # Transactional email
             export ZEPTOMAIL_API_KEY="${{ secrets.ZEPTOMAIL_API_KEY }}"
             export ZEPTOMAIL_FROM_EMAIL="${{ secrets.ZEPTOMAIL_FROM_EMAIL }}"
             export ZEPTOMAIL_FROM_NAME="${{ secrets.ZEPTOMAIL_FROM_NAME }}"
+
+            # Studio media uploads (Cloudinary)
+            export CLOUDINARY_CLOUD_NAME="${{ secrets.CLOUDINARY_CLOUD_NAME }}"
+            export CLOUDINARY_API_KEY="${{ secrets.CLOUDINARY_API_KEY }}"
+            export CLOUDINARY_API_SECRET="${{ secrets.CLOUDINARY_API_SECRET }}"
+
+            # LLM (AI insights)
+            export LLM_PROVIDER="${{ secrets.LLM_PROVIDER }}"
+            export ANTHROPIC_API_KEY="${{ secrets.ANTHROPIC_API_KEY }}"
 
             # Docker Hub
             export DOCKERHUB_USERNAME="${{ secrets.DOCKERHUB_USERNAME }}"

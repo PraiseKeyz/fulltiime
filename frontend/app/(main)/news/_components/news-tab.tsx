@@ -1,272 +1,98 @@
 'use client'
 
-import { useState } from 'react'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
-import { Newspaper, Clock, ChevronLeft, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
-import { useArticles } from '@/lib/api/hooks/news.hooks'
-import type { Article, ArticleCategory } from '@/lib/api/domain'
+import { Cover } from '@/components/content/cover'
+import { getSection, SECTIONS, SECTION_KEYS, type SectionKey, type Story } from '@/lib/dummy-content'
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// ─── Category card (design "Category" screen) ─────────────────────────────────
 
-const CATEGORY_COLOR: Record<string, string> = {
-  NEWS:         '#3b82f6',
-  ANALYSIS:     '#8b5cf6',
-  INTERVIEW:    '#10b981',
-  TRANSFER:     '#f59e0b',
-  MATCH_REPORT: '#ef4444',
-}
-
-
-function timeAgo(iso: string | null): string {
-  if (!iso) return ''
-  const diff = Date.now() - new Date(iso).getTime()
-  const mins  = Math.floor(diff / 60_000)
-  if (mins < 60)   return `${mins}m ago`
-  const hrs = Math.floor(mins / 60)
-  if (hrs  < 24)   return `${hrs}h ago`
-  return `${Math.floor(hrs / 24)}d ago`
-}
-
-function readTime(content: string): string {
-  const words = content.replace(/<[^>]+>/g, ' ').split(/\s+/).filter(Boolean).length
-  return `${Math.max(1, Math.ceil(words / 200))} min read`
-}
-
-// ─── Cover image ──────────────────────────────────────────────────────────────
-
-function Cover({ src, alt, className }: { src: string | null; alt: string; className?: string }) {
-  return (
-    <div className={cn('bg-muted overflow-hidden relative', className)}>
-      {src ? (
-        <img src={src} alt={alt} className="w-full h-full object-cover" />
-      ) : (
-        <div className="w-full h-full flex items-center justify-center">
-          <Newspaper className="h-8 w-8 text-muted-foreground/20" />
-        </div>
-      )}
-    </div>
-  )
-}
-
-// ─── Skeletons ────────────────────────────────────────────────────────────────
-
-function FeaturedSkeleton() {
-  return (
-    <div className="grid md:grid-cols-2 rounded-xl overflow-hidden border border-border bg-card">
-      <div className="h-64 md:h-full min-h-[260px] bg-muted animate-pulse" />
-      <div className="p-6 flex flex-col justify-center gap-3">
-        <div className="h-3 w-16 rounded bg-muted animate-pulse" />
-        <div className="h-7 w-full rounded bg-muted animate-pulse" />
-        <div className="h-7 w-3/4 rounded bg-muted animate-pulse" />
-        <div className="space-y-2">
-          <div className="h-3 w-full rounded bg-muted animate-pulse" />
-          <div className="h-3 w-5/6 rounded bg-muted animate-pulse" />
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function CardSkeleton() {
-  return (
-    <div className="rounded-xl overflow-hidden border border-border bg-card">
-      <div className="h-44 bg-muted animate-pulse" />
-      <div className="p-4 space-y-2">
-        <div className="h-2.5 w-14 rounded bg-muted animate-pulse" />
-        <div className="h-4 w-full rounded bg-muted animate-pulse" />
-        <div className="h-4 w-3/4 rounded bg-muted animate-pulse" />
-      </div>
-    </div>
-  )
-}
-
-// ─── Article cards ────────────────────────────────────────────────────────────
-
-function FeaturedStory({ article }: { article: Article }) {
+function CategoryCard({ story }: { story: Story }) {
   return (
     <Link
-      href={`/news/${article.slug}`}
-      className="group grid md:grid-cols-2 rounded-xl overflow-hidden border border-border bg-card hover:border-primary/30 transition-colors"
+      href={`/news/${story.slug}`}
+      className="flex flex-col overflow-hidden border border-border bg-background-secondary transition-colors hover:border-primary/40"
     >
-      <Cover src={article.cover_url} alt={article.title} className="h-64 md:h-full min-h-[260px]" />
-      <div className="p-6 flex flex-col justify-center gap-3">
-        <span className="text-[11px] font-bold capitalize tracking-wider" style={{ color: CATEGORY_COLOR[article.category] ?? '#888' }}>
-          {article.category.replace(/_/g, ' ').toLowerCase()}
+      <div className="relative h-[170px]">
+        <Cover seed={story.headline} hue={story.hue} className="absolute inset-0" />
+        <span className="absolute left-2.5 top-2.5 rounded-[5px] bg-primary px-2 py-1 font-mono text-[10px] font-bold tracking-[0.1em] text-primary-foreground">
+          {story.kicker}
         </span>
-        <h2 className="text-[24px] font-semibold tracking-[0.01rem] leading-[1.15] group-hover:text-primary transition-colors">
-          {article.title}
-        </h2>
-        {article.excerpt && (
-          <p className="text-[13px] text-muted-foreground leading-relaxed line-clamp-3">
-            {article.excerpt}
-          </p>
+      </div>
+      <div className="flex flex-1 flex-col gap-2.5 p-4.5">
+        <h3 className="m-0 line-clamp-3 text-balance text-[23px] leading-[1.02]">{story.headline}</h3>
+        {story.sub ? (
+          <p className="m-0 line-clamp-3 text-[13px] leading-normal text-txt2">{story.sub}</p>
+        ) : (
+          <div className="font-mono text-[12px] text-muted-foreground">
+            {story.author} · {story.read} read
+          </div>
         )}
-        <div className="flex items-center gap-2 text-[12px] text-muted-foreground pt-1">
-          <span className="font-semibold text-foreground">{article.author.full_name ?? article.author.username}</span>
-          <span>·</span>
-          <span>{timeAgo(article.published_at)}</span>
-          <span>·</span>
-          <Clock className="h-3 w-3" />
-          <span>{readTime(article.content)}</span>
-        </div>
       </div>
     </Link>
   )
 }
-
-function ArticleCard({ article }: { article: Article }) {
-  return (
-    <Link
-      href={`/news/${article.slug}`}
-      className="group flex flex-col rounded-xl overflow-hidden border border-border bg-card hover:border-primary/30 transition-colors"
-    >
-      <Cover src={article.cover_url} alt={article.title} className="h-44 w-full" />
-      <div className="p-4 flex flex-col gap-2 flex-1">
-        <span className="text-[12px] capitalize font-semibold tracking-wider" style={{ color: CATEGORY_COLOR[article.category] ?? '#888' }}>
-          {article.category.replace(/_/g, ' ').toLowerCase()}
-        </span>
-        <h3 className="text-[16px] font-bold group-hover:text-primary transition-colors line-clamp-2">
-          {article.title}
-        </h3>
-        {article.excerpt && (
-          <p className="text-[12px] text-muted-foreground leading-relaxed line-clamp-2 flex-1">
-            {article.excerpt}
-          </p>
-        )}
-        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground pt-1 border-t border-border mt-1">
-          <span>{timeAgo(article.published_at)}</span>
-          <span>·</span>
-          <Clock className="h-3 w-3" />
-          <span>{readTime(article.content)}</span>
-        </div>
-      </div>
-    </Link>
-  )
-}
-
-const FILTER_TABS: { label: string; value: ArticleCategory | undefined }[] = [
-  { label: 'All',          value: undefined       },
-  { label: 'News',         value: 'NEWS'          },
-  { label: 'Transfers',    value: 'TRANSFER'      },
-]
-
-const VALID_CATEGORIES = FILTER_TABS.map(t => t.value).filter(Boolean) as ArticleCategory[]
 
 // ─── Main tab ─────────────────────────────────────────────────────────────────
 
-const LIMIT = 10
-
 export function NewsTab() {
-  const router       = useRouter()
-  const pathname     = usePathname()
+  const router = useRouter()
+  const pathname = usePathname()
   const searchParams = useSearchParams()
 
-  const urlCategory = searchParams.get('category') as ArticleCategory | null
-  const urlPage     = Number(searchParams.get('page')) || 1
+  // Derived from the URL so navbar/footer category links work while already
+  // on /news — there is no remount when only the query string changes.
+  const section = getSection(searchParams.get('category')) ?? SECTIONS.news
+  const activeKey = (searchParams.get('category') ?? 'news') as SectionKey
 
-  const [category, setCategory] = useState<ArticleCategory | undefined>(
-    urlCategory && VALID_CATEGORIES.includes(urlCategory) ? urlCategory : undefined,
-  )
-  const [page, setPage]         = useState(urlPage)
-  const { data, isLoading }     = useArticles({ category, page, limit: LIMIT })
-
-  const articles   = data?.articles ?? []
-  const totalPages = data?.pages ?? 1
-  const [featured, ...rest] = articles
-
-  const updateUrl = (nextCategory: ArticleCategory | undefined, nextPage: number) => {
+  const handleCategory = (key: SectionKey) => {
     const params = new URLSearchParams(searchParams.toString())
-    if (nextCategory) params.set('category', nextCategory)
-    else params.delete('category')
-    if (nextPage > 1) params.set('page', String(nextPage))
-    else params.delete('page')
+    if (key === 'news') params.delete('category')
+    else params.set('category', key)
     const qs = params.toString()
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
   }
 
-  const handleCategory = (value: ArticleCategory | undefined) => {
-    setCategory(value)
-    setPage(1)
-    updateUrl(value, 1)
-  }
-
-  const goToPage = (value: number) => {
-    setPage(value)
-    updateUrl(category, value)
-  }
-
   return (
-    <div className="space-y-6">
-      {/* Category filters */}
-      <div className="flex items-center gap-1 overflow-x-auto scrollbar-none">
-        {FILTER_TABS.map(tab => (
-          <Button
-            key={tab.label}
-            onClick={() => handleCategory(tab.value)}
-            variant={category === tab.value ? 'default' : 'ghost'}
-            size="sm"
-            className={cn('shrink-0 rounded-full px-4 text-[12px]', category !== tab.value && 'text-muted-foreground')}
+    <>
+      <Link
+        href="/"
+        className="flex items-center gap-2 pt-6 pb-1 font-mono text-[13px] text-muted-foreground transition-colors hover:text-foreground"
+      >
+        ← back to the homepage
+      </Link>
+
+      <div className="mt-2.5 border-t border-border pt-7.5 pb-7.5">
+        <span className="mb-2 block font-mono text-[12px] tracking-[0.14em] text-primary">
+          ◎ CATEGORY
+        </span>
+        <h1 className="m-0 text-[clamp(30px,6vw,52px)] uppercase leading-[0.95]">{section.title}</h1>
+      </div>
+
+      {/* Section filters */}
+      <div className="mb-7 flex items-center gap-2 overflow-x-auto pb-1" data-scroll>
+        {SECTION_KEYS.map((key) => (
+          <button
+            key={key}
+            onClick={() => handleCategory(key)}
+            className={cn(
+              'shrink-0 rounded-full border px-4 py-2 text-[13px] font-bold transition-colors',
+              (getSection(activeKey) ? activeKey : 'news') === key
+                ? 'border-primary bg-primary text-primary-foreground'
+                : 'border-border text-txt2 hover:border-primary hover:text-primary',
+            )}
           >
-            {tab.label}
-          </Button>
+            {SECTIONS[key].label}
+          </button>
         ))}
       </div>
 
-      {isLoading && (
-        <>
-          <FeaturedSkeleton />
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {Array.from({ length: 6 }).map((_, i) => <CardSkeleton key={i} />)}
-          </div>
-        </>
-      )}
-
-      {!isLoading && articles.length === 0 && (
-        <div className="text-center py-20 text-muted-foreground text-sm">
-          No articles found.
-        </div>
-      )}
-
-      {!isLoading && featured && <FeaturedStory article={featured} />}
-
-      {!isLoading && rest.length > 0 && (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {rest.map(article => <ArticleCard key={article.id} article={article} />)}
-        </div>
-      )}
-
-      {!isLoading && totalPages > 1 && (
-        <div className="flex items-center justify-center gap-3 pt-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => goToPage(page - 1)}
-            disabled={page <= 1}
-            className="h-8 gap-1 text-[12px] text-muted-foreground disabled:opacity-30"
-          >
-            <ChevronLeft className="h-3.5 w-3.5" />
-            Prev
-          </Button>
-
-          <span className="text-[12px] text-muted-foreground">
-            {page} / {totalPages}
-          </span>
-
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => goToPage(page + 1)}
-            disabled={page >= totalPages}
-            className="h-8 gap-1 text-[12px] text-muted-foreground disabled:opacity-30"
-          >
-            Next
-            <ChevronRight className="h-3.5 w-3.5" />
-          </Button>
-        </div>
-      )}
-    </div>
+      <div className="grid gap-5.5 sm:grid-cols-2 lg:grid-cols-3">
+        {section.items.map((story) => (
+          <CategoryCard key={story.slug} story={story} />
+        ))}
+      </div>
+    </>
   )
 }

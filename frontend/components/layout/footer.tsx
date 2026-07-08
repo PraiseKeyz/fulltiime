@@ -1,8 +1,10 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { Instagram, Youtube } from 'lucide-react'
 import { useImmersive } from '@/providers/immersive-provider'
+import { Wordmark } from '@/components/layout/navbar'
 
 // Brand glyphs lucide no longer ships as first-class icons (X, TikTok, WhatsApp).
 // Inline SVGs using currentColor so they inherit the same hover colour as the rest.
@@ -30,91 +32,161 @@ function WhatsAppIcon({ className }: { className?: string }) {
   )
 }
 
-const COLUMNS = [
-  {
-    title: 'Platform',
-    links: [
-      { label: 'News', href: '/news' },
-      { label: 'Matches', href: '/matches' },
-      { label: 'Fixtures', href: '/fixtures' },
-    ],
-  },
-  {
-    title: 'Competitions',
-    links: [
-      { label: 'All Leagues', href: '/leagues' },
-      { label: 'Standings', href: '/standings' },
-      // { label: 'Teams', href: '/teams' },
-      // { label: 'Transfers', href: '/news?category=TRANSFER' },
-    ],
-  },
-  {
-    title: 'Company',
-    links: [
-      { label: 'About', href: '/about' },
-      { label: 'Privacy Policy', href: '/privacy' },
-      { label: 'Terms & Conditions', href: '/terms' },
-    ],
-  },
+const SOCIALS = [
+  { label: 'X',         href: 'https://x.com/FulltiimeSport',                                       Icon: XIcon },
+  { label: 'Instagram', href: 'https://www.instagram.com/fulltiimesport?igsh=czh5MDhyY3B0am0z',     Icon: Instagram },
+  { label: 'YouTube',   href: 'https://youtube.com/@fulltiimesport?si=-KEhv7IEX706-vb5',            Icon: Youtube },
+  { label: 'TikTok',    href: 'https://www.tiktok.com/@fulltiimesport?_r=1&_t=ZS-96vNU5lViGj',      Icon: TikTokIcon },
+  { label: 'WhatsApp',  href: 'https://whatsapp.com/channel/0029Vb8Yk0JCHDyuhv7VCc44',              Icon: WhatsAppIcon },
 ]
+
+const EXPLORE = [
+  { label: 'News',                href: '/news' },
+  { label: 'Transfers',           href: '/news?category=transfers' },
+  { label: 'Tactical Breakdowns', href: '/news?category=tactics' },
+  { label: 'Fulltiime TV',        href: '/news?category=tv' },
+  { label: 'Beyond the Whistle',  href: '/news?category=beyond' },
+  { label: 'The Motherland',      href: '/news?category=motherland' },
+]
+
+const COMPANY = [
+  { label: 'Sign In',        href: '/login' },
+  { label: 'Terms of Use',   href: '/terms' },
+  { label: 'Privacy Policy', href: '/privacy' },
+]
+
+function ColumnMarks() {
+  return (
+    <>
+      <span className="absolute -left-1.5 -top-2.5 hidden font-mono text-[14px] leading-none text-muted-foreground lg:block">+</span>
+      <span className="absolute -left-1.5 -bottom-2.5 hidden font-mono text-[14px] leading-none text-muted-foreground lg:block">+</span>
+    </>
+  )
+}
+
+function FooterColumn({
+  title,
+  links,
+}: {
+  title: string
+  links: { label: string; href: string }[]
+}) {
+  return (
+    <div className="relative py-8 lg:border-l lg:border-border lg:px-10 lg:py-10">
+      <ColumnMarks />
+      <div className="mb-4.5 font-mono text-[12px] tracking-[0.12em] text-muted-foreground">{title}</div>
+      <div className="flex flex-col gap-3 text-[14px] font-semibold text-txt2">
+        {links.map((link) => (
+          <Link key={link.label} href={link.href} className="transition-colors hover:text-primary">
+            {link.label}
+          </Link>
+        ))}
+      </div>
+    </div>
+  )
+}
 
 export function Footer() {
   const { immersive } = useImmersive()
+  const [email, setEmail] = useState('')
+  const [sent, setSent] = useState(false)
+
   if (immersive) return null
 
   return (
-    <footer className="bg-card border-t border-border mt-auto">
-      <div className="mx-auto max-w-[var(--content-max)] px-4 lg:px-6 py-10">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-          {/* Brand */}
-          <div className="col-span-2 md:col-span-1">
-            <Link href="/" className="flex items-center mb-3">
-              <img src="/logo.svg" alt="Fulltiime" className="h-6 w-auto" />
+    <footer className="mt-5">
+      <div className="mx-auto max-w-[var(--content-max)] px-4.5 pt-8 pb-10 sm:px-10 sm:pt-13">
+        <div className="grid grid-cols-1 border-t border-b border-border sm:grid-cols-2 lg:grid-cols-[1.7fr_1fr_1fr_1.15fr]">
+          {/* About + newsletter */}
+          <div className="py-8 sm:col-span-2 lg:col-span-1 lg:py-10 lg:pr-12">
+            <Link href="/" aria-label="Fulltiime home" className="mb-3.5 inline-block">
+              <Wordmark className="text-[26px]" />
             </Link>
-            <p className="text-[12px] text-muted-foreground leading-relaxed max-w-[200px]">
-              Football beyond the final whistle.
+            <p className="mb-5.5 text-[14px] leading-relaxed text-txt2">
+              Independent football storytelling — deep reads, sharp tactics, and the culture around
+              the game. Football beyond the final whistle.
             </p>
-            <div className="flex gap-3 mt-4">
-              <a href="https://x.com/FulltiimeSport" aria-label="X" className="text-muted-foreground hover:text-foreground transition-colors">
-                <XIcon className="h-4 w-4" />
-              </a>
-              <a href="https://www.instagram.com/fulltiimesport?igsh=czh5MDhyY3B0am0z" aria-label="Instagram" className="text-muted-foreground hover:text-foreground transition-colors">
-                <Instagram className="h-4 w-4" />
-              </a>
-              <a href="https://youtube.com/@fulltiimesport?si=-KEhv7IEX706-vb5" aria-label="YouTube" className="text-muted-foreground hover:text-foreground transition-colors">
-                <Youtube className="h-4 w-4" />
-              </a>
-              <a href="https://www.tiktok.com/@fulltiimesport?_r=1&_t=ZS-96vNU5lViGj" aria-label="TikTok" className="text-muted-foreground hover:text-foreground transition-colors">
-                <TikTokIcon className="h-4 w-4" />
-              </a>
-              <a href="https://whatsapp.com/channel/0029Vb8Yk0JCHDyuhv7VCc44" aria-label="WhatsApp" className="text-muted-foreground hover:text-foreground transition-colors">
-                <WhatsAppIcon className="h-4 w-4" />
-              </a>
+            <div className="mb-2.5 font-mono text-[12px] tracking-[0.12em] text-muted-foreground">
+              NEVER MISS A MOMENT
+            </div>
+            {sent ? (
+              <div className="py-2.5 text-[14px] font-semibold text-primary">
+                ✓ You&apos;re in. Welcome to the conversation.
+              </div>
+            ) : (
+              <form
+                className="flex max-w-[360px] gap-2"
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  if (email.includes('@')) setSent(true)
+                }}
+              >
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@email.com"
+                  className="min-w-0 flex-1 rounded-full border border-border bg-background-secondary px-4 py-3 text-[14px] text-foreground outline-none placeholder:text-muted-foreground focus:border-primary"
+                />
+                <button
+                  type="submit"
+                  className="rounded-full bg-primary px-5 text-[14px] font-bold text-primary-foreground"
+                >
+                  Subscribe
+                </button>
+              </form>
+            )}
+            <div className="mt-5.5 flex flex-wrap gap-2">
+              {SOCIALS.map(({ label, href, Icon }) => (
+                <a
+                  key={label}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 rounded-full border border-border px-3 py-2 text-[12px] font-semibold text-foreground transition-colors hover:border-primary hover:text-primary"
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                  {label}
+                </a>
+              ))}
             </div>
           </div>
 
-          {COLUMNS.map((col) => (
-            <div key={col.title}>
-              <h4 className="text-[11px] font-sans uppercase tracking-widest mb-3 text-foreground">
-                {col.title}
-              </h4>
-              <ul className="space-y-2">
-                {col.links.map((link) => (
-                  <li key={link.href}>
-                    <Link href={link.href} className="text-[12px] text-muted-foreground hover:text-foreground transition-colors">
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+          <FooterColumn title="EXPLORE" links={EXPLORE} />
+          <FooterColumn
+            title="LEAGUES"
+            links={[
+              { label: 'Premier League',   href: '/news?category=premier' },
+              { label: 'Champions League', href: '/news?category=champions' },
+              { label: 'La Liga',          href: '/news?category=laliga' },
+              { label: 'World Cup 2026',   href: '/news?category=worldcup' },
+            ]}
+          />
+          <FooterColumn title="COMPANY" links={COMPANY} />
         </div>
 
-        <div className="mt-8 pt-6 border-t border-border">
-          <p className="text-[11px] text-muted-foreground">
-            &copy; {new Date().getFullYear()} FULLTIIME. All rights reserved. A product of Glostarep Media Limited.
+        <div className="border-b border-border py-7">
+          <p className="m-0 max-w-[940px] text-[15px] leading-[1.7] text-txt2">
+            Fulltiime is built for the fan who reads deeply — covering the leagues, the World Cup,
+            and the human stories the scoreboard never tells. From NPFL matchdays to Champions
+            League nights, every piece is written by people who actually watch the game, for people
+            who never stop talking about it.
           </p>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-4.5 pt-6">
+          <span className="font-mono text-[12px] text-muted-foreground">
+            © {new Date().getFullYear()} Fulltiime Media · Football beyond the final whistle · A
+            product of Glostarep Media Limited
+          </span>
+          <div className="flex flex-wrap gap-5 font-mono text-[13px]">
+            <a href="mailto:editorial@fulltiime.com" className="text-primary hover:underline">
+              editorial@fulltiime.com
+            </a>
+            <a href="mailto:partnerships@fulltiime.com" className="text-primary hover:underline">
+              partnerships@fulltiime.com
+            </a>
+          </div>
         </div>
       </div>
     </footer>

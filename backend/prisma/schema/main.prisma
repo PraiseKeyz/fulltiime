@@ -1,0 +1,17 @@
+// Prisma multi-file schema — one file per domain:
+//   main.prisma     → generator + datasource
+//   enums.prisma    → shared enums (roles, workflow, sections)
+//   user.prisma     → accounts & auth
+//   article.prisma  → editorial content
+//   media.prisma    → Cloudinary uploads
+//   cache.prisma    → generic JSON cache
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}

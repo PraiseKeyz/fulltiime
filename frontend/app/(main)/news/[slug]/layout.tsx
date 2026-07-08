@@ -42,7 +42,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       publishedTime: article.published_at ?? undefined,
       authors: [authorName],
       tags: article.tags,
-      section: article.category,
+      section: article.section,
     },
     authors: [{ name: authorName }],
     creator: authorName,

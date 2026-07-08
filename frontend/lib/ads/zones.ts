@@ -10,25 +10,20 @@ export interface AdZone {
 }
 
 export const AD_ZONES = {
-  'home-top': {
-    enabled:   true,
-    format:    'leaderboard',
-    creatives: ['hero-top-banner'],
-  },
   'matches-sidebar': {
     enabled:   true,
     format:    'mpu',
     creatives: ['1xbet-300x200-a'],
   },
-  'rail-left': {
+  'article-inline': {
     enabled:   true,
-    format:    'sidebar',
-    creatives: ['1xbet-160x600-a'],
+    format:    'leaderboard',
+    creatives: ['hero-top-banner'],
   },
-  'rail-right': {
+  'article-sidebar': {
     enabled:   true,
-    format:    'sidebar',
-    creatives: ['1xbet-300x600-a'],
+    format:    'mpu',
+    creatives: ['1xbet-300x200-a'],
   },
 } satisfies Record<string, AdZone>
 

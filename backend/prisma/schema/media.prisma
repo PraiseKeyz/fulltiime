@@ -1,0 +1,18 @@
+// ─── Media (Cloudinary uploads) ───────────────────────────────────────────────
+
+model Media {
+  id          String   @id @default(cuid())
+  public_id   String   @unique
+  url         String
+  width       Int?
+  height      Int?
+  format      String?
+  bytes       Int?
+
+  uploader_id String
+  uploader    User     @relation(fields: [uploader_id], references: [id])
+
+  created_at  DateTime @default(now())
+
+  @@map("media")
+}

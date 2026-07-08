@@ -1,28 +1,25 @@
 'use client'
 
 import { useParams } from 'next/navigation'
-import { Newspaper, Clock, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
-import { useArticle, useArticles } from '@/lib/api/hooks/news.hooks'
-import { ArticleSkeleton } from './_components/article-skeleton'
-import { RelatedCard } from './_components/related-card'
-import { CATEGORY_COLOR } from './_components/category-colors'
-import { timeAgo, readTime } from './_components/utils'
+import { Cover } from '@/components/content/cover'
+import { AiInsights } from '@/components/content/ai-insights'
+import { LiveChat } from '@/components/content/live-chat'
+import { SponsoredFrame } from '@/components/ads/sponsored-frame'
+import { getStory } from '@/lib/dummy-content'
 
 export default function ArticlePage() {
   const { slug } = useParams<{ slug: string }>()
-  const { data: article, isLoading, isError } = useArticle(slug)
-  const { data: recent } = useArticles({ limit: 4 })
+  const story = getStory(slug)
 
-  const related = (recent?.articles ?? []).filter(a => a.slug !== slug).slice(0, 3)
-
-  if (isLoading) return <ArticleSkeleton />
-
-  if (isError || !article) {
+  if (!story) {
     return (
-      <div className="mx-auto max-w-[var(--content-max)] px-4 lg:px-6 py-20 text-center">
-        <p className="text-muted-foreground text-sm">Article not found.</p>
-        <Link href="/news" className="text-primary text-sm font-semibold hover:underline mt-2 inline-block">
+      <div className="mx-auto max-w-[var(--content-max)] px-4.5 py-20 text-center sm:px-10">
+        <p className="font-mono text-[13px] text-muted-foreground">Article not found.</p>
+        <Link
+          href="/news"
+          className="mt-2 inline-block text-[13px] font-bold text-primary hover:underline"
+        >
           Back to News
         </Link>
       </div>
@@ -30,80 +27,64 @@ export default function ArticlePage() {
   }
 
   return (
-    <>
-      {/* Header */}
-      <div className="bg-card border-b border-border py-6">
-        <div className="mx-auto max-w-[var(--content-max)] px-4 lg:px-6">
-          <Link href="/news" className="inline-flex items-center gap-1.5 text-[12px] text-muted-foreground hover:text-foreground transition-colors mb-4">
-            <ArrowLeft className="h-3.5 w-3.5" />
-            Back to News
-          </Link>
+    <div data-bp className="mx-auto max-w-[var(--content-max)] px-4.5 pb-20 sm:px-10 sm:pb-0">
+      <Link
+        href="/"
+        className="flex items-center gap-2 pt-6 pb-1 font-mono text-[13px] text-muted-foreground transition-colors hover:text-foreground"
+      >
+        ← back to the homepage
+      </Link>
 
-          <span className="block text-[11px] font-bold capitalize tracking-wider mb-2" style={{ color: CATEGORY_COLOR[article.category] ?? '#888' }}>
-            {article.category.replace(/_/g, ' ').toLowerCase()}
+      <div className="grid items-start gap-7.5 pb-15 lg:grid-cols-[1fr_372px] lg:gap-12">
+        {/* Main article */}
+        <article className="min-w-0 pt-4.5">
+          <span className="font-mono text-[12px] tracking-[0.12em] text-primary">
+            {story.kicker}
           </span>
-
-          <h1 className="text-3xl font-black leading-tight">{article.title}</h1>
-
-          {article.excerpt && (
-            <p className="mt-3 text-[15px] text-muted-foreground leading-relaxed">{article.excerpt}</p>
-          )}
-
-          <div className="flex items-center gap-2 mt-4 text-[12px] text-muted-foreground">
-            <span className="font-semibold text-foreground">{article.author.full_name ?? article.author.username}</span>
-            <span>·</span>
-            <span>{timeAgo(article.published_at)}</span>
-            <span>·</span>
-            <Clock className="h-3 w-3" />
-            <span>{readTime(article.content)}</span>
+          <h1 className="mt-3.5 mb-4.5 text-balance text-[clamp(32px,6vw,54px)] leading-[0.96]">
+            {story.headline}
+          </h1>
+          <div className="mb-5 flex flex-wrap items-center gap-3.5 font-mono text-[13px] text-txt2">
+            <span>By {story.author}</span>
+            <span className="text-muted-foreground">·</span>
+            <span>{story.read} read</span>
+            <span className="text-muted-foreground">·</span>
+            <span>Today</span>
           </div>
+
+          <AiInsights insights={story.insights} />
+
+          {/* Ad · placement 1 (under AI strip) */}
+          <SponsoredFrame zone="article-inline" compact className="mb-6.5" />
+
+          <Cover
+            seed={story.headline}
+            hue={story.hue}
+            alt={story.headline}
+            className="mb-2 h-[280px] border border-border sm:h-[420px]"
+          />
+          <div className="mb-8 font-mono text-[12px] text-muted-foreground">
+            [ match photography placeholder ]
+          </div>
+
+          <div className="article-prose" dangerouslySetInnerHTML={{ __html: story.bodyHtml }} />
+
+          {/* Ad · placement 2 (mid-article) */}
+          <SponsoredFrame zone="article-inline" className="my-8.5 max-w-[680px]" />
+
+          <p className="m-0 max-w-[680px] font-heading text-[22px] leading-[1.12] text-head">
+            Football beyond the final whistle isn&apos;t a tagline. It&apos;s where the real game
+            lives.
+          </p>
+        </article>
+
+        {/* Live thread + sidebar ad */}
+        <div className="flex flex-col gap-4 lg:sticky lg:top-22">
+          <LiveChat storyId={story.slug} />
+          {/* Ad · placement 3 (sidebar) */}
+          <SponsoredFrame zone="article-sidebar" />
         </div>
       </div>
-
-      {/* Body */}
-      <div className="mx-auto max-w-[var(--content-max)] px-4 lg:px-6 py-8">
-        {/* Image floats right at half width — text wraps around it */}
-        {article.cover_url ? (
-          <img
-            src={article.cover_url}
-            alt={article.title}
-            className="w-full md:float-left md:w-1/2 md:mr-8 mb-6 rounded-xl object-cover"
-          />
-        ) : (
-          <div className="w-full md:float-left md:w-1/2 md:mr-8 mb-6 rounded-xl bg-muted h-56 flex items-center justify-center">
-            <Newspaper className="h-10 w-10 text-muted-foreground/20" />
-          </div>
-        )}
-
-        <div
-          className="article-prose"
-          dangerouslySetInnerHTML={{ __html: article.content }}
-        />
-        <div className="clear-both" />
-
-        {/* Tags */}
-        {article.tags.length > 0 && (
-          <div className="flex flex-wrap gap-2 mt-8 pt-6 border-t border-border">
-            {article.tags.map(tag => (
-              <span key={tag} className="rounded-full bg-muted px-3 py-1 text-[12px] text-muted-foreground">
-                #{tag}
-              </span>
-            ))}
-          </div>
-        )}
-
-        {/* Related */}
-        {related.length > 0 && (
-          <div className="mt-10 pt-8 border-t border-border">
-            <h2 className="text-[13px] font-black uppercase tracking-wide mb-4">More Stories</h2>
-            <div className="grid sm:grid-cols-3 gap-4">
-              {related.map(a => (
-                <RelatedCard key={a.id} slug={a.slug} title={a.title} cover_url={a.cover_url} category={a.category} />
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    </>
+    </div>
   )
 }

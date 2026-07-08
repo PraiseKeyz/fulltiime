@@ -3,7 +3,7 @@ import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '@/prisma/prisma.service.js';
 import { RssService } from './rss.service.js';
 import { ScraperService } from './scraper.service.js';
-import { ArticleCategory } from '../../generated/prisma/index.js';
+import { ArticleStatus, Section } from '../../generated/prisma/index.js';
 
 const BBC_FEED_URL    = 'https://feeds.bbci.co.uk/sport/football/rss.xml';
 const BBC_AUTHOR_EMAIL = 'bbc-sport@system.internal';
@@ -93,8 +93,8 @@ export class NewsSyncService implements OnModuleInit {
             excerpt:      item.excerpt,
             content:      scraped.content,
             cover_url:    item.thumbnail ?? scraped.coverUrl,
-            category:     this.detectCategory(item.title),
-            is_published: true,
+            section:      this.detectSection(item.title),
+            status:       ArticleStatus.PUBLISHED,
             published_at: item.pubDate,
             author_id:    this.bbcAuthorId!,
             tags:         item.categories,
@@ -173,7 +173,7 @@ export class NewsSyncService implements OnModuleInit {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
-  private detectCategory(title: string): ArticleCategory {
-    return TRANSFER_PATTERNS.some(re => re.test(title)) ? 'TRANSFER' : 'NEWS';
+  private detectSection(title: string): Section {
+    return TRANSFER_PATTERNS.some(re => re.test(title)) ? 'TRANSFERS' : 'NEWS';
   }
 }

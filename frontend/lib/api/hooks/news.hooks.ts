@@ -1,14 +1,23 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { api } from '../instance'
-import type { Article, ArticleCategory, PaginatedArticles } from '../domain'
+import type { Article, HomePayload, PaginatedArticles, Section } from '../domain'
 
 export const newsKeys = {
   all: ['news'] as const,
+  home: ['news', 'home'] as const,
   list: (filters: object) => ['news', 'list', filters] as const,
   detail: (slug: string) => ['news', 'detail', slug] as const,
 }
 
-export function useArticles(filters: { category?: ArticleCategory; page?: number; limit?: number } = {}) {
+export function useHome() {
+  return useQuery({
+    queryKey: newsKeys.home,
+    queryFn: () => api.get<HomePayload>('/news/home'),
+    staleTime: 60_000,
+  })
+}
+
+export function useArticles(filters: { section?: Section; page?: number; limit?: number } = {}) {
   return useQuery({
     queryKey: newsKeys.list(filters),
     queryFn: () =>
@@ -27,23 +36,5 @@ export function useArticle(slug: string) {
     queryKey: newsKeys.detail(slug),
     queryFn: () => api.get<Article>(`/news/${slug}`),
     enabled: !!slug,
-  })
-}
-
-export function useCreateArticle() {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: (body: {
-      title: string
-      content: string
-      category: ArticleCategory
-      is_published: boolean
-      excerpt?: string
-      cover_url?: string
-      tags?: string[]
-    }) => api.post<Article>('/news', body, { successMessage: 'Article published!' }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: newsKeys.all })
-    },
   })
 }

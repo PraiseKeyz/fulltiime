@@ -1,0 +1,55 @@
+// ─── Article / News ───────────────────────────────────────────────────────────
+
+model Article {
+  id           String        @id @default(cuid())
+  title        String
+  slug         String        @unique
+  /// Standfirst — the accent-coloured sub shown under headlines.
+  excerpt      String?
+  content      String
+  cover_url    String?
+  section      Section       @default(NEWS)
+  /// Mono label above the headline, e.g. "THE BIG READ · WORLD CUP 2026".
+  kicker       String?
+  /// Fallback cover art hue (0–360) when no cover image is set.
+  hue          Int?
+
+  // Section-specific extras
+  /// Transfers: "Viktoria SC → Northgate Utd"
+  move         String?
+  /// Transfers: crest initials shown in the badge, e.g. "NU"
+  crest        String?
+  /// Tactics: formation label for the pitch graphic, e.g. "4-3-3"
+  formation    String?
+  /// Fulltiime TV: playable video
+  video_url    String?
+  /// Fulltiime TV: duration label, e.g. "8:42"
+  duration     String?
+
+  /// [{ l: "KEY STAT", t: "..." }] — generated on publish, editable in studio.
+  ai_insights  Json?
+
+  // Workflow
+  status       ArticleStatus @default(DRAFT)
+  submitted_at DateTime?
+  published_at DateTime?
+  scheduled_at DateTime?
+  /// Editor feedback when a submission is sent back to the writer.
+  review_note  String?
+
+  // Homepage curation (editor+)
+  is_featured  Boolean       @default(false)
+  pin_order    Int?
+
+  author_id    String
+  author       User          @relation(fields: [author_id], references: [id])
+  tags         String[]
+  source_url   String?       @unique
+
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  @@index([status, section, published_at])
+  @@index([author_id, status])
+  @@map("articles")
+}

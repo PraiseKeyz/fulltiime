@@ -1,118 +1,119 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useSearchParams } from 'next/navigation'
 import { useTheme } from 'next-themes'
-import { Sun, Moon, Newspaper, ArrowLeftRight, BarChart2 } from 'lucide-react'
+import { Sun, Moon, Menu, X } from 'lucide-react'
+import { Suspense } from 'react'
 import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
 import { UserMenu } from '@/components/layout/user-menu'
 import { useImmersive } from '@/providers/immersive-provider'
 
 const NAV_LINKS = [
-  { href: '/news', label: 'News', icon: Newspaper },
-  { href: '/news?category=TRANSFER', label: 'Transfers', icon: ArrowLeftRight },
-  { href: '/news?category=ANALYSIS', label: 'Analysis', icon: BarChart2 },
+  { href: '/news', label: 'News' },
+  { href: '/news?category=transfers', label: 'Transfers' },
+  { href: '/news?category=tactics', label: 'Tactics' },
+  { href: '/news?category=worldcup', label: 'World Cup' },
+  { href: '/news?category=beyond', label: 'Beyond' },
 ]
 
-export function Navbar() {
-  const pathname = usePathname()
-  const { theme, setTheme } = useTheme()
-  const [scrolled, setScrolled] = useState(false)
-  const { immersive } = useImmersive()
+export function Wordmark({ className }: { className?: string }) {
+  return (
+    <span className={cn('flex items-baseline font-heading tracking-[0.02em] text-head', className)}>
+      FULLT<span className="mx-px tracking-[-0.04em] text-primary">//</span>ME
+    </span>
+  )
+}
 
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 16)
-    onScroll()
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [])
+function NavLinks({ className, onNavigate }: { className?: string; onNavigate?: () => void }) {
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const current = searchParams.toString() ? `${pathname}?${searchParams.toString()}` : pathname
 
   return (
     <>
-    {!immersive && (
-    <header className="sticky top-0 z-50 mb-4">
-      <div
-        className={cn(
-          'transition-all duration-300 ease-out',
-          scrolled
-            ? 'mx-0 mt-0 max-w-none rounded-none border-0 border-b border-border bg-card shadow-none'
-            : 'mx-4 mt-3 max-w-[760px] rounded-2xl border border-border bg-card/60 shadow-lg shadow-black/10 backdrop-blur-xl sm:mx-auto',
-        )}
+      {NAV_LINKS.map((link) => (
+        <Link
+          key={link.href}
+          href={link.href}
+          onClick={onNavigate}
+          className={cn(
+            'transition-colors hover:text-primary',
+            current === link.href ? 'text-primary' : 'text-foreground',
+            className,
+          )}
+        >
+          {link.label}
+        </Link>
+      ))}
+    </>
+  )
+}
+
+export function Navbar() {
+  const { theme, setTheme } = useTheme()
+  const { immersive } = useImmersive()
+  const [menuOpen, setMenuOpen] = useState(false)
+
+  if (immersive) return null
+
+  return (
+    <>
+      <header
+        className="sticky top-0 z-50 border-b border-border backdrop-blur-[14px]"
+        style={{ background: 'var(--nav-bg)' }}
       >
-        <div className="mx-auto max-w-[var(--content-max)] px-4 lg:px-6">
-          <div className="grid grid-cols-[auto_1fr_auto] h-14 items-center gap-4">
-            {/* Logo */}
-            <Link href="/" className="flex items-center shrink-0">
-              <img src="/logo.svg" alt="Fulltiime" className="h-6 w-auto" />
-            </Link>
+        <nav className="flex items-center justify-between gap-3 px-4.5 py-4 sm:gap-6 sm:px-10">
+          <Link href="/" aria-label="Fulltiime home" className="shrink-0">
+            <Wordmark className="text-[25px]" />
+          </Link>
 
-            {/* Nav links — centered in the middle column (desktop only) */}
-            <nav className="hidden md:flex items-center justify-center gap-0.5">
-              {NAV_LINKS.map((link) => {
-                const active = pathname === link.href || (link.href === '/news' && pathname.startsWith('/news'))
-                return (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className={cn(
-                      'flex items-center gap-1.5 px-3 py-1.5 rounded text-[13px] font-semibold transition-colors',
-                      active ? 'text-primary' : 'text-muted-foreground hover:text-foreground',
-                    )}
-                  >
-                    {link.label}
-                  </Link>
-                )
-              })}
-            </nav>
-
-            {/* Right actions */}
-            <div className="flex items-center gap-2 justify-end">
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label="Toggle theme"
-                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                className="h-8 w-8 text-muted-foreground hover:text-foreground"
-              >
-                <Sun className="hidden dark:block" />
-                <Moon className="block dark:hidden" />
-              </Button>
-
-              <div className="h-6 w-px bg-border mx-1" />
-
-              <UserMenu />
-            </div>
+          {/* Desktop links */}
+          <div className="hidden items-center gap-7.5 text-[13px] font-semibold tracking-[0.04em] md:flex">
+            <Suspense fallback={null}>
+              <NavLinks />
+            </Suspense>
           </div>
-        </div>
-      </div>
-    </header>
-    )}
 
-    {/* Mobile bottom tab bar */}
-    {!immersive && (
-    <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-card/95 backdrop-blur-xl pb-[env(safe-area-inset-bottom)] md:hidden">
-      <div className="grid grid-cols-3">
-        {NAV_LINKS.map((link) => {
-          const active = pathname === link.href || (link.href === '/news' && pathname.startsWith('/news'))
-          return (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={cn(
-                'flex flex-col items-center justify-center gap-1 py-2.5 text-[11px] font-semibold transition-colors',
-                active ? 'text-primary' : 'text-muted-foreground hover:text-foreground',
-              )}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              title="Toggle light / dark"
+              aria-label="Toggle theme"
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-foreground transition-colors hover:border-primary hover:text-primary"
             >
-              <link.icon className={cn('h-5 w-5', active && 'fill-primary/15')} />
-              {link.label}
-            </Link>
-          )
-        })}
-      </div>
-    </nav>
-    )}
+              <Sun className="hidden h-4 w-4 dark:block" />
+              <Moon className="block h-4 w-4 dark:hidden" />
+            </button>
+
+            <UserMenu />
+
+            <button
+              onClick={() => setMenuOpen((o) => !o)}
+              aria-label="Menu"
+              className="flex h-9.5 w-9.5 items-center justify-center rounded-[10px] border border-border text-foreground md:hidden"
+            >
+              {menuOpen ? <X className="h-4.5 w-4.5" /> : <Menu className="h-4.5 w-4.5" />}
+            </button>
+          </div>
+        </nav>
+      </header>
+
+      {/* Mobile menu */}
+      {menuOpen && (
+        <div
+          className="sticky top-[66px] z-49 flex flex-col border-b border-border px-4.5 pt-1.5 pb-3.5 backdrop-blur-[14px] md:hidden"
+          style={{ background: 'var(--nav-bg)' }}
+        >
+          <Suspense fallback={null}>
+            <NavLinks
+              className="border-b border-border px-0.5 py-3 text-[17px] font-bold tracking-normal last:border-b-0"
+              onNavigate={() => setMenuOpen(false)}
+            />
+          </Suspense>
+        </div>
+      )}
     </>
   )
 }

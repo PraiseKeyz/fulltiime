@@ -1,0 +1,12 @@
+// ─── Cache ────────────────────────────────────────────────────────────────────
+
+model Cache {
+  key        String   @id
+  payload    Json
+  expires_at DateTime
+
+  updated_at DateTime @updatedAt
+
+  @@index([expires_at])
+  @@map("cache")
+}

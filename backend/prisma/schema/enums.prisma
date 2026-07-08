@@ -1,0 +1,32 @@
+// ─── Shared enums ─────────────────────────────────────────────────────────────
+
+/// Hierarchical: USER < WRITER < EDITOR < ADMIN. Guards check "role ≥ X",
+/// so an ADMIN can do everything an EDITOR can, and so on down the ladder.
+enum Role {
+  USER
+  WRITER
+  EDITOR
+  ADMIN
+}
+
+/// Editorial workflow: writers move DRAFT → IN_REVIEW; editors take it from there.
+enum ArticleStatus {
+  DRAFT
+  IN_REVIEW
+  PUBLISHED
+  ARCHIVED
+}
+
+/// The site's fixed editorial sections (homepage rails + category pages).
+enum Section {
+  NEWS
+  TRANSFERS
+  TACTICS
+  WORLDCUP
+  PREMIER
+  CHAMPIONS
+  LALIGA
+  TV
+  BEYOND
+  MOTHERLAND
+}

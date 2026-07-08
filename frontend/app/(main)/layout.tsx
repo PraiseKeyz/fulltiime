@@ -4,7 +4,6 @@ import { VerifyEmailBanner } from '@/components/layout/verify-email-banner'
 import { ImmersiveProvider } from '@/providers/immersive-provider'
 import { ImmersiveShell } from '@/components/layout/immersive-shell'
 import { AdsProvider } from '@/components/ads/ads-provider'
-import { SideRails } from '@/components/ads/side-rails'
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
 
@@ -17,7 +16,6 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
           <main className="flex-1">{children}</main>
           <Footer />
         </ImmersiveShell>
-        <SideRails />
       </AdsProvider>
     </ImmersiveProvider>
   )
