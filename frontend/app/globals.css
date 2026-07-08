@@ -31,8 +31,8 @@
 
 /* ── Light theme ────────────────────────────────────────────────────────────── */
 .light {
-  --background: #f4f4f5;
-  --background-secondary: #ffffff;
+  --background: #ffffff;
+  --background-secondary: #f4f4f5;
   --foreground: #0f0f0f;
   --card: #ffffff;
   --card-hover: #f9f9f9;

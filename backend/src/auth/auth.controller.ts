@@ -12,6 +12,7 @@ import { VerifyEmailDto } from './dto/verify-email.dto.js';
 import { ResendVerificationDto } from './dto/resend-verification.dto.js';
 import { ForgotPasswordDto } from './dto/forgot-password.dto.js';
 import { ResetPasswordDto } from './dto/reset-password.dto.js';
+import { ChangePasswordDto } from './dto/change-password.dto.js';
 import { Public } from '@/common/decorators/public.decorator.js';
 import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
 import { CurrentUser } from '@/common/decorators/current-user.decorator.js';
@@ -138,6 +139,13 @@ export class AuthController {
   async resetPassword(@Body() dto: ResetPasswordDto) {
     const { message } = await this.authService.resetPassword(dto.token, dto.password);
     return { message };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('change-password')
+  @HttpCode(200)
+  changePassword(@CurrentUser() user: SafeUser, @Body() dto: ChangePasswordDto) {
+    return this.authService.changePassword(user.id, dto.current_password, dto.new_password);
   }
 
   // ── Refresh ───────────────────────────────────────────────────────────────────

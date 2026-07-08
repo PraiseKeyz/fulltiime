@@ -43,12 +43,15 @@ function InvitePanel({ onClose }: { onClose: () => void }) {
         </div>
         <p className="m-0 mb-3 text-[14px] text-foreground">
           <strong>{created.user.username}</strong> ({created.user.email}) is now a{' '}
-          {created.user.role.toLowerCase()}.
+          {created.user.role.toLowerCase()}.{' '}
+          {created.emailed
+            ? 'An invite with their one-time password is on its way — they’ll be asked to set their own password on first login.'
+            : 'The invite email could not be sent.'}
         </p>
-        {created.temp_password && (
+        {!created.emailed && created.temp_password && (
           <div className="mb-3">
             <div className="mb-1.5 font-mono text-[11px] text-muted-foreground">
-              Temporary password — copy it now, it won&apos;t be shown again:
+              Share this one-time password with them — it won&apos;t be shown again:
             </div>
             <button
               onClick={async () => {

@@ -10,6 +10,8 @@ model User {
   avatar_url      String?
   role            Role      @default(USER)
   is_verified     Boolean   @default(false)
+  /// Set for admin-created staff accounts — forces a password change on first login.
+  must_change_password Boolean @default(false)
   refresh_token   String?
 
   verification_token    String?   @unique

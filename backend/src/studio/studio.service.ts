@@ -11,6 +11,8 @@ import { PrismaService } from '@/prisma/prisma.service.js';
 import { ArticleStatus, Prisma, Role } from '../../generated/prisma/index.js';
 import { roleAtLeast } from '@/auth/guards/roles.guard.js';
 import { CloudinaryService } from '@/cloudinary/cloudinary.service.js';
+import { EmailService } from '@/email/email.service.js';
+import { ConfigService } from '@nestjs/config';
 import { CreateArticleDto } from './dto/create-article.dto.js';
 import { CreateStaffDto, ListArticlesQuery } from './dto/studio.dto.js';
 
@@ -25,6 +27,8 @@ export class StudioService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly cloudinary: CloudinaryService,
+    private readonly email: EmailService,
+    private readonly config: ConfigService,
   ) {}
 
   // ── Article list & detail ──────────────────────────────────────────────────
@@ -263,9 +267,9 @@ export class StudioService {
   }
 
   /**
-   * Admin creates a writer/editor account directly. If no password is given,
-   * a temporary one is generated and returned ONCE — share it with the new
-   * staff member; they can change it via the password-reset flow.
+   * Admin creates a writer/editor account. A one-time password is generated
+   * (or taken from the dto), emailed to the new staff member, and they are
+   * forced to choose their own password on first login.
    */
   async createStaff(dto: CreateStaffDto) {
     const clash = await this.prisma.user.findFirst({
@@ -287,13 +291,35 @@ export class StudioService {
         role: dto.role,
         password_hash: await argon2.hash(tempPassword),
         is_verified: true,
+        must_change_password: true,
       },
       select: { id: true, email: true, username: true, full_name: true, role: true },
     });
 
+    // Email the one-time password. If the send fails the account still exists,
+    // so surface the temp password to the admin as a fallback hand-off.
+    let emailed = true;
+    try {
+      await this.email.sendStaffInviteEmail(
+        user.email,
+        user.full_name ?? user.username,
+        user.role,
+        tempPassword,
+        `${this.config.get<string>('FRONTEND_URL') ?? 'https://fulltiime.com'}/login`,
+      );
+    } catch {
+      emailed = false; // already logged in detail by EmailService
+    }
+
     return {
-      data: { user, temp_password: dto.password ? undefined : tempPassword },
-      message: `${dto.role === Role.EDITOR ? 'Editor' : 'Writer'} account created`,
+      data: {
+        user,
+        emailed,
+        temp_password: emailed ? undefined : tempPassword,
+      },
+      message: emailed
+        ? `Invite sent to ${user.email}`
+        : 'Account created, but the invite email failed — share the one-time password manually',
     };
   }
 

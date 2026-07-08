@@ -16,77 +16,106 @@ export class EmailService {
   private readonly http: AxiosInstance;
   private readonly senderEmail: string;
   private readonly senderName: string;
-  private readonly apiKey: string | undefined;
+  private readonly configured: boolean;
 
   constructor(
     private readonly config: ConfigService,
     private readonly templateService: EmailTemplateService,
   ) {
-    this.apiKey = this.config.get<string>('ZEPTOMAIL_API_KEY');
+    const rawKey = this.config.get<string>('ZEPTOMAIL_API_KEY');
     this.senderEmail = this.config.get<string>('ZEPTOMAIL_FROM_EMAIL') ?? 'no-reply@fulltiime.com';
     this.senderName = this.config.get<string>('ZEPTOMAIL_FROM_NAME') ?? 'Fulltiime';
+    this.configured = !!rawKey;
 
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-
-    if (this.apiKey) {
-      headers.Authorization = `Bearer ${this.apiKey}`;
+    if (!this.configured) {
+      this.logger.warn('ZEPTOMAIL_API_KEY is not set — all emails will be skipped.');
     }
 
+    // ZeptoMail auth: "Authorization: Zoho-enczapikey <key>". Accept the key
+    // with or without the prefix already included.
+    const authHeader = rawKey?.startsWith('Zoho-enczapikey')
+      ? rawKey
+      : `Zoho-enczapikey ${rawKey}`;
+
     this.http = axios.create({
-      baseURL: this.config.get<string>('ZEPTOMAIL_API_BASE_URL') ?? 'https://api.zeptomail.com/v1',
+      baseURL: this.config.get<string>('ZEPTOMAIL_API_BASE_URL') ?? 'https://api.zeptomail.com',
       timeout: 15_000,
-      headers,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(this.configured ? { Authorization: authHeader } : {}),
+      },
     });
   }
 
   async sendWelcomeEmail(to: string, name: string) {
     const subject = 'Welcome to Fulltiime';
-    const html = await this.templateService.render('welcome', { name });
+    const html = this.templateService.render('welcome', { name });
     await this.sendEmail({ to, subject, html });
   }
 
   async sendVerificationEmail(to: string, name: string, verifyUrl: string) {
     const subject = 'Verify your Fulltiime account';
-    const html = await this.templateService.render('verify-email', { name, verifyUrl });
+    const html = this.templateService.render('verify-email', { name, verifyUrl });
     await this.sendEmail({ to, subject, html });
   }
 
   async sendPasswordResetEmail(to: string, name: string, resetUrl: string) {
     const subject = 'Reset your Fulltiime password';
-    const html = await this.templateService.render('password-reset', { name, resetUrl });
+    const html = this.templateService.render('password-reset', { name, resetUrl });
+    await this.sendEmail({ to, subject, html });
+  }
+
+  async sendStaffInviteEmail(
+    to: string,
+    name: string,
+    role: string,
+    tempPassword: string,
+    loginUrl: string,
+  ) {
+    const subject = `You've been invited to Fulltiime Studio`;
+    const html = this.templateService.render('staff-invite', {
+      name,
+      role,
+      tempPassword,
+      loginUrl,
+    });
     await this.sendEmail({ to, subject, html });
   }
 
   private async sendEmail(payload: SendEmailPayload) {
-    if (!this.apiKey) {
-      this.logger.warn('ZeptoMail API key is not configured. Skipping email send.');
+    if (!this.configured) {
+      this.logger.warn(
+        `Email SKIPPED (no API key) — to=${payload.to} subject="${payload.subject}"`,
+      );
       return;
     }
 
+    // ZeptoMail transactional email API: POST /v1.1/email
+    // https://www.zoho.com/zeptomail/help/api/email-sending.html
     const body = {
-      personalizations: [
-        {
-          to: [{ email: payload.to }],
-        },
-      ],
-      from: {
-        email: this.senderEmail,
-        name: this.senderName,
-      },
+      from: { address: this.senderEmail, name: this.senderName },
+      to: [{ email_address: { address: payload.to } }],
       subject: payload.subject,
-      content: [
-        { type: 'text/plain', value: payload.text ?? this.htmlToText(payload.html) },
-        { type: 'text/html', value: payload.html },
-      ],
+      htmlbody: payload.html,
+      textbody: payload.text ?? this.htmlToText(payload.html),
     };
 
+    this.logger.log(`Sending email — to=${payload.to} subject="${payload.subject}"`);
+
     try {
-      await this.http.post('/send', body);
-      this.logger.log(`Email sent to ${payload.to}`);
+      const res = await this.http.post('/v1.1/email', body);
+      const requestId = res.data?.request_id ?? 'n/a';
+      this.logger.log(
+        `Email SENT — to=${payload.to} subject="${payload.subject}" request_id=${requestId}`,
+      );
     } catch (error: any) {
-      this.logger.error(`ZeptoMail send failed: ${error.message}`);
+      const status = error?.response?.status;
+      const detail = error?.response?.data
+        ? JSON.stringify(error.response.data)
+        : error?.message ?? 'unknown error';
+      this.logger.error(
+        `Email FAILED — to=${payload.to} subject="${payload.subject}" status=${status ?? 'n/a'} detail=${detail}`,
+      );
       throw error;
     }
   }

@@ -8,6 +8,7 @@ export const SafeUserSelect = {
   avatar_url: true,
   role: true,
   is_verified: true,
+  must_change_password: true,
   created_at: true,
   updated_at: true,
 } satisfies Prisma.UserSelect;

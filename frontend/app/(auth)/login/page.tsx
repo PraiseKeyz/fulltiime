@@ -20,7 +20,16 @@ function LoginContent() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    login(form, { onSuccess: () => router.push(redirectTo) })
+    login(form, {
+      onSuccess: (data) => {
+        // Staff accounts created by an admin must set their own password first.
+        if (data.user.must_change_password) {
+          router.push(`/change-password?callbackUrl=${encodeURIComponent(redirectTo)}`)
+        } else {
+          router.push(redirectTo)
+        }
+      },
+    })
   }
 
   return (

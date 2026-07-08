@@ -11,6 +11,8 @@ export interface User {
   avatar_url: string | null
   role: Role
   is_verified: boolean
+  /** Admin-created staff must set their own password on first login. */
+  must_change_password: boolean
   created_at: string
   updated_at: string
 }

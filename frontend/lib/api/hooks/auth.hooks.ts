@@ -38,6 +38,19 @@ export function useLogin() {
   })
 }
 
+export function useChangePassword() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (body: { current_password: string; new_password: string }) =>
+      api.post<AuthResponse>('/auth/change-password', body, {
+        successMessage: 'Password updated!',
+      }),
+    onSuccess: (data) => {
+      qc.setQueryData(authKeys.me, data.user)
+    },
+  })
+}
+
 export function useGoogleLogin() {
   const qc = useQueryClient()
   return useMutation({

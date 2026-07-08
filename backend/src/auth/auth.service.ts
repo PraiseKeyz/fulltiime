@@ -144,6 +144,28 @@ export class AuthService {
     return { message: 'If an account exists for that email, a password reset link has been sent.' };
   }
 
+  /** Authenticated password change; also clears the first-login force flag. */
+  async changePassword(userId: string, currentPassword: string, newPassword: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user || !user.password_hash) {
+      throw new BadRequestException('This account has no password set');
+    }
+
+    const valid = await argon2.verify(user.password_hash, currentPassword);
+    if (!valid) throw new UnauthorizedException('Current password is incorrect');
+
+    const updated = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        password_hash: await argon2.hash(newPassword),
+        must_change_password: false,
+      },
+      select: SafeUserSelect,
+    });
+
+    return { data: { user: updated }, message: 'Password updated' };
+  }
+
   async resetPassword(rawToken: string, newPassword: string) {
     const user = await this.prisma.user.findUnique({
       where: { reset_token: this.hashToken(rawToken) },

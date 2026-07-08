@@ -198,7 +198,9 @@ export interface CreateStaffInput {
 
 export interface CreateStaffResult {
   user: Pick<StudioUser, 'id' | 'email' | 'username' | 'full_name' | 'role'>
-  /** Present only when the password was auto-generated — shown once. */
+  /** Whether the invite email (with the one-time password) was delivered. */
+  emailed: boolean
+  /** Fallback when the email failed — shown once so the admin can share it. */
   temp_password?: string
 }
 

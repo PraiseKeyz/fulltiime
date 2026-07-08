@@ -4,16 +4,20 @@
 
 type Vars = Record<string, string | number | boolean | null | undefined>;
 
+// Dark theme matching the site: near-black backgrounds, light text, green accent.
 const BRAND = {
   name:    'Fulltiime',
-  green:   '#0a7c42',
-  greenDk: '#075c31',
-  ink:     '#0f172a',
-  muted:   '#64748b',
-  bg:      '#f1f5f9',
-  card:    '#ffffff',
-  border:  '#e2e8f0',
+  green:   '#22c55e',
+  greenDk: '#16a34a',
+  dark:    '#111111',
+  ink:     '#f2f2f2',
+  muted:   '#9a9a9a',
+  bg:      '#0a0a0a',
+  card:    '#1a1a1a',
+  border:  '#2e2e2e',
   site:    'https://fulltiime.com',
+  // Rendered from public/logo.svg (email clients can't display SVG)
+  logo:    'https://res.cloudinary.com/ykb0cm9w/image/upload/v1783550798/fulltiime/brand/email-logo.png',
 };
 
 // Escape text rendered into element content
@@ -48,10 +52,13 @@ function layout({ preheader, heading, body }: { preheader: string; heading: stri
       <td align="center" style="padding:32px 16px;">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;">
 
-          <!-- Header -->
+          <!-- Header — dark, matching the site navbar; green wordmark logo -->
           <tr>
-            <td style="background:${BRAND.green};border-radius:14px 14px 0 0;padding:22px 32px;">
-              <span style="font-family:Arial,Helvetica,sans-serif;font-size:20px;font-weight:800;letter-spacing:2px;color:#ffffff;">FULLTIIME</span>
+            <td style="background:${BRAND.dark};border-radius:14px 14px 0 0;padding:22px 32px;">
+              <a href="${BRAND.site}" target="_blank" style="text-decoration:none;">
+                <img src="${BRAND.logo}" alt="FULLTIIME" height="26"
+                     style="display:block;height:26px;width:auto;border:0;font-family:Arial,Helvetica,sans-serif;font-size:20px;font-weight:800;letter-spacing:2px;color:#22c55e;">
+              </a>
             </td>
           </tr>
 
@@ -96,7 +103,7 @@ function button(label: string, url: string) {
     <tr>
       <td style="border-radius:10px;background:${BRAND.green};">
         <a href="${escUrl(url)}" target="_blank"
-           style="display:inline-block;padding:13px 28px;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:10px;">
+           style="display:inline-block;padding:13px 28px;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:700;color:#000000;text-decoration:none;border-radius:10px;">
           ${esc(label)}
         </a>
       </td>
@@ -157,8 +164,35 @@ export function passwordResetTemplate(vars: Vars) {
   });
 }
 
+export function staffInviteTemplate(vars: Vars) {
+  const name = esc(vars.name ?? 'there');
+  const role = esc(String(vars.role ?? 'WRITER').toLowerCase());
+  const temp = esc(vars.tempPassword ?? '');
+  const url  = String(vars.loginUrl ?? `${BRAND.site}/login`);
+  return layout({
+    preheader: `You've been added to the Fulltiime editorial team.`,
+    heading:   `You're on the team ✍️`,
+    body: `
+      ${paragraph(`Hi ${name}, an admin has created a <strong>${role}</strong> account for you on <strong>${BRAND.name} Studio</strong> — the newsroom behind fulltiime.com.`)}
+      ${paragraph('Sign in with your email and this one-time password:')}
+      <table role="presentation" cellpadding="0" cellspacing="0" style="margin:8px 0 24px;">
+        <tr>
+          <td style="border:1px dashed ${BRAND.border};border-radius:10px;background:${BRAND.bg};padding:14px 24px;">
+            <span style="font-family:'Courier New',monospace;font-size:18px;font-weight:700;letter-spacing:1px;color:${BRAND.ink};">${temp}</span>
+          </td>
+        </tr>
+      </table>
+      ${button('Sign in to the Studio', url)}
+      ${linkFallback(url)}
+      <div style="height:16px;"></div>
+      ${muted('You will be asked to choose your own password on first login. If you weren’t expecting this invitation, please ignore this email.')}
+    `,
+  });
+}
+
 export const TEMPLATES: Record<string, (vars: Vars) => string> = {
   'welcome':        welcomeTemplate,
   'verify-email':   verifyEmailTemplate,
   'password-reset': passwordResetTemplate,
+  'staff-invite':   staffInviteTemplate,
 };
