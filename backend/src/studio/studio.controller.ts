@@ -145,10 +145,15 @@ export class StudioController {
 
   @MinRole(Role.ADMIN)
   @Get('users')
-  listUsers(@Query('page') page?: string, @Query('limit') limit?: string) {
+  listUsers(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('search') search?: string,
+  ) {
     return this.studio.listUsers(
       page ? Number(page) : undefined,
       limit ? Number(limit) : undefined,
+      search,
     );
   }
 

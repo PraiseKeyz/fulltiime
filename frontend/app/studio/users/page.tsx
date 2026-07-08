@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { UserPlus, Copy } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { UserPlus, Copy, Search } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/providers/auth-provider'
@@ -164,18 +164,27 @@ function UserRow({ user, isSelf }: { user: StudioUser; isSelf: boolean }) {
           {user._count.articles} article{user._count.articles === 1 ? '' : 's'} · joined{' '}
           {timeAgo(user.created_at)}
         </span>
-        <select
-          value={user.role}
-          disabled={isSelf || updateRole.isPending}
-          onChange={(e) => updateRole.mutate({ id: user.id, role: e.target.value as Role })}
-          className="rounded-full border border-border bg-background px-3.5 py-2 font-mono text-[12px] font-bold text-primary outline-none focus:border-primary disabled:opacity-50"
-        >
-          {ROLES.map((r) => (
-            <option key={r} value={r}>
-              {r}
-            </option>
-          ))}
-        </select>
+        {isSelf ? (
+          <span
+            title="You can't change your own role — ask another admin"
+            className="cursor-not-allowed rounded-full border border-border px-3.5 py-2 font-mono text-[12px] font-bold text-muted-foreground"
+          >
+            {user.role}
+          </span>
+        ) : (
+          <select
+            value={user.role}
+            disabled={updateRole.isPending}
+            onChange={(e) => updateRole.mutate({ id: user.id, role: e.target.value as Role })}
+            className="cursor-pointer rounded-full border border-border bg-background px-3.5 py-2 font-mono text-[12px] font-bold text-primary outline-none focus:border-primary disabled:opacity-50"
+          >
+            {ROLES.map((r) => (
+              <option key={r} value={r}>
+                {r}
+              </option>
+            ))}
+          </select>
+        )}
       </div>
     </div>
   )
@@ -185,7 +194,18 @@ export default function UsersPage() {
   const { user: me } = useAuth()
   const [page, setPage] = useState(1)
   const [inviting, setInviting] = useState(false)
-  const { data, isLoading } = useStudioUsers(page)
+  const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedSearch(search)
+      setPage(1)
+    }, 350)
+    return () => clearTimeout(t)
+  }, [search])
+
+  const { data, isLoading } = useStudioUsers(page, debouncedSearch)
 
   const users = data?.users ?? []
   const totalPages = data?.pages ?? 1
@@ -197,7 +217,7 @@ export default function UsersPage() {
           <span className="mb-1.5 block font-mono text-[11px] tracking-[0.14em] text-primary">
             ◎ STUDIO
           </span>
-          <h1 className="m-0 text-[clamp(26px,4vw,38px)] uppercase leading-none">Writers</h1>
+          <h1 className="m-0 text-[clamp(26px,4vw,38px)] uppercase leading-none">Users</h1>
           <p className="mt-2 font-mono text-[12px] text-muted-foreground">
             USER &lt; WRITER &lt; EDITOR &lt; ADMIN — higher roles inherit everything below
           </p>
@@ -215,11 +235,25 @@ export default function UsersPage() {
 
       {inviting && <InvitePanel onClose={() => setInviting(false)} />}
 
+      <div className="relative mb-5 max-w-[340px]">
+        <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search by name, username or email…"
+          className="w-full rounded-full border border-border bg-background-secondary py-2.5 pl-10 pr-4 text-[13px] text-foreground outline-none placeholder:text-muted-foreground focus:border-primary"
+        />
+      </div>
+
       {isLoading ? (
         <div className="flex flex-col gap-2.5">
           {Array.from({ length: 5 }).map((_, i) => (
             <div key={i} className="h-[66px] animate-pulse border border-border bg-muted" />
           ))}
+        </div>
+      ) : users.length === 0 ? (
+        <div className="border border-dashed border-border py-16 text-center font-mono text-[13px] text-muted-foreground">
+          No users match “{debouncedSearch}”.
         </div>
       ) : (
         <div className="flex flex-col gap-2.5">

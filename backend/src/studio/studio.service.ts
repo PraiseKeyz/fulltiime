@@ -229,9 +229,19 @@ export class StudioService {
 
   // ── User administration (admin only — enforced at the controller) ──────────
 
-  async listUsers(page = 1, limit = 30) {
+  async listUsers(page = 1, limit = 30, search?: string) {
+    const where = search
+      ? {
+          OR: [
+            { username: { contains: search, mode: 'insensitive' as const } },
+            { full_name: { contains: search, mode: 'insensitive' as const } },
+            { email: { contains: search, mode: 'insensitive' as const } },
+          ],
+        }
+      : {};
     const [users, total] = await this.prisma.$transaction([
       this.prisma.user.findMany({
+        where,
         select: {
           id: true,
           email: true,
@@ -247,7 +257,7 @@ export class StudioService {
         skip: (page - 1) * limit,
         take: limit,
       }),
-      this.prisma.user.count(),
+      this.prisma.user.count({ where }),
     ]);
     return { data: { users, total, page, limit, pages: Math.ceil(total / limit) } };
   }

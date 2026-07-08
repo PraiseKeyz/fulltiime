@@ -66,7 +66,8 @@ export function Navbar() {
       >
         <nav className="flex items-center justify-between gap-3 px-4.5 py-4 sm:gap-6 sm:px-10">
           <Link href="/" aria-label="Fulltiime home" className="shrink-0">
-            <Wordmark className="text-[25px]" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.svg" alt="Fulltiime" className="h-6 w-auto" />
           </Link>
 
           {/* Desktop links */}

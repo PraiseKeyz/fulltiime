@@ -13,7 +13,7 @@ const NAV = [
   { href: '/studio/articles', label: 'Articles', icon: FileText, min: 'WRITER' as const },
   { href: '/studio/review', label: 'Review Queue', icon: Inbox, min: 'EDITOR' as const },
   { href: '/studio/media', label: 'Media', icon: ImageIcon, min: 'WRITER' as const },
-  { href: '/studio/users', label: 'Writers', icon: Users, min: 'ADMIN' as const },
+  { href: '/studio/users', label: 'Users', icon: Users, min: 'ADMIN' as const },
 ]
 
 export default function StudioLayout({ children }: { children: React.ReactNode }) {

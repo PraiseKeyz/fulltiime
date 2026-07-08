@@ -17,7 +17,7 @@ export const studioKeys = {
   articles: (filters: object) => ['studio', 'articles', filters] as const,
   article: (id: string) => ['studio', 'article', id] as const,
   media: (page: number) => ['studio', 'media', page] as const,
-  users: (page: number) => ['studio', 'users', page] as const,
+  users: (page: number, search: string) => ['studio', 'users', page, search] as const,
 }
 
 // ─── Article payloads ─────────────────────────────────────────────────────────
@@ -177,10 +177,14 @@ export function useUploadMedia() {
 
 // ─── Users (admin) ────────────────────────────────────────────────────────────
 
-export function useStudioUsers(page = 1) {
+export function useStudioUsers(page = 1, search = '') {
   return useQuery({
-    queryKey: studioKeys.users(page),
-    queryFn: () => api.get<PaginatedUsers>('/studio/users', { params: { page } }),
+    queryKey: studioKeys.users(page, search),
+    queryFn: () =>
+      api.get<PaginatedUsers>('/studio/users', {
+        params: search ? { page, search } : { page },
+      }),
+    placeholderData: (prev) => prev,
   })
 }
 
