@@ -55,8 +55,10 @@ export function ArticleForm({ article }: { article?: Article }) {
     formation: article?.formation ?? '',
     video_url: article?.video_url ?? '',
     duration: article?.duration ?? '',
-    tags: article?.tags ?? [],
   })
+  // Kept as raw text while typing (a controlled array round-trip would eat
+  // the comma as you type it); parsed into tags on save.
+  const [tagsText, setTagsText] = useState((article?.tags ?? []).join(', '))
 
   const set = <K extends keyof ArticleInput>(key: K, value: ArticleInput[K]) =>
     setForm((f) => ({ ...f, [key]: value }))
@@ -76,18 +78,21 @@ export function ArticleForm({ article }: { article?: Article }) {
     create.isPending || update.isPending || remove.isPending || submit.isPending ||
     publish.isPending || reject.isPending || unpublish.isPending || upload.isPending
 
-  const cleanPayload = (): ArticleInput => ({
-    ...form,
-    excerpt: form.excerpt || undefined,
-    cover_url: form.cover_url || undefined,
-    kicker: form.kicker || undefined,
-    move: form.move || undefined,
-    crest: form.crest || undefined,
-    formation: form.formation || undefined,
-    video_url: form.video_url || undefined,
-    duration: form.duration || undefined,
-    tags: form.tags?.length ? form.tags : undefined,
-  })
+  const cleanPayload = (): ArticleInput => {
+    const tags = tagsText.split(',').map((t) => t.trim()).filter(Boolean)
+    return {
+      ...form,
+      excerpt: form.excerpt || undefined,
+      cover_url: form.cover_url || undefined,
+      kicker: form.kicker || undefined,
+      move: form.move || undefined,
+      crest: form.crest || undefined,
+      formation: form.formation || undefined,
+      video_url: form.video_url || undefined,
+      duration: form.duration || undefined,
+      tags: tags.length ? tags : undefined,
+    }
+  }
 
   const save = async (): Promise<Article | null> => {
     if (!form.title.trim() || form.content.replace(/<[^>]+>/g, '').trim().length < 50) {
@@ -280,13 +285,8 @@ export function ArticleForm({ article }: { article?: Article }) {
 
         <Field label="Tags" hint="Comma-separated">
           <input
-            value={(form.tags ?? []).join(', ')}
-            onChange={(e) =>
-              set(
-                'tags',
-                e.target.value.split(',').map((t) => t.trim()).filter(Boolean),
-              )
-            }
+            value={tagsText}
+            onChange={(e) => setTagsText(e.target.value)}
             placeholder="world cup, tactics"
             className={inputCls}
           />

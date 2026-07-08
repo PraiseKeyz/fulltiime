@@ -7,9 +7,10 @@ export class CloudinaryService {
   private readonly configured: boolean;
 
   constructor(config: ConfigService) {
-    const cloud_name = config.get<string>('CLOUDINARY_CLOUD_NAME');
-    const api_key = config.get<string>('CLOUDINARY_API_KEY');
-    const api_secret = config.get<string>('CLOUDINARY_API_SECRET');
+
+    const cloud_name = config.get<string>('CLOUDINARY_CLOUD_NAME')?.trim();
+    const api_key = config.get<string>('CLOUDINARY_API_KEY')?.trim();
+    const api_secret = config.get<string>('CLOUDINARY_API_SECRET')?.trim();
 
     this.configured = Boolean(cloud_name && api_key && api_secret);
     if (this.configured) {
