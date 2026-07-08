@@ -4,16 +4,16 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useTheme } from 'next-themes'
-import { Sun, Moon, Goal, Trophy, Newspaper } from 'lucide-react'
+import { Sun, Moon, Newspaper, ArrowLeftRight, BarChart2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { UserMenu } from '@/components/layout/user-menu'
 import { useImmersive } from '@/providers/immersive-provider'
 
 const NAV_LINKS = [
-  { href: '/matches', label: 'Matches', icon: Goal },
-  { href: '/leagues', label: 'Leagues', icon: Trophy },
   { href: '/news', label: 'News', icon: Newspaper },
+  { href: '/news?category=TRANSFER', label: 'Transfers', icon: ArrowLeftRight },
+  { href: '/news?category=ANALYSIS', label: 'Analysis', icon: BarChart2 },
 ]
 
 export function Navbar() {
@@ -51,7 +51,7 @@ export function Navbar() {
             {/* Nav links — centered in the middle column (desktop only) */}
             <nav className="hidden md:flex items-center justify-center gap-0.5">
               {NAV_LINKS.map((link) => {
-                const active = pathname === link.href || pathname.startsWith(link.href + '/')
+                const active = pathname === link.href || (link.href === '/news' && pathname.startsWith('/news'))
                 return (
                   <Link
                     key={link.href}
@@ -69,20 +69,6 @@ export function Navbar() {
 
             {/* Right actions */}
             <div className="flex items-center gap-2 justify-end">
-              {/* <button
-                aria-label="Search"
-                className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-              >
-                <Search className="h-4 w-4" />
-              </button> */}
-
-              {/* <button
-                aria-label="Notifications"
-                className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-              >
-                <Bell className="h-4 w-4" />
-              </button> */}
-
               <Button
                 variant="ghost"
                 size="icon"
@@ -104,12 +90,12 @@ export function Navbar() {
     </header>
     )}
 
-    {/* Mobile bottom tab bar — replaces the hidden desktop nav on small screens */}
+    {/* Mobile bottom tab bar */}
     {!immersive && (
     <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-card/95 backdrop-blur-xl pb-[env(safe-area-inset-bottom)] md:hidden">
       <div className="grid grid-cols-3">
         {NAV_LINKS.map((link) => {
-          const active = pathname === link.href || pathname.startsWith(link.href + '/')
+          const active = pathname === link.href || (link.href === '/news' && pathname.startsWith('/news'))
           return (
             <Link
               key={link.href}

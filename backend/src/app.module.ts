@@ -9,15 +9,7 @@ import { PrismaModule } from './prisma/prisma.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { EmailModule } from './email/email.module.js';
 import { UsersModule } from './users/users.module.js';
-import { FixturesModule } from './fixtures/fixtures.module.js';
-import { LeaguesModule } from './leagues/leagues.module.js';
-import { StandingsModule } from './standings/standings.module.js';
 import { NewsModule } from './news/news.module.js';
-import { TeamsModule } from './teams/teams.module.js';
-import { PlayersModule } from './players/players.module.js';
-import { SportMonksModule } from './sportmonks/sportmonks.module.js';
-import { SyncModule } from './sync/sync.module.js';
-import { LiveChatModule } from './live-chat/live-chat.module.js';
 
 @Module({
   imports: [
@@ -34,15 +26,7 @@ import { LiveChatModule } from './live-chat/live-chat.module.js';
     AuthModule,
     EmailModule,
     UsersModule,
-    FixturesModule,
-    LeaguesModule,
-    StandingsModule,
     NewsModule,
-    TeamsModule,
-    PlayersModule,
-    SportMonksModule,
-    SyncModule,
-    LiveChatModule,
   ],
   controllers: [AppController],
   providers: [
