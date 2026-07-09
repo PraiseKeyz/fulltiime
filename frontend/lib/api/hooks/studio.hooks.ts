@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import imageCompression from 'browser-image-compression'
 import { api } from '../instance'
 import type {
   Article,
@@ -160,12 +161,27 @@ export function useMediaList(page = 1) {
   })
 }
 
+async function compressImage(file: File): Promise<File> {
+  if (file.type === 'image/gif') return file
+  try {
+    return await imageCompression(file, {
+      maxSizeMB: 1.5,
+      maxWidthOrHeight: 2560,
+      useWebWorker: true,
+      initialQuality: 0.85,
+    })
+  } catch {
+    return file
+  }
+}
+
 export function useUploadMedia() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (file: File) => {
+    mutationFn: async (file: File) => {
+      const compressed = await compressImage(file)
       const form = new FormData()
-      form.append('file', file)
+      form.append('file', compressed, file.name)
       return api.post<Media>('/studio/media', form, {
         successMessage: 'Uploaded',
         timeout: 60_000,

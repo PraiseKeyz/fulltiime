@@ -31,7 +31,7 @@ import { CurrentUser } from '@/common/decorators/current-user.decorator.js';
 import type { SafeUser } from '@/common/constants/user-select.constant.js';
 import { Role } from '../../generated/prisma/index.js';
 
-const MAX_UPLOAD_BYTES = 8 * 1024 * 1024; // 8 MB
+const MAX_UPLOAD_BYTES = 5 * 1024 * 1024; // 5 MB
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @MinRole(Role.WRITER)

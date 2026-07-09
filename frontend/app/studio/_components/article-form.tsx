@@ -39,7 +39,7 @@ function Field({
   error?: string
 }) {
   return (
-    <label className="block">
+    <div className="block">
       <span className="mb-1.5 block font-mono text-[11px] tracking-[0.12em] text-muted-foreground uppercase">
         {label}
       </span>
@@ -49,7 +49,7 @@ function Field({
       ) : (
         hint && <span className="mt-1 block font-mono text-[10px] text-muted-foreground">{hint}</span>
       )}
-    </label>
+    </div>
   )
 }
 
@@ -280,7 +280,7 @@ export function ArticleForm({ article }: { article?: Article }) {
         </Field>
 
         {/* Cover */}
-        <Field label="Cover image">
+        <Field label="Cover image" hint="Upload files should not be more than 5MB">
           <div className="flex gap-2">
             <input
               value={form.cover_url ?? ''}
