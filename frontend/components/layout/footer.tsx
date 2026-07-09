@@ -4,7 +4,6 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { Instagram, Youtube } from 'lucide-react'
 import { useImmersive } from '@/providers/immersive-provider'
-import { Wordmark } from '@/components/layout/navbar'
 
 // Brand glyphs lucide no longer ships as first-class icons (X, TikTok, WhatsApp).
 // Inline SVGs using currentColor so they inherit the same hover colour as the rest.
@@ -100,7 +99,7 @@ export function Footer() {
           {/* About + newsletter */}
           <div className="py-8 sm:col-span-2 lg:col-span-1 lg:py-10 lg:pr-12">
             <Link href="/" aria-label="Fulltiime home" className="mb-3.5 inline-block">
-              <Wordmark className="text-[26px]" />
+              <img src="/logo.svg" alt="Fulltiime" className="h-7 w-auto" />
             </Link>
             <p className="mb-5.5 text-[14px] leading-relaxed text-txt2">
               Independent football storytelling — deep reads, sharp tactics, and the culture around

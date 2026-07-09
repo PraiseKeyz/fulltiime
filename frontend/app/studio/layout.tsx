@@ -7,7 +7,6 @@ import { FileText, Inbox, Image as ImageIcon, Users, ArrowLeft } from 'lucide-re
 import { cn } from '@/lib/utils'
 import { roleAtLeast } from '@/lib/roles'
 import { useAuth } from '@/providers/auth-provider'
-import { Wordmark } from '@/components/layout/navbar'
 
 const NAV = [
   { href: '/studio/articles', label: 'Articles', icon: FileText, min: 'WRITER' as const },
@@ -42,7 +41,8 @@ export default function StudioLayout({ children }: { children: React.ReactNode }
   if (!roleAtLeast(user?.role, 'WRITER')) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center">
-        <Wordmark className="text-[28px]" />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/logo.svg" alt="Fulltiime" className="h-8 w-auto" />
         <h1 className="text-[clamp(26px,5vw,40px)] uppercase">No studio access</h1>
         <p className="max-w-[420px] font-mono text-[13px] text-muted-foreground">
           Your account doesn&apos;t have a writer role yet. Ask an admin to invite you to the
@@ -63,7 +63,8 @@ export default function StudioLayout({ children }: { children: React.ReactNode }
       <aside className="flex shrink-0 flex-col border-b border-border bg-background-secondary lg:sticky lg:top-0 lg:h-screen lg:w-[230px] lg:overflow-y-auto lg:border-b-0 lg:border-r">
         <div className="flex items-center gap-2 px-5 pt-5 pb-4">
           <Link href="/studio/articles" aria-label="Studio home">
-            <Wordmark className="text-[21px]" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.svg" alt="Fulltiime" className="h-5.5 w-auto" />
           </Link>
           <span className="mt-0.5 rounded-[4px] bg-primary px-1.5 py-0.5 font-mono text-[9px] font-bold tracking-[0.1em] text-primary-foreground">
             STUDIO

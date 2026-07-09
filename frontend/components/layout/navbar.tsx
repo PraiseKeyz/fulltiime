@@ -18,14 +18,6 @@ const NAV_LINKS = [
   { href: '/news?category=beyond', label: 'Beyond' },
 ]
 
-export function Wordmark({ className }: { className?: string }) {
-  return (
-    <span className={cn('flex items-baseline font-anton tracking-[0.02em] text-head', className)}>
-      FULLT<span className="mx-px tracking-[-0.04em] text-primary">//</span>ME
-    </span>
-  )
-}
-
 function NavLinks({ className, onNavigate }: { className?: string; onNavigate?: () => void }) {
   const pathname = usePathname()
   const searchParams = useSearchParams()

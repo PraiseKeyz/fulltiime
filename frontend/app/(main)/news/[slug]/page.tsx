@@ -41,7 +41,7 @@ export default function ArticlePage() {
           <span className="font-mono text-[12px] tracking-[0.12em] text-primary">
             {story.kicker}
           </span>
-          <h1 className="mt-3.5 mb-4.5 text-balance text-[clamp(32px,6vw,54px)] leading-[0.96]">
+          <h1 className="mt-3.5 mb-4.5 text-balance font-inter text-[clamp(32px,6vw,54px)] font-extrabold leading-[1.04] tracking-[-0.02em]">
             {story.headline}
           </h1>
           <div className="mb-5 flex flex-wrap items-center gap-3.5 font-mono text-[13px] text-txt2">
