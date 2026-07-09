@@ -1,9 +1,10 @@
 'use client'
 
 import { useRef, useState } from 'react'
-import { Upload, Copy, Check } from 'lucide-react'
+import { Upload, Copy, Check, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useMediaList, useUploadMedia } from '@/lib/api/hooks/studio.hooks'
+import { Button } from '@/components/ui/button'
 
 function prettyBytes(bytes: number | null): string {
   if (!bytes) return ''
@@ -37,14 +38,15 @@ export default function MediaPage() {
           </span>
           <h1 className="m-0 text-[clamp(26px,4vw,38px)] uppercase leading-none">Media</h1>
         </div>
-        <button
+        <Button
+          variant="primary"
+          className="rounded-full px-5 disabled:opacity-40"
           onClick={() => fileRef.current?.click()}
           disabled={upload.isPending}
-          className="flex items-center gap-2 rounded-full bg-primary px-5 py-2.75 text-[13px] font-bold text-primary-foreground disabled:opacity-50"
         >
-          <Upload className="h-4 w-4" />
+          {upload.isPending ? <Loader2 className="animate-spin" /> : <Upload />}
           {upload.isPending ? 'Uploading…' : 'Upload image'}
-        </button>
+        </Button>
         <input
           ref={fileRef}
           type="file"
@@ -94,23 +96,27 @@ export default function MediaPage() {
 
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-4 pt-6">
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => setPage((p) => p - 1)}
             disabled={page <= 1}
-            className="rounded-full border border-border px-4 py-2 text-[12px] font-bold text-txt2 hover:border-primary hover:text-primary disabled:pointer-events-none disabled:opacity-30"
+            className="rounded-full text-txt2 hover:border-primary hover:text-primary disabled:opacity-30"
           >
             ← Prev
-          </button>
+          </Button>
           <span className="font-mono text-[12px] text-muted-foreground">
             {page} / {totalPages}
           </span>
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => setPage((p) => p + 1)}
             disabled={page >= totalPages}
-            className="rounded-full border border-border px-4 py-2 text-[12px] font-bold text-txt2 hover:border-primary hover:text-primary disabled:pointer-events-none disabled:opacity-30"
+            className="rounded-full text-txt2 hover:border-primary hover:text-primary disabled:opacity-30"
           >
             Next →
-          </button>
+          </Button>
         </div>
       )}
     </>

@@ -13,6 +13,7 @@ import {
   useUpdateUserRole,
   type CreateStaffResult,
 } from '@/lib/api/hooks/studio.hooks'
+import { Button } from '@/components/ui/button'
 
 const ROLES: Role[] = ['USER', 'WRITER', 'EDITOR', 'ADMIN']
 
@@ -53,21 +54,27 @@ function InvitePanel({ onClose }: { onClose: () => void }) {
             <div className="mb-1.5 font-mono text-[11px] text-muted-foreground">
               Share this one-time password with them — it won&apos;t be shown again:
             </div>
-            <button
+            <Button
+              variant="outline"
+              className="bg-background font-mono text-[14px] text-primary hover:text-primary"
               onClick={async () => {
                 await navigator.clipboard.writeText(created.temp_password!)
                 toast.success('Password copied')
               }}
-              className="flex items-center gap-2 rounded-lg border border-border bg-background px-3.5 py-2.5 font-mono text-[14px] font-bold text-primary hover:border-primary"
             >
               {created.temp_password}
-              <Copy className="h-3.5 w-3.5" />
-            </button>
+              <Copy className="!size-3.5" />
+            </Button>
           </div>
         )}
-        <button onClick={onClose} className="rounded-full border border-border px-4 py-2 text-[12px] font-bold text-txt2 hover:border-primary hover:text-primary">
+        <Button
+          variant="outline"
+          size="sm"
+          className="rounded-full text-txt2 hover:border-primary hover:text-primary"
+          onClick={onClose}
+        >
           Done
-        </button>
+        </Button>
       </div>
     )
   }
@@ -105,37 +112,33 @@ function InvitePanel({ onClose }: { onClose: () => void }) {
         />
         <div className="flex gap-2">
           {(['WRITER', 'EDITOR'] as const).map((r) => (
-            <button
+            <Button
               key={r}
               type="button"
+              variant={form.role === r ? 'primary' : 'outline'}
               onClick={() => setForm((f) => ({ ...f, role: r }))}
               className={cn(
-                'flex-1 rounded-lg border px-3 py-2.5 font-mono text-[12px] font-bold transition-colors',
-                form.role === r
-                  ? 'border-primary bg-primary text-primary-foreground'
-                  : 'border-border text-txt2 hover:border-primary hover:text-primary',
+                'flex-1 font-mono text-[12px]',
+                form.role !== r && 'text-txt2 hover:border-primary hover:text-primary',
               )}
             >
               {r}
-            </button>
+            </Button>
           ))}
         </div>
       </div>
       <div className="mt-4 flex gap-2.5">
-        <button
-          type="submit"
-          disabled={create.isPending}
-          className="rounded-full bg-primary px-5 py-2.5 text-[13px] font-bold text-primary-foreground disabled:opacity-50"
-        >
+        <Button type="submit" variant="primary" className="rounded-full px-5" disabled={create.isPending}>
           {create.isPending ? 'Creating…' : 'Create account'}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
+          variant="outline"
+          className="rounded-full px-5 text-txt2 hover:border-primary hover:text-primary"
           onClick={onClose}
-          className="rounded-full border border-border px-5 py-2.5 text-[13px] font-bold text-txt2 hover:border-primary hover:text-primary"
         >
           Cancel
-        </button>
+        </Button>
       </div>
     </form>
   )
@@ -226,13 +229,10 @@ export default function UsersPage() {
           </p>
         </div>
         {!inviting && (
-          <button
-            onClick={() => setInviting(true)}
-            className="flex items-center gap-2 rounded-full bg-primary px-5 py-2.75 text-[13px] font-bold text-primary-foreground"
-          >
-            <UserPlus className="h-4 w-4" />
+          <Button variant="primary" className="rounded-full px-5" onClick={() => setInviting(true)}>
+            <UserPlus />
             Add staff
-          </button>
+          </Button>
         )}
       </div>
 
@@ -268,23 +268,27 @@ export default function UsersPage() {
 
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-4 pt-6">
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => setPage((p) => p - 1)}
             disabled={page <= 1}
-            className="rounded-full border border-border px-4 py-2 text-[12px] font-bold text-txt2 hover:border-primary hover:text-primary disabled:pointer-events-none disabled:opacity-30"
+            className="rounded-full text-txt2 hover:border-primary hover:text-primary disabled:opacity-30"
           >
             ← Prev
-          </button>
+          </Button>
           <span className="font-mono text-[12px] text-muted-foreground">
             {page} / {totalPages}
           </span>
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => setPage((p) => p + 1)}
             disabled={page >= totalPages}
-            className="rounded-full border border-border px-4 py-2 text-[12px] font-bold text-txt2 hover:border-primary hover:text-primary disabled:pointer-events-none disabled:opacity-30"
+            className="rounded-full text-txt2 hover:border-primary hover:text-primary disabled:opacity-30"
           >
             Next →
-          </button>
+          </Button>
         </div>
       )}
     </>

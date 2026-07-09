@@ -175,6 +175,14 @@ export function useUploadMedia() {
   })
 }
 
+export function useDeleteMedia() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => api.delete(`/studio/media/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['studio', 'media'] }),
+  })
+}
+
 // ─── Users (admin) ────────────────────────────────────────────────────────────
 
 export function useStudioUsers(page = 1, search = '') {

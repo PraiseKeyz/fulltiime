@@ -1,10 +1,13 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { Check, CornerUpLeft } from 'lucide-react'
 import { timeAgo } from '@/lib/editorial'
 import { SECTION_META } from '@/lib/sections'
 import type { Article } from '@/lib/api/domain'
+import { Button } from '@/components/ui/button'
+import { PromptModal } from '@/components/ui/modal'
 import {
   usePublishArticle,
   useRejectArticle,
@@ -14,13 +17,8 @@ import {
 function ReviewRow({ article }: { article: Article }) {
   const publish = usePublishArticle()
   const reject = useRejectArticle()
+  const [rejecting, setRejecting] = useState(false)
   const busy = publish.isPending || reject.isPending
-
-  const onReject = () => {
-    const note = window.prompt(`Feedback for ${article.author.username} (required):`)
-    if (!note || note.trim().length < 5) return
-    reject.mutate({ id: article.id, note: note.trim() })
-  }
 
   return (
     <div className="border border-border bg-background-secondary px-5 py-4">
@@ -36,28 +34,44 @@ function ReviewRow({ article }: { article: Article }) {
           </div>
         </Link>
         <div className="flex shrink-0 gap-2">
-          <button
+          <Button
+            variant="primary"
+            size="sm"
+            className="rounded-full"
             onClick={() => publish.mutate(article.id)}
             disabled={busy}
-            className="flex items-center gap-1.5 rounded-full bg-primary px-4.5 py-2.25 text-[12px] font-bold text-primary-foreground disabled:opacity-50"
           >
-            <Check className="h-3.5 w-3.5" />
+            <Check className="!size-3.5" />
             Publish
-          </button>
-          <button
-            onClick={onReject}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="rounded-full border-gold text-gold hover:text-gold"
+            onClick={() => setRejecting(true)}
             disabled={busy}
-            className="flex items-center gap-1.5 rounded-full border border-gold px-4.5 py-2.25 text-[12px] font-bold text-gold disabled:opacity-50"
           >
-            <CornerUpLeft className="h-3.5 w-3.5" />
+            <CornerUpLeft className="!size-3.5" />
             Send back
-          </button>
+          </Button>
         </div>
       </div>
       {article.excerpt && (
         <p className="mt-2.5 mb-0 max-w-[640px] text-[13px] leading-relaxed text-txt2">
           {article.excerpt}
         </p>
+      )}
+
+      {rejecting && (
+        <PromptModal
+          title="Send back to writer"
+          message={`Tell ${article.author.full_name ?? article.author.username} what needs work — they’ll see this note on their draft.`}
+          placeholder="The intro buries the lede — open with the result…"
+          submitLabel="Send back"
+          pending={reject.isPending}
+          onSubmit={(note) => reject.mutate({ id: article.id, note }, { onSuccess: () => setRejecting(false) })}
+          onClose={() => setRejecting(false)}
+        />
       )}
     </div>
   )

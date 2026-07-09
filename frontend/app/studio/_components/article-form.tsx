@@ -2,12 +2,13 @@
 
 import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Upload, Trash2, Star } from 'lucide-react'
+import { Upload, Trash2, Star, X, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/providers/auth-provider'
 import { roleAtLeast } from '@/lib/roles'
 import { SECTION_META, ALL_SECTIONS } from '@/lib/sections'
 import type { Article, Section } from '@/lib/api/domain'
+import type { Media } from '@/lib/api/domain'
 import {
   useCreateArticle,
   useUpdateArticle,
@@ -18,19 +19,36 @@ import {
   useUnpublishArticle,
   useFeatureArticle,
   useUploadMedia,
+  useDeleteMedia,
   type ArticleInput,
 } from '@/lib/api/hooks/studio.hooks'
+import { Button } from '@/components/ui/button'
+import { ConfirmModal, PromptModal } from '@/components/ui/modal'
 import { StatusChip } from './status-chip'
 import { RichEditor } from './rich-editor'
 
-function Field({ label, children, hint }: { label: string; children: React.ReactNode; hint?: string }) {
+function Field({
+  label,
+  children,
+  hint,
+  error,
+}: {
+  label: string
+  children: React.ReactNode
+  hint?: string
+  error?: string
+}) {
   return (
     <label className="block">
       <span className="mb-1.5 block font-mono text-[11px] tracking-[0.12em] text-muted-foreground uppercase">
         {label}
       </span>
       {children}
-      {hint && <span className="mt-1 block font-mono text-[10px] text-muted-foreground">{hint}</span>}
+      {error ? (
+        <span className="mt-1.5 block text-[12px] text-destructive">{error}</span>
+      ) : (
+        hint && <span className="mt-1 block font-mono text-[10px] text-muted-foreground">{hint}</span>
+      )}
     </label>
   )
 }
@@ -59,9 +77,18 @@ export function ArticleForm({ article }: { article?: Article }) {
   // Kept as raw text while typing (a controlled array round-trip would eat
   // the comma as you type it); parsed into tags on save.
   const [tagsText, setTagsText] = useState((article?.tags ?? []).join(', '))
+  const [errors, setErrors] = useState<{ title?: string; content?: string }>({})
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
+  const [confirmingCover, setConfirmingCover] = useState(false)
+  const [removingCover, setRemovingCover] = useState(false)
+  const [rejecting, setRejecting] = useState(false)
 
-  const set = <K extends keyof ArticleInput>(key: K, value: ArticleInput[K]) =>
+  const set = <K extends keyof ArticleInput>(key: K, value: ArticleInput[K]) => {
     setForm((f) => ({ ...f, [key]: value }))
+    if (key === 'title' || key === 'content') {
+      setErrors((e) => ({ ...e, [key]: undefined }))
+    }
+  }
 
   const create = useCreateArticle()
   const update = useUpdateArticle()
@@ -72,7 +99,11 @@ export function ArticleForm({ article }: { article?: Article }) {
   const unpublish = useUnpublishArticle()
   const feature = useFeatureArticle()
   const upload = useUploadMedia()
+  const deleteMedia = useDeleteMedia()
   const fileRef = useRef<HTMLInputElement>(null)
+  // The Media record of a cover uploaded in this session — lets the ✕ button
+  // remove the asset from Cloudinary too, not just clear the field.
+  const [uploadedCover, setUploadedCover] = useState<Media | null>(null)
 
   const busy =
     create.isPending || update.isPending || remove.isPending || submit.isPending ||
@@ -95,8 +126,15 @@ export function ArticleForm({ article }: { article?: Article }) {
   }
 
   const save = async (): Promise<Article | null> => {
-    if (!form.title.trim() || form.content.replace(/<[^>]+>/g, '').trim().length < 50) {
-      window.alert('A title and at least a paragraph of content are required.')
+    const nextErrors: typeof errors = {}
+    if (!form.title.trim()) {
+      nextErrors.title = 'A headline is required.'
+    }
+    if (form.content.replace(/<[^>]+>/g, '').trim().length < 50) {
+      nextErrors.content = 'Write at least a short paragraph (50+ characters) before saving.'
+    }
+    if (nextErrors.title || nextErrors.content) {
+      setErrors(nextErrors)
       return null
     }
     if (article) {
@@ -112,24 +150,40 @@ export function ArticleForm({ article }: { article?: Article }) {
     if (saved) await action(saved.id)
   }
 
-  const onReject = async () => {
+  const onReject = async (note: string) => {
     if (!article) return
-    const note = window.prompt('Feedback for the writer (required):')
-    if (!note || note.trim().length < 5) return
-    await reject.mutateAsync({ id: article.id, note: note.trim() })
+    await reject.mutateAsync({ id: article.id, note })
+    setRejecting(false)
   }
 
   const onDelete = async () => {
     if (!article) return
-    if (!window.confirm(`Delete "${article.title}"? This cannot be undone.`)) return
     await remove.mutateAsync(article.id)
     router.replace('/studio/articles')
   }
 
   const onUpload = async (file: File | undefined) => {
     if (!file) return
-    const media = (await upload.mutateAsync(file)) as { url: string }
+    const media = (await upload.mutateAsync(file)) as Media
     set('cover_url', media.url)
+    setUploadedCover(media)
+  }
+
+  const onRemoveCover = async () => {
+    setConfirmingCover(false)
+    setRemovingCover(true)
+    try {
+      // Only purge from Cloudinary if this session uploaded it; a pasted URL
+      // (or a cover saved earlier) just clears the field.
+      if (uploadedCover) {
+        await deleteMedia.mutateAsync(uploadedCover.id)
+        setUploadedCover(null)
+      }
+      set('cover_url', '')
+      if (fileRef.current) fileRef.current.value = ''
+    } finally {
+      setRemovingCover(false)
+    }
   }
 
   const status = article?.status
@@ -177,12 +231,16 @@ export function ArticleForm({ article }: { article?: Article }) {
       )}
 
       <fieldset disabled={locked || busy} className="flex flex-col gap-5">
-        <Field label="Headline">
+        <Field label="Headline" error={errors.title}>
           <input
             value={form.title}
             onChange={(e) => set('title', e.target.value)}
             placeholder="The Tournament That Refused To Behave"
-            className={cn(inputCls, 'font-heading text-[22px] leading-tight')}
+            className={cn(
+              inputCls,
+              'font-heading text-[22px] leading-tight',
+              errors.title && 'border-destructive',
+            )}
           />
         </Field>
 
@@ -230,14 +288,16 @@ export function ArticleForm({ article }: { article?: Article }) {
               placeholder="https://… or upload →"
               className={inputCls}
             />
-            <button
+            <Button
               type="button"
+              variant="outline"
               onClick={() => fileRef.current?.click()}
-              className="flex shrink-0 items-center gap-2 rounded-lg border border-border px-4 text-[13px] font-bold text-txt2 transition-colors hover:border-primary hover:text-primary"
+              disabled={upload.isPending}
+              className="h-auto shrink-0 self-stretch disabled:opacity-40"
             >
-              <Upload className="h-4 w-4" />
+              {upload.isPending ? <Loader2 className="animate-spin" /> : <Upload />}
               {upload.isPending ? 'Uploading…' : 'Upload'}
-            </button>
+            </Button>
             <input
               ref={fileRef}
               type="file"
@@ -247,8 +307,31 @@ export function ArticleForm({ article }: { article?: Article }) {
             />
           </div>
           {form.cover_url && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={form.cover_url} alt="Cover preview" className="mt-2.5 max-h-[220px] border border-border object-cover" />
+            <div className="relative mt-2.5 w-fit">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={form.cover_url} alt="Cover preview" className="max-h-[220px] border border-border object-cover" />
+
+              {removingCover ? (
+                /* Red deleting state over the image */
+                <div className="absolute inset-0 flex animate-pulse items-center justify-center gap-2 bg-destructive/70 backdrop-blur-[2px]">
+                  <Loader2 className="h-5 w-5 animate-spin text-white" />
+                  <span className="font-mono text-[12px] font-bold tracking-[0.08em] text-white uppercase">
+                    Deleting…
+                  </span>
+                </div>
+              ) : (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setConfirmingCover(true)}
+                  title="Remove cover"
+                  className="absolute right-2 top-2 h-7 w-7 rounded-full bg-black/70 text-white hover:bg-destructive hover:text-white"
+                >
+                  <X />
+                </Button>
+              )}
+            </div>
           )}
         </Field>
 
@@ -279,8 +362,10 @@ export function ArticleForm({ article }: { article?: Article }) {
           </div>
         )}
 
-        <Field label="Body">
-          <RichEditor value={form.content} onChange={(html) => set('content', html)} />
+        <Field label="Body" error={errors.content}>
+          <div className={cn(errors.content && '[&>div]:border-destructive')}>
+            <RichEditor value={form.content} onChange={(html) => set('content', html)} />
+          </div>
         </Field>
 
         <Field label="Tags" hint="Comma-separated">
@@ -296,78 +381,119 @@ export function ArticleForm({ article }: { article?: Article }) {
       {/* Actions */}
       <div className="mt-7 flex flex-wrap items-center gap-2.5 border-t border-border pt-5">
         {!locked && (
-          <button
-            onClick={() => save()}
-            disabled={busy}
-            className="rounded-full bg-primary px-5.5 py-2.75 text-[13px] font-bold text-primary-foreground disabled:opacity-50"
-          >
+          <Button variant="primary" className="rounded-full px-5.5" onClick={() => save()} disabled={busy}>
             {article ? 'Save' : 'Create draft'}
-          </button>
+          </Button>
         )}
 
         {(!article || status === 'DRAFT') && !isEditor && (
-          <button
+          <Button
+            variant="outline"
+            className="rounded-full border-primary px-5.5 text-primary hover:text-primary"
             onClick={() => saveThen((id) => submit.mutateAsync(id))}
             disabled={busy}
-            className="rounded-full border border-primary px-5.5 py-2.75 text-[13px] font-bold text-primary disabled:opacity-50"
           >
             Submit for review
-          </button>
+          </Button>
         )}
 
         {isEditor && status !== 'PUBLISHED' && (
-          <button
+          <Button
+            variant="outline"
+            className="rounded-full border-primary px-5.5 text-primary hover:text-primary"
             onClick={() => saveThen((id) => publish.mutateAsync(id))}
             disabled={busy}
-            className="rounded-full border border-primary px-5.5 py-2.75 text-[13px] font-bold text-primary disabled:opacity-50"
           >
             {article ? 'Publish' : 'Publish now'}
-          </button>
+          </Button>
         )}
 
         {isEditor && status === 'IN_REVIEW' && (
-          <button
-            onClick={onReject}
+          <Button
+            variant="outline"
+            className="rounded-full border-gold px-5.5 text-gold hover:text-gold"
+            onClick={() => setRejecting(true)}
             disabled={busy}
-            className="rounded-full border border-gold px-5.5 py-2.75 text-[13px] font-bold text-gold disabled:opacity-50"
           >
             Send back
-          </button>
+          </Button>
         )}
 
         {isEditor && status === 'PUBLISHED' && (
           <>
             {!article?.is_featured && (
-              <button
+              <Button
+                variant="outline"
+                className="rounded-full px-5.5 text-txt2 hover:border-primary hover:text-primary"
                 onClick={() => article && feature.mutateAsync(article.id)}
                 disabled={busy}
-                className="flex items-center gap-1.5 rounded-full border border-border px-5.5 py-2.75 text-[13px] font-bold text-txt2 hover:border-primary hover:text-primary disabled:opacity-50"
               >
-                <Star className="h-3.5 w-3.5" />
+                <Star />
                 Feature
-              </button>
+              </Button>
             )}
-            <button
+            <Button
+              variant="outline"
+              className="rounded-full border-gold px-5.5 text-gold hover:text-gold"
               onClick={() => article && unpublish.mutateAsync(article.id)}
               disabled={busy}
-              className="rounded-full border border-gold px-5.5 py-2.75 text-[13px] font-bold text-gold disabled:opacity-50"
             >
               Unpublish
-            </button>
+            </Button>
           </>
         )}
 
         {article && (isEditor || status === 'DRAFT') && (
-          <button
-            onClick={onDelete}
+          <Button
+            variant="outline"
+            className="ml-auto rounded-full text-destructive/80 hover:border-destructive hover:text-destructive"
+            onClick={() => setConfirmingDelete(true)}
             disabled={busy}
-            className="ml-auto flex items-center gap-1.5 rounded-full border border-border px-4.5 py-2.75 text-[13px] font-bold text-destructive/80 hover:border-destructive hover:text-destructive disabled:opacity-50"
           >
-            <Trash2 className="h-3.5 w-3.5" />
+            <Trash2 />
             Delete
-          </button>
+          </Button>
         )}
       </div>
+
+      {confirmingCover && (
+        <ConfirmModal
+          title="Remove cover image?"
+          message={
+            uploadedCover
+              ? 'This upload will be permanently deleted from storage. You can upload a different image afterwards.'
+              : 'The cover will be cleared from this article. The image itself is not deleted since it wasn’t uploaded here.'
+          }
+          confirmLabel="Remove"
+          destructive
+          onConfirm={onRemoveCover}
+          onClose={() => setConfirmingCover(false)}
+        />
+      )}
+
+      {confirmingDelete && article && (
+        <ConfirmModal
+          title="Delete article?"
+          message={`“${article.title}” will be permanently deleted. This cannot be undone.`}
+          confirmLabel="Delete"
+          destructive
+          pending={remove.isPending}
+          onConfirm={onDelete}
+          onClose={() => setConfirmingDelete(false)}
+        />
+      )}
+
+      {rejecting && article && (
+        <PromptModal
+          title="Send back to writer"
+          message={`Tell ${article.author.full_name ?? article.author.username} what needs work — they’ll see this note on their draft.`}
+          placeholder="The intro buries the lede — open with the result…"
+          submitLabel="Send back"
+          pending={reject.isPending}
+          onSubmit={onReject}
+          onClose={() => setRejecting(false)}
+        />
+      )}
     </div>
   )
 }

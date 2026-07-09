@@ -203,18 +203,25 @@ export class StudioService {
 
   async uploadMedia(actor: Actor, file: Express.Multer.File) {
     const result = await this.cloudinary.upload(file);
-    const media = await this.prisma.media.create({
-      data: {
-        public_id: result.public_id,
-        url: result.secure_url,
-        width: result.width,
-        height: result.height,
-        format: result.format,
-        bytes: result.bytes,
-        uploader_id: actor.id,
-      },
-    });
-    return { data: media, message: 'Uploaded' };
+    try {
+      const media = await this.prisma.media.create({
+        data: {
+          public_id: result.public_id,
+          url: result.secure_url,
+          width: result.width,
+          height: result.height,
+          format: result.format,
+          bytes: result.bytes,
+          uploader_id: actor.id,
+        },
+      });
+      return { data: media, message: 'Uploaded' };
+    } catch (error) {
+      // Compensate: the DB row failed, so don't leave an orphaned asset in
+      // Cloudinary. Best-effort — surfacing the original error matters more.
+      await this.cloudinary.destroy(result.public_id).catch(() => {});
+      throw error;
+    }
   }
 
   async listMedia(actor: Actor, page = 1, limit = 40) {
@@ -229,6 +236,19 @@ export class StudioService {
       this.prisma.media.count({ where }),
     ]);
     return { data: { media, total, page, limit, pages: Math.ceil(total / limit) } };
+  }
+
+  /** Permanently deletes the asset from Cloudinary and the media record. */
+  async deleteMedia(actor: Actor, id: string) {
+    const media = await this.prisma.media.findUnique({ where: { id } });
+    if (!media) throw new NotFoundException('Media not found');
+    if (media.uploader_id !== actor.id && !roleAtLeast(actor.role, Role.EDITOR)) {
+      throw new ForbiddenException('Not your upload');
+    }
+
+    await this.cloudinary.destroy(media.public_id);
+    await this.prisma.media.delete({ where: { id } });
+    return { message: 'Image deleted' };
   }
 
   // ── User administration (admin only — enforced at the controller) ──────────

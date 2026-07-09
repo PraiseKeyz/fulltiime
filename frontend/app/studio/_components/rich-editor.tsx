@@ -18,6 +18,7 @@ import {
   Redo2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
 
 function ToolButton({
   onClick,
@@ -33,19 +34,21 @@ function ToolButton({
   children: React.ReactNode
 }) {
   return (
-    <button
+    <Button
       type="button"
+      variant="ghost"
+      size="icon"
       onMouseDown={(e) => e.preventDefault()}
       onClick={onClick}
       disabled={disabled}
       title={title}
       className={cn(
-        'flex h-8 w-8 items-center justify-center rounded-md transition-colors disabled:opacity-30',
-        active ? 'bg-primary/15 text-primary' : 'text-txt2 hover:bg-card-hover hover:text-foreground',
+        'h-8 w-8 rounded-md disabled:opacity-30',
+        active ? 'bg-primary/15 text-primary hover:bg-primary/15 hover:text-primary' : 'text-txt2 hover:bg-card-hover hover:text-foreground',
       )}
     >
       {children}
-    </button>
+    </Button>
   )
 }
 
@@ -73,7 +76,7 @@ export function RichEditor({
     onUpdate: ({ editor }) => onChange(editor.getHTML()),
     editorProps: {
       attributes: {
-        class: 'article-prose max-w-none min-h-[320px] px-4 py-3 outline-none',
+        class: 'article-prose max-w-none min-h-[320px] cursor-text px-4 py-3 outline-none',
       },
     },
   })

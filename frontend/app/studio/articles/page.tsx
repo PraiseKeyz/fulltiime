@@ -10,6 +10,7 @@ import { timeAgo } from '@/lib/editorial'
 import { SECTION_META, ALL_SECTIONS } from '@/lib/sections'
 import type { Article, ArticleStatus, Section } from '@/lib/api/domain'
 import { useFeatureArticle, useStudioArticles } from '@/lib/api/hooks/studio.hooks'
+import { Button } from '@/components/ui/button'
 import { StatusChip } from '../_components/status-chip'
 
 const STATUS_TABS: { label: string; value: ArticleStatus | undefined }[] = [
@@ -41,14 +42,16 @@ function ArticleRow({ article, canCurate }: { article: Article; canCurate: boole
 
       <div className="flex shrink-0 items-center gap-2.5">
         {canCurate && article.status === 'PUBLISHED' && !article.is_featured && (
-          <button
+          <Button
+            variant="outline"
+            size="icon"
             onClick={() => feature.mutate(article.id)}
             disabled={feature.isPending}
             title="Feature as homepage hero"
-            className="rounded-full border border-border p-2 text-txt2 transition-colors hover:border-primary hover:text-primary"
+            className="h-8 w-8 rounded-full text-txt2 hover:border-primary hover:text-primary"
           >
-            <Star className="h-3.5 w-3.5" />
-          </button>
+            <Star className="!size-3.5" />
+          </Button>
         )}
         <StatusChip status={article.status} />
       </div>
@@ -84,33 +87,29 @@ export default function StudioArticlesPage() {
           </span>
           <h1 className="m-0 text-[clamp(26px,4vw,38px)] uppercase leading-none">Articles</h1>
         </div>
-        <Link
-          href="/studio/articles/new"
-          className="flex items-center gap-2 rounded-full bg-primary px-5 py-2.75 text-[13px] font-bold text-primary-foreground"
-        >
-          <Plus className="h-4 w-4" />
-          New Article
-        </Link>
+        <Button asChild variant="primary" className="rounded-full px-5">
+          <Link href="/studio/articles/new">
+            <Plus />
+            New Article
+          </Link>
+        </Button>
       </div>
 
       {/* Filters */}
       <div className="mb-5 flex flex-wrap items-center gap-2">
         {STATUS_TABS.map((tab) => (
-          <button
+          <Button
             key={tab.label}
+            size="sm"
+            variant={status === tab.value ? 'primary' : 'outline'}
             onClick={() => {
               setStatus(tab.value)
               setPage(1)
             }}
-            className={cn(
-              'shrink-0 rounded-full border px-3.5 py-1.75 text-[12px] font-bold transition-colors',
-              status === tab.value
-                ? 'border-primary bg-primary text-primary-foreground'
-                : 'border-border text-txt2 hover:border-primary hover:text-primary',
-            )}
+            className={cn('shrink-0 rounded-full', status !== tab.value && 'text-txt2 hover:border-primary hover:text-primary')}
           >
             {tab.label}
-          </button>
+          </Button>
         ))}
 
         <select
@@ -164,23 +163,27 @@ export default function StudioArticlesPage() {
 
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-4 pt-6">
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => setPage((p) => p - 1)}
             disabled={page <= 1}
-            className="rounded-full border border-border px-4 py-2 text-[12px] font-bold text-txt2 hover:border-primary hover:text-primary disabled:pointer-events-none disabled:opacity-30"
+            className="rounded-full text-txt2 hover:border-primary hover:text-primary disabled:opacity-30"
           >
             ← Prev
-          </button>
+          </Button>
           <span className="font-mono text-[12px] text-muted-foreground">
             {page} / {totalPages}
           </span>
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => setPage((p) => p + 1)}
             disabled={page >= totalPages}
-            className="rounded-full border border-border px-4 py-2 text-[12px] font-bold text-txt2 hover:border-primary hover:text-primary disabled:pointer-events-none disabled:opacity-30"
+            className="rounded-full text-txt2 hover:border-primary hover:text-primary disabled:opacity-30"
           >
             Next →
-          </button>
+          </Button>
         </div>
       )}
     </>

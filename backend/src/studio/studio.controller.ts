@@ -128,6 +128,11 @@ export class StudioController {
     return this.studio.uploadMedia(user, file);
   }
 
+  @Delete('media/:id')
+  deleteMedia(@CurrentUser() user: SafeUser, @Param('id') id: string) {
+    return this.studio.deleteMedia(user, id);
+  }
+
   @Get('media')
   listMedia(
     @CurrentUser() user: SafeUser,

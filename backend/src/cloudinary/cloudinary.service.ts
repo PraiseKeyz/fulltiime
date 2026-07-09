@@ -18,6 +18,14 @@ export class CloudinaryService {
     }
   }
 
+  /** Permanently remove an asset from Cloudinary. */
+  async destroy(publicId: string): Promise<void> {
+    if (!this.configured) {
+      throw new ServiceUnavailableException('Media uploads are not configured');
+    }
+    await cloudinary.uploader.destroy(publicId, { resource_type: 'image', invalidate: true });
+  }
+
   async upload(file: Express.Multer.File): Promise<UploadApiResponse> {
     if (!this.configured) {
       throw new ServiceUnavailableException(
