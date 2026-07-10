@@ -16,6 +16,8 @@ services:
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       FRONTEND_URL: ${FRONTEND_URL}
+      # Parent domain for the ft_session marker cookie (e.g. .fulltiime.com)
+      COOKIE_DOMAIN: ${COOKIE_DOMAIN}
 
       # Transactional email (ZeptoMail)
       ZEPTOMAIL_API_KEY: ${ZEPTOMAIL_API_KEY}

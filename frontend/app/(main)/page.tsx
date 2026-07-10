@@ -6,8 +6,6 @@ export const revalidate = 60
 export default async function HomePage() {
   const home = await getHome()
 
-  // Reached only when the API is unreachable — with a live newsroom there is
-  // always content, so this is a server-trouble state, not an empty state.
   if (!home || !home.featured) {
     return (
       <div className="mx-auto flex min-h-[60vh] max-w-[var(--content-max)] flex-col items-center justify-center px-4.5 py-24 text-center sm:px-10">
@@ -20,9 +18,6 @@ export default async function HomePage() {
         <p className="mx-auto mt-4 max-w-[440px] text-[15px] leading-relaxed text-txt2">
           Our servers are being difficult — the stories are safe, they just can&apos;t get through
           right now. Give it a minute and refresh.
-        </p>
-        <p className="mt-6 font-mono text-[12px] text-muted-foreground">
-          this page retries automatically · no action needed
         </p>
       </div>
     )

@@ -6,11 +6,17 @@ export const authKeys = {
   me: ['auth', 'me'] as const,
 }
 
+function hasSessionMarker(): boolean {
+  if (typeof document === 'undefined') return false
+  return document.cookie.split(';').some((c) => c.trim().startsWith('ft_session='))
+}
+
 export function useMe() {
   return useQuery({
     queryKey: authKeys.me,
-    // Guests are expected to 401 here — fail quietly and never redirect.
+    // Expired sessions may still 401 here — fail quietly and never redirect.
     queryFn: () => api.get<User>('/auth/me', { silent: true, skipAuthRedirect: true }),
+    enabled: hasSessionMarker(),
     retry: false,
     staleTime: 5 * 60 * 1000,
   })

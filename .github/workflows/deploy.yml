@@ -79,6 +79,7 @@ jobs:
             export JWT_REFRESH_SECRET="${{ secrets.JWT_REFRESH_SECRET }}"
             export FRONTEND_URL="${{ secrets.FRONTEND_URL }}"
             export GOOGLE_CLIENT_ID="${{ secrets.GOOGLE_CLIENT_ID }}"
+            export COOKIE_DOMAIN="${{ secrets.COOKIE_DOMAIN }}"
 
             # Transactional email
             export ZEPTOMAIL_API_KEY="${{ secrets.ZEPTOMAIL_API_KEY }}"

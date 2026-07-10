@@ -41,6 +41,22 @@ const REFRESH_COOKIE_OPTIONS = {
   path:   '/api/v1/auth',
 };
 
+const SESSION_MARKER_COOKIE = 'ft_session';
+const MARKER_COOKIE_OPTIONS = {
+  httpOnly: false,
+  secure:   process.env.NODE_ENV === 'production',
+  sameSite: 'lax' as const,
+  maxAge:   30 * 24 * 60 * 60 * 1000, // matches the refresh token
+  path:     '/',
+  ...(process.env.COOKIE_DOMAIN ? { domain: process.env.COOKIE_DOMAIN } : {}),
+};
+
+function setAuthCookies(res: Response, access_token: string, refresh_token: string) {
+  res.cookie(ACCESS_COOKIE, access_token, ACCESS_COOKIE_OPTIONS);
+  res.cookie(REFRESH_COOKIE, refresh_token, REFRESH_COOKIE_OPTIONS);
+  res.cookie(SESSION_MARKER_COOKIE, '1', MARKER_COOKIE_OPTIONS);
+}
+
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
@@ -61,8 +77,7 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const { user, access_token, refresh_token } = await this.authService.register(dto);
-    res.cookie(ACCESS_COOKIE, access_token, ACCESS_COOKIE_OPTIONS);
-    res.cookie(REFRESH_COOKIE, refresh_token, REFRESH_COOKIE_OPTIONS);
+    setAuthCookies(res, access_token, refresh_token);
     return {
       data:    { user },
       message: 'Account created successfully',
@@ -79,8 +94,7 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const { user, access_token, refresh_token } = await this.authService.login(dto);
-    res.cookie(ACCESS_COOKIE, access_token, ACCESS_COOKIE_OPTIONS);
-    res.cookie(REFRESH_COOKIE, refresh_token, REFRESH_COOKIE_OPTIONS);
+    setAuthCookies(res, access_token, refresh_token);
     return {
       data:    { user },
       message: 'Login successful',
@@ -97,8 +111,7 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const { user, access_token, refresh_token } = await this.authService.loginWithGoogle(dto.credential);
-    res.cookie(ACCESS_COOKIE, access_token, ACCESS_COOKIE_OPTIONS);
-    res.cookie(REFRESH_COOKIE, refresh_token, REFRESH_COOKIE_OPTIONS);
+    setAuthCookies(res, access_token, refresh_token);
     return {
       data:    { user },
       message: 'Login successful',
@@ -161,8 +174,7 @@ export class AuthController {
     if (!token) throw new UnauthorizedException('No refresh token provided');
 
     const { access_token, refresh_token } = await this.authService.refresh(token);
-    res.cookie(ACCESS_COOKIE, access_token, ACCESS_COOKIE_OPTIONS);
-    res.cookie(REFRESH_COOKIE, refresh_token, REFRESH_COOKIE_OPTIONS);
+    setAuthCookies(res, access_token, refresh_token);
     return {
       message: 'Token refreshed',
     };
@@ -180,6 +192,10 @@ export class AuthController {
     await this.authService.logout(user.id);
     res.clearCookie(ACCESS_COOKIE, { path: '/' });
     res.clearCookie(REFRESH_COOKIE, { path: '/api/v1/auth' });
+    res.clearCookie(SESSION_MARKER_COOKIE, {
+      path: '/',
+      ...(process.env.COOKIE_DOMAIN ? { domain: process.env.COOKIE_DOMAIN } : {}),
+    });
     return { message: 'Logged out successfully' };
   }
 
