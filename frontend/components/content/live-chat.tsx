@@ -1,34 +1,28 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { toast } from 'sonner'
 import { hashString } from '@/lib/editorial'
+import { getChatSocket } from '@/lib/chat-socket'
+import { useAuth } from '@/providers/auth-provider'
 
-interface ChatMessage {
+interface WireMessage {
   id: string
-  author: string
-  hue: number
-  text: string
-  you?: boolean
-  replyTo?: string | null
+  body: string
+  reply_to: string | null
+  created_at: string
+  user: { id: string; username: string }
 }
 
-// Simulated fan thread from the Fulltiime design — stands in for the realtime
-// backend until the live-chat service ships.
-const POOL: Omit<ChatMessage, 'id'>[] = [
-  { author: 'pressing_unit', hue: 200, text: 'no way that stays offside once you see the replay' },
-  { author: 'CalderTillIDie', hue: 30, text: 'the second goal was all about the run OFF the ball, nobody picked it up' },
-  { author: 'tifosi_92', hue: 300, text: 'genuinely the best thing this writer has done all season' },
-  { author: 'back_four', hue: 150, text: 'the keeper saved them 3 points today and got zero credit for it' },
-  { author: 'low_block', hue: 90, text: 'the AI insight up top actually explained the false nine thing really well' },
-  { author: 'NorthgateNel', hue: 262, text: 'we massively overpaid and i could not care less, ship it' },
-  { author: 'terrace_poet', hue: 50, text: 'football beyond the final whistle indeed lads' },
-  { author: 'vela_stan', hue: 332, text: 'the homecoming arc gets me every single time man' },
-  { author: 'gegenpress', hue: 170, text: 'reply-guy energy but the throw-in piece genuinely changed how i watch' },
-  { author: 'xG_skeptic', hue: 24, text: 'models said draw. eyes said otherwise. eyes won.' },
-]
+interface JoinAck {
+  history?: WireMessage[]
+  fans?: number
+  canPost?: boolean
+  error?: string
+}
 
-const CHAT_SPEED_MS = 4500
 const PEEK_PX = 60
+const MAX_MESSAGES = 80
 
 function Avatar({ hue, size = 30 }: { hue: number; size?: number }) {
   return (
@@ -40,11 +34,10 @@ function Avatar({ hue, size = 30 }: { hue: number; size?: number }) {
 }
 
 export function LiveChat({ storyId }: { storyId: string }) {
-  const fans = 120 + (hashString(storyId) % 340)
+  const { user, isAuthenticated } = useAuth()
 
-  const [messages, setMessages] = useState<ChatMessage[]>(() =>
-    POOL.slice(0, 6).map((m, i) => ({ id: `s${i}`, ...m })),
-  )
+  const [messages, setMessages] = useState<WireMessage[]>([])
+  const [fans, setFans] = useState<number | null>(null)
   const [draft, setDraft] = useState('')
   const [replyingTo, setReplyingTo] = useState<string | null>(null)
   const [sheetOpen, setSheetOpen] = useState(false)
@@ -54,13 +47,31 @@ export function LiveChat({ storyId }: { storyId: string }) {
   const scrimRef = useRef<HTMLDivElement>(null)
   const dragRef = useRef<{ y: number; h: number; base: number; moved: number; t: number } | null>(null)
 
+  // ── Realtime wiring ─────────────────────────────────────────────────────────
   useEffect(() => {
-    const timer = setInterval(() => {
-      const m = POOL[Math.floor(Math.random() * POOL.length)]
-      setMessages((prev) => [...prev, { id: `m${Date.now()}${Math.random()}`, ...m }].slice(-50))
-    }, CHAT_SPEED_MS)
-    return () => clearInterval(timer)
-  }, [])
+    const socket = getChatSocket()
+
+    const onMessage = (m: WireMessage) =>
+      setMessages((prev) => [...prev, m].slice(-MAX_MESSAGES))
+    const onPresence = (p: { fans: number }) => setFans(p.fans)
+    const join = () =>
+      socket.emit('join', { room: storyId }, (res: JoinAck) => {
+        if (res?.history) setMessages(res.history)
+        if (typeof res?.fans === 'number') setFans(res.fans)
+      })
+
+    socket.on('message', onMessage)
+    socket.on('presence', onPresence)
+    socket.on('connect', join) // also re-joins after reconnects
+    if (socket.connected) join()
+
+    return () => {
+      socket.emit('leave')
+      socket.off('message', onMessage)
+      socket.off('presence', onPresence)
+      socket.off('connect', join)
+    }
+  }, [storyId])
 
   useEffect(() => {
     const el = chatRef.current
@@ -70,12 +81,18 @@ export function LiveChat({ storyId }: { storyId: string }) {
   const send = () => {
     const text = draft.trim()
     if (!text) return
-    setMessages((prev) =>
-      [
-        ...prev,
-        { id: `y${Date.now()}`, author: 'You', hue: 142, text, you: true, replyTo: replyingTo },
-      ].slice(-60),
+    if (!isAuthenticated) {
+      toast.error('Sign in to join the conversation')
+      return
+    }
+    getChatSocket().emit(
+      'message',
+      { body: text, reply_to: replyingTo ?? undefined },
+      (res: { error?: string }) => {
+        if (res?.error) toast.error(res.error)
+      },
     )
+    // The message comes back through the room broadcast — no local append.
     setDraft('')
     setReplyingTo(null)
   }
@@ -133,6 +150,8 @@ export function LiveChat({ storyId }: { storyId: string }) {
     setSheetOpen(open)
   }
 
+  const fansLabel = fans === null ? '…' : String(fans)
+
   return (
     <>
       {/* Scrim behind the mobile sheet */}
@@ -174,7 +193,7 @@ export function LiveChat({ storyId }: { storyId: string }) {
               ))}
             </span>
             <span className="whitespace-nowrap text-[14px] font-bold text-head">
-              {sheetOpen ? 'Live conversation' : `${fans} fans talking`}
+              {sheetOpen ? 'Live conversation' : `${fansLabel} fans here`}
             </span>
             <span className="ml-auto flex items-center gap-1.5 whitespace-nowrap font-mono text-[11px] font-semibold text-primary">
               {sheetOpen ? 'swipe down' : 'swipe up'}
@@ -187,7 +206,9 @@ export function LiveChat({ storyId }: { storyId: string }) {
         <div className="flex items-center gap-2.5 border-b border-border px-4.5 py-4">
           <span className="animate-blip h-2 w-2 shrink-0 rounded-full bg-primary shadow-[0_0_10px_var(--primary)]" />
           <div className="flex-1">
-            <div className="text-[14px] font-bold text-head">Reading with {fans} fans</div>
+            <div className="text-[14px] font-bold text-head">
+              Reading with {fansLabel} fan{fans === 1 ? '' : 's'}
+            </div>
             <div className="font-mono text-[11px] text-muted-foreground">
               live thread · replaces comments
             </div>
@@ -200,32 +221,42 @@ export function LiveChat({ storyId }: { storyId: string }) {
           data-scroll
           className="flex flex-1 flex-col gap-4 overflow-y-auto px-4 pt-4 pb-2"
         >
-          {messages.map((m) => (
-            <div key={m.id} className="animate-message-in flex gap-2.5">
-              <Avatar hue={m.hue} />
-              <div className="min-w-0 flex-1">
-                <div className="mb-1 font-mono text-[12px] font-bold text-foreground">{m.author}</div>
-                {m.replyTo && (
-                  <div className="mb-1.25 border-l-2 border-primary/40 pl-1.75 font-mono text-[11px] text-muted-foreground">
-                    ↳ replying to {m.replyTo}
-                  </div>
-                )}
-                <div
-                  className={`rounded-[4px_12px_12px_12px] border px-3 py-2.25 text-[14px] leading-[1.45] text-foreground ${
-                    m.you ? 'border-primary/40 bg-primary/15' : 'border-border bg-background'
-                  }`}
-                >
-                  {m.text}
-                </div>
-                <button
-                  onClick={() => setReplyingTo(m.author)}
-                  className="pt-1.25 font-mono text-[11px] text-muted-foreground hover:text-primary"
-                >
-                  reply
-                </button>
-              </div>
+          {messages.length === 0 && (
+            <div className="py-10 text-center font-mono text-[12px] text-muted-foreground">
+              Nothing yet — be the first to say something.
             </div>
-          ))}
+          )}
+          {messages.map((m) => {
+            const you = m.user.id === user?.id
+            return (
+              <div key={m.id} className="animate-message-in flex gap-2.5">
+                <Avatar hue={hashString(m.user.username) % 360} />
+                <div className="min-w-0 flex-1">
+                  <div className="mb-1 font-mono text-[12px] font-bold text-foreground">
+                    {you ? 'You' : m.user.username}
+                  </div>
+                  {m.reply_to && (
+                    <div className="mb-1.25 border-l-2 border-primary/40 pl-1.75 font-mono text-[11px] text-muted-foreground">
+                      ↳ replying to {m.reply_to}
+                    </div>
+                  )}
+                  <div
+                    className={`rounded-[4px_12px_12px_12px] border px-3 py-2.25 text-[14px] leading-[1.45] text-foreground ${
+                      you ? 'border-primary/40 bg-primary/15' : 'border-border bg-background'
+                    }`}
+                  >
+                    {m.body}
+                  </div>
+                  <button
+                    onClick={() => setReplyingTo(m.user.username)}
+                    className="pt-1.25 font-mono text-[11px] text-muted-foreground hover:text-primary"
+                  >
+                    reply
+                  </button>
+                </div>
+              </div>
+            )
+          })}
         </div>
 
         {/* Composer */}
@@ -252,7 +283,9 @@ export function LiveChat({ storyId }: { storyId: string }) {
                   send()
                 }
               }}
-              placeholder="Add to the conversation…"
+              placeholder={
+                isAuthenticated ? 'Add to the conversation…' : 'Sign in to join the conversation…'
+              }
               className="min-w-0 flex-1 rounded-full border border-border bg-background px-3.75 py-2.75 text-[13px] text-foreground outline-none placeholder:text-muted-foreground focus:border-primary"
             />
             <button

@@ -26,13 +26,10 @@ export interface AuthResponse {
 export type ArticleStatus = 'DRAFT' | 'IN_REVIEW' | 'PUBLISHED' | 'ARCHIVED'
 
 export type Section =
-  | 'NEWS'
   | 'TRANSFERS'
-  | 'TACTICS'
   | 'WORLDCUP'
   | 'PREMIER'
   | 'CHAMPIONS'
-  | 'LALIGA'
   | 'TV'
   | 'BEYOND'
   | 'MOTHERLAND'

@@ -64,13 +64,12 @@ export function ArticleForm({ article }: { article?: Article }) {
   const [form, setForm] = useState<ArticleInput>({
     title: article?.title ?? '',
     content: article?.content ?? '',
-    section: article?.section ?? 'NEWS',
+    section: article?.section ?? 'TRANSFERS',
     excerpt: article?.excerpt ?? '',
     cover_url: article?.cover_url ?? '',
     kicker: article?.kicker ?? '',
     move: article?.move ?? '',
     crest: article?.crest ?? '',
-    formation: article?.formation ?? '',
     video_url: article?.video_url ?? '',
     duration: article?.duration ?? '',
   })
@@ -118,7 +117,6 @@ export function ArticleForm({ article }: { article?: Article }) {
       kicker: form.kicker || undefined,
       move: form.move || undefined,
       crest: form.crest || undefined,
-      formation: form.formation || undefined,
       video_url: form.video_url || undefined,
       duration: form.duration || undefined,
       tags: tags.length ? tags : undefined,
@@ -345,11 +343,6 @@ export function ArticleForm({ article }: { article?: Article }) {
               <input value={form.crest ?? ''} onChange={(e) => set('crest', e.target.value)} maxLength={4} className={inputCls} />
             </Field>
           </div>
-        )}
-        {form.section === 'TACTICS' && (
-          <Field label="Formation" hint="Shown on the pitch graphic, e.g. 4-3-3">
-            <input value={form.formation ?? ''} onChange={(e) => set('formation', e.target.value)} className={cn(inputCls, 'max-w-[200px]')} />
-          </Field>
         )}
         {form.section === 'TV' && (
           <div className="grid gap-5 sm:grid-cols-[1fr_140px]">

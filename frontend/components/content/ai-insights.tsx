@@ -2,15 +2,15 @@
 
 import { useState } from 'react'
 import { ChevronDown } from 'lucide-react'
-import type { Insight } from '@/lib/dummy-content'
+import type { Insight } from '@/lib/api/domain'
 
 /**
  * Collapsible "AI Insights" strip from the Fulltiime design — context a casual
  * fan might be missing, surfaced above the article body.
  */
-export function AiInsights({ insights }: { insights: Insight[] }) {
+export function AiInsights({ insights }: { insights: Insight[] | null }) {
   const [open, setOpen] = useState(false)
-  if (insights.length === 0) return null
+  if (!insights || insights.length === 0) return null
 
   return (
     <div className="mb-7.5 overflow-hidden rounded-[14px] border border-[rgba(29,185,84,0.32)] bg-linear-[120deg] from-[rgba(29,185,84,0.1)] to-primary/5">

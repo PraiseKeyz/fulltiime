@@ -10,6 +10,7 @@ import { EmailModule } from './email/email.module.js';
 import { UsersModule } from './users/users.module.js';
 import { NewsModule } from './news/news.module.js';
 import { StudioModule } from './studio/studio.module.js';
+import { ChatModule } from './chat/chat.module.js';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { StudioModule } from './studio/studio.module.js';
     UsersModule,
     NewsModule,
     StudioModule,
+    ChatModule,
   ],
   controllers: [AppController],
   providers: [

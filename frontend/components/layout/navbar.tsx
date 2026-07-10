@@ -13,8 +13,8 @@ import { useImmersive } from '@/providers/immersive-provider'
 const NAV_LINKS = [
   { href: '/news', label: 'News' },
   { href: '/news?category=transfers', label: 'Transfers' },
-  { href: '/news?category=tactics', label: 'Tactics' },
   { href: '/news?category=worldcup', label: 'World Cup' },
+  { href: '/news?category=motherland', label: 'The Motherland' },
   { href: '/news?category=beyond', label: 'Beyond' },
 ]
 

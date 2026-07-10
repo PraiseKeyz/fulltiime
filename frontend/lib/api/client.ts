@@ -9,7 +9,8 @@ import type {
   ErrorInterceptorFn,
 } from './types'
 
-const BASE_URL = `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5000'}/api/v1`
+
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5000/api/v1'
 const DEFAULT_TIMEOUT_MS = 15_000
 
 export class ApiClient {

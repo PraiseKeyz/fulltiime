@@ -40,12 +40,12 @@ const SOCIALS = [
 ]
 
 const EXPLORE = [
-  { label: 'News',                href: '/news' },
-  { label: 'Transfers',           href: '/news?category=transfers' },
-  { label: 'Tactical Breakdowns', href: '/news?category=tactics' },
-  { label: 'Fulltiime TV',        href: '/news?category=tv' },
-  { label: 'Beyond the Whistle',  href: '/news?category=beyond' },
-  { label: 'The Motherland',      href: '/news?category=motherland' },
+  { label: 'News',               href: '/news' },
+  { label: 'Transfers',          href: '/news?category=transfers' },
+  { label: 'World Cup 2026',     href: '/news?category=worldcup' },
+  { label: 'Fulltiime TV',       href: '/news?category=tv' },
+  { label: 'Beyond the Whistle', href: '/news?category=beyond' },
+  { label: 'The Motherland',     href: '/news?category=motherland' },
 ]
 
 const COMPANY = [

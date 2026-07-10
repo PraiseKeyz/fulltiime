@@ -1,22 +1,8 @@
 import Link from 'next/link'
 import { Cover } from '@/components/content/cover'
 import { SponsoredFrame } from '@/components/ads/sponsored-frame'
-import {
-  FEATURED_STORY,
-  SECONDARY_STORIES,
-  TRENDING_STORIES,
-  AFRICA_STORIES,
-  WORLDCUP_STORIES,
-  PREMIER_STORIES,
-  CHAMPIONS_STORIES,
-  LALIGA_STORIES,
-  VIDEO_FEATURED,
-  VIDEO_STORIES,
-  TRANSFER_STORIES,
-  TACTICS_STORIES,
-  LONGFORM_STORIES,
-  type Story,
-} from '@/lib/dummy-content'
+import type { HomePayload } from '@/lib/api/domain'
+import { toStory, type Story } from '@/lib/story'
 
 // ─── Shared bits ──────────────────────────────────────────────────────────────
 
@@ -75,7 +61,7 @@ function HeroFeatured({ story }: { story: Story }) {
       href={`/news/${story.slug}`}
       className="animate-fade-up group relative flex min-h-[clamp(360px,62vw,560px)] flex-col justify-end overflow-hidden border border-border"
     >
-      <Cover seed={story.headline} hue={story.hue} className="absolute inset-0" />
+      <Cover src={story.src} seed={story.headline} hue={story.hue} className="absolute inset-0" />
       <div className="absolute inset-0 bg-linear-to-t from-[rgba(7,11,9,0.96)] from-6% via-[rgba(7,11,9,0.55)] via-42% to-[rgba(7,11,9,0.1)]" />
       <span className="absolute left-5.5 top-5.5 rounded-md border border-primary/28 bg-[rgba(10,15,12,0.5)] px-2.75 py-1.75 font-mono text-[12px] leading-none tracking-[0.12em] text-primary">
         {story.kicker}
@@ -105,7 +91,7 @@ function HeroSecondary({ story }: { story: Story }) {
       href={`/news/${story.slug}`}
       className="animate-fade-up grid flex-1 grid-cols-[128px_1fr] items-center gap-4 border border-border bg-background-secondary p-3.5 transition-colors hover:border-primary/40"
     >
-      <Cover seed={story.headline} hue={story.hue} className="h-[118px]" />
+      <Cover src={story.src} seed={story.headline} hue={story.hue} className="h-[118px]" />
       <div>
         <span className="font-mono text-[11px] leading-none tracking-[0.1em] text-primary">
           {story.kicker}
@@ -130,7 +116,7 @@ function TrendingCard({ story }: { story: Story }) {
       className="flex flex-[0_0_320px] snap-start flex-col overflow-hidden border border-border bg-background-secondary transition-colors hover:border-primary/40"
     >
       <div className="relative h-[150px]">
-        <Cover seed={story.headline} hue={story.hue} className="absolute inset-0" />
+        <Cover src={story.src} seed={story.headline} hue={story.hue} className="absolute inset-0" />
         <span className="absolute left-2.5 top-2.5 rounded-[5px] bg-primary px-2 py-1 font-mono text-[10px] font-bold tracking-[0.1em] text-primary-foreground">
           {story.kicker}
         </span>
@@ -162,7 +148,7 @@ function MotherlandCard({ story }: { story: Story }) {
       href={`/news/${story.slug}`}
       className="relative flex min-h-[392px] flex-[0_0_min(360px,82vw)] snap-start flex-col justify-end overflow-hidden border border-border"
     >
-      <Cover seed={story.headline} hue={story.hue} className="absolute inset-0" />
+      <Cover src={story.src} seed={story.headline} hue={story.hue} className="absolute inset-0" />
       <div className="absolute inset-0 bg-linear-to-t from-[rgba(7,11,9,0.97)] from-14% via-[rgba(7,11,9,0.4)] via-56% to-[rgba(7,11,9,0.08)]" />
       <div className="relative p-6">
         <span className="rounded-[5px] bg-primary px-2.25 py-1 font-mono text-[10px] font-bold tracking-[0.1em] text-primary-foreground">
@@ -187,7 +173,7 @@ function PosterCard({ story }: { story: Story }) {
       href={`/news/${story.slug}`}
       className="relative flex min-h-[320px] flex-[0_0_min(380px,82vw)] snap-start flex-col justify-end overflow-hidden border border-border"
     >
-      <Cover seed={story.headline} hue={story.hue} className="absolute inset-0" />
+      <Cover src={story.src} seed={story.headline} hue={story.hue} className="absolute inset-0" />
       <div className="absolute inset-0 bg-linear-to-t from-[rgba(7,11,9,0.95)] to-70% to-[rgba(7,11,9,0.15)]" />
       <div className="relative p-5.5">
         <span className="font-mono text-[11px] tracking-[0.1em] text-primary">{story.kicker}</span>
@@ -200,6 +186,7 @@ function PosterCard({ story }: { story: Story }) {
 }
 
 function PosterRail({ title, href, stories }: { title: string; href: string; stories: Story[] }) {
+  if (stories.length === 0) return null
   return (
     <Section className="pt-7.5 pb-2.5">
       <RailHeading title={title} href={href} />
@@ -220,12 +207,14 @@ function VideoFeaturedCard({ story }: { story: Story }) {
       href={`/news/${story.slug}`}
       className="relative flex min-h-[clamp(320px,46vw,500px)] flex-col justify-end overflow-hidden border border-border"
     >
-      <Cover seed={story.headline} hue={story.hue} className="absolute inset-0" />
+      <Cover src={story.src} seed={story.headline} hue={story.hue} className="absolute inset-0" />
       <div className="absolute inset-0 bg-linear-to-t from-[rgba(7,11,9,0.95)] via-[rgba(7,11,9,0.25)] via-55% to-[rgba(7,11,9,0.45)]" />
       <PlayBadge size={88} />
-      <span className="absolute right-4.5 top-4.5 flex items-center gap-1.5 border border-white/18 bg-[rgba(10,15,12,0.6)] px-2.5 py-1.25 font-mono text-[11px] text-white">
-        ▶ {story.dur}
-      </span>
+      {story.dur && (
+        <span className="absolute right-4.5 top-4.5 flex items-center gap-1.5 border border-white/18 bg-[rgba(10,15,12,0.6)] px-2.5 py-1.25 font-mono text-[11px] text-white">
+          ▶ {story.dur}
+        </span>
+      )}
       <div className="relative p-7">
         <span className="font-mono text-[11px] tracking-[0.1em] text-primary">{story.kicker}</span>
         <h3 className="mt-2.5 mb-0 max-w-[580px] text-balance text-[clamp(25px,3.2vw,36px)] leading-none text-white">
@@ -243,12 +232,14 @@ function VideoCard({ story }: { story: Story }) {
       className="flex min-h-[150px] flex-1 flex-col overflow-hidden border border-border"
     >
       <div className="relative min-h-[128px] flex-1">
-        <Cover seed={story.headline} hue={story.hue} className="absolute inset-0" />
+        <Cover src={story.src} seed={story.headline} hue={story.hue} className="absolute inset-0" />
         <div className="absolute inset-0 bg-linear-to-t from-[rgba(7,11,9,0.55)] to-[rgba(7,11,9,0.05)]" />
         <PlayBadge />
-        <span className="absolute bottom-2.5 right-2.5 border border-white/18 bg-[rgba(10,15,12,0.6)] px-2 py-0.75 font-mono text-[10px] text-white">
-          {story.dur}
-        </span>
+        {story.dur && (
+          <span className="absolute bottom-2.5 right-2.5 border border-white/18 bg-[rgba(10,15,12,0.6)] px-2 py-0.75 font-mono text-[10px] text-white">
+            {story.dur}
+          </span>
+        )}
       </div>
       <div className="bg-background-secondary px-4 py-3.25">
         <span className="font-mono text-[10px] tracking-[0.1em] text-primary">{story.kicker}</span>
@@ -267,61 +258,21 @@ function TransferCard({ story }: { story: Story }) {
       className="flex flex-[0_0_290px] snap-start flex-col overflow-hidden border border-border bg-background-secondary transition-colors hover:border-primary/40"
     >
       <div className="relative h-[150px]">
-        <Cover seed={story.headline} hue={story.hue} className="absolute inset-0" />
-        <div className="absolute -bottom-4 left-4 z-2 flex h-11.5 w-11.5 items-center justify-center rounded-full border-2 border-primary bg-background font-mono text-[14px] font-bold text-primary">
-          {story.crest}
-        </div>
+        <Cover src={story.src} seed={story.headline} hue={story.hue} className="absolute inset-0" />
+        {story.crest && (
+          <div className="absolute -bottom-4 left-4 z-2 flex h-11.5 w-11.5 items-center justify-center rounded-full border-2 border-primary bg-background font-mono text-[14px] font-bold text-primary">
+            {story.crest}
+          </div>
+        )}
       </div>
       <div className="px-4 pt-6 pb-4.5">
-        <div className="mb-2 font-mono text-[11px] text-muted-foreground">{story.move}</div>
+        {story.move && (
+          <div className="mb-2 font-mono text-[11px] text-muted-foreground">{story.move}</div>
+        )}
         <h3 className="mb-2 line-clamp-3 text-balance text-[20px] leading-[1.04]">{story.headline}</h3>
         {story.sub && (
           <p className="m-0 line-clamp-2 text-[13px] leading-[1.45] text-txt2">{story.sub}</p>
         )}
-      </div>
-    </Link>
-  )
-}
-
-// ─── Tactics rail card (pitch graphic) ────────────────────────────────────────
-
-const PITCH_DOTS: [number, number, boolean][] = [
-  [50, 86, false], [24, 70, false], [50, 68, true], [76, 70, false],
-  [18, 46, false], [38, 44, false], [62, 44, true], [82, 46, false],
-  [34, 22, false], [50, 24, false], [66, 22, false],
-]
-
-function TacticsCard({ story }: { story: Story }) {
-  return (
-    <Link
-      href={`/news/${story.slug}`}
-      className="flex-[0_0_320px] snap-start overflow-hidden border border-border bg-background-secondary transition-colors hover:border-primary/40"
-    >
-      <div className="relative h-[178px] overflow-hidden border-b border-border bg-linear-[150deg] from-[#0d2417] to-[#08160e]">
-        <div className="absolute inset-3.5 rounded-md border border-primary/18" />
-        <div className="absolute left-3.5 right-3.5 top-1/2 h-px bg-primary/18" />
-        <div className="absolute left-1/2 top-1/2 h-[54px] w-[54px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-primary/18" />
-        {PITCH_DOTS.map(([x, y, accent], i) => (
-          <div
-            key={i}
-            className="absolute h-2.75 w-2.75 -translate-x-1/2 -translate-y-1/2 rounded-full"
-            style={{
-              left: `${x}%`,
-              top: `${y}%`,
-              background: accent ? 'var(--primary)' : '#EAF0EA',
-              boxShadow: accent ? '0 0 8px color-mix(in srgb, var(--primary) 70%, transparent)' : 'none',
-            }}
-          />
-        ))}
-        <span className="absolute bottom-2.5 right-3 font-mono text-[10px] tracking-[0.08em] text-primary/50">
-          {story.formation}
-        </span>
-      </div>
-      <div className="p-4">
-        <span className="font-mono text-[11px] text-primary">{story.kicker}</span>
-        <h3 className="mt-2 mb-0 line-clamp-3 text-balance text-[21px] leading-[1.04]">
-          {story.headline}
-        </h3>
       </div>
     </Link>
   )
@@ -335,7 +286,7 @@ function LongformCard({ story }: { story: Story }) {
       href={`/news/${story.slug}`}
       className="grid overflow-hidden border border-border bg-background-secondary transition-colors hover:border-primary/40 sm:grid-cols-[200px_1fr]"
     >
-      <Cover seed={story.headline} hue={story.hue} className="min-h-[180px] sm:min-h-[220px]" />
+      <Cover src={story.src} seed={story.headline} hue={story.hue} className="min-h-[180px] sm:min-h-[220px]" />
       <div className="flex flex-col justify-center px-5 py-6 sm:px-6.5 sm:py-7">
         <span className="mb-3 font-mono text-[11px] tracking-[0.1em] text-primary">{story.kicker}</span>
         <h3 className="mb-3.5 line-clamp-3 text-balance text-[28px] leading-none">{story.headline}</h3>
@@ -352,97 +303,109 @@ function LongformCard({ story }: { story: Story }) {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export function EditorialHome() {
+export function EditorialHome({ home }: { home: HomePayload }) {
+  const featured = home.featured ? toStory(home.featured) : null
+  const latest = home.latest.map(toStory)
+  const trending = home.trending.map(toStory)
+  const rail = (key: keyof HomePayload['sections']) =>
+    (home.sections[key] ?? []).map(toStory)
+
+  const motherland = rail('MOTHERLAND')
+  const tv = rail('TV')
+  const transfers = rail('TRANSFERS')
+  const beyond = rail('BEYOND')
+
   return (
     <>
       {/* Hero */}
-      <Section className="grid items-stretch gap-7.5 pt-8 pb-2 sm:pt-11 lg:grid-cols-[1.62fr_1fr]">
-        <HeroFeatured story={FEATURED_STORY} />
-        <div className="flex flex-col gap-4">
-          <span className="py-0.5 font-mono text-[12px] leading-none tracking-[0.14em] text-muted-foreground">
-            THE LATEST
-          </span>
-          {SECONDARY_STORIES.map((s) => (
-            <HeroSecondary key={s.slug} story={s} />
-          ))}
-        </div>
-      </Section>
-
-      {/* Trending discussion */}
-      <Section className="pt-11.5 pb-2.5">
-        <div className="mb-5 flex flex-wrap items-center gap-3">
-          <span className="animate-blip h-2.25 w-2.25 rounded-full bg-primary shadow-[0_0_12px_var(--primary)]" />
-          <h2 className="m-0 text-[26px] tracking-[0.02em]">TRENDING DISCUSSION</h2>
-          <span className="ml-1 hidden font-mono text-[13px] text-muted-foreground sm:inline">
-            what the dressing room&apos;s arguing about right now
-          </span>
-        </div>
-        <Rail>
-          {TRENDING_STORIES.map((s) => (
-            <TrendingCard key={s.slug} story={s} />
-          ))}
-        </Rail>
-      </Section>
-
-      {/* The Motherland */}
-      <Section className="pt-7.5 pb-2.5">
-        <RailHeading title="The Motherland" href="/news?category=motherland" />
-        <Rail>
-          {AFRICA_STORIES.map((s) => (
-            <MotherlandCard key={s.slug} story={s} />
-          ))}
-        </Rail>
-      </Section>
-
-      {/* World Cup + league rails */}
-      <PosterRail title="World Cup 2026" href="/news?category=worldcup" stories={WORLDCUP_STORIES} />
-      <PosterRail title="Premier League" href="/news?category=premier" stories={PREMIER_STORIES} />
-      <PosterRail title="Champions League" href="/news?category=champions" stories={CHAMPIONS_STORIES} />
-      <PosterRail title="La Liga" href="/news?category=laliga" stories={LALIGA_STORIES} />
-
-      {/* Fulltiime TV */}
-      <Section className="pt-7.5 pb-2.5">
-        <RailHeading title="Fulltiime TV" href="/news?category=tv" />
-        <div className="grid items-stretch gap-4.5 lg:grid-cols-[1.55fr_1fr]">
-          <VideoFeaturedCard story={VIDEO_FEATURED} />
-          <div className="flex flex-col gap-4.5">
-            {VIDEO_STORIES.map((s) => (
-              <VideoCard key={s.slug} story={s} />
+      {featured && (
+        <Section className="grid items-stretch gap-7.5 pt-8 pb-2 sm:pt-11 lg:grid-cols-[1.62fr_1fr]">
+          <HeroFeatured story={featured} />
+          <div className="flex flex-col gap-4">
+            <span className="py-0.5 font-mono text-[12px] leading-none tracking-[0.14em] text-muted-foreground">
+              THE LATEST
+            </span>
+            {latest.map((s) => (
+              <HeroSecondary key={s.slug} story={s} />
             ))}
           </div>
-        </div>
-      </Section>
+        </Section>
+      )}
+
+      {/* Trending discussion */}
+      {trending.length > 0 && (
+        <Section className="pt-11.5 pb-2.5">
+          <div className="mb-5 flex flex-wrap items-center gap-3">
+            <span className="animate-blip h-2.25 w-2.25 rounded-full bg-primary shadow-[0_0_12px_var(--primary)]" />
+            <h2 className="m-0 text-[26px] tracking-[0.02em]">TRENDING DISCUSSION</h2>
+            <span className="ml-1 hidden font-mono text-[13px] text-muted-foreground sm:inline">
+              what the dressing room&apos;s arguing about right now
+            </span>
+          </div>
+          <Rail>
+            {trending.map((s) => (
+              <TrendingCard key={s.slug} story={s} />
+            ))}
+          </Rail>
+        </Section>
+      )}
+
+      {/* The Motherland */}
+      {motherland.length > 0 && (
+        <Section className="pt-7.5 pb-2.5">
+          <RailHeading title="The Motherland" href="/news?category=motherland" />
+          <Rail>
+            {motherland.map((s) => (
+              <MotherlandCard key={s.slug} story={s} />
+            ))}
+          </Rail>
+        </Section>
+      )}
+
+      {/* World Cup + league rails */}
+      <PosterRail title="World Cup 2026" href="/news?category=worldcup" stories={rail('WORLDCUP')} />
+      <PosterRail title="Premier League" href="/news?category=premier" stories={rail('PREMIER')} />
+      <PosterRail title="Champions League" href="/news?category=champions" stories={rail('CHAMPIONS')} />
+
+      {/* Fulltiime TV */}
+      {tv.length > 0 && (
+        <Section className="pt-7.5 pb-2.5">
+          <RailHeading title="Fulltiime TV" href="/news?category=tv" />
+          <div className="grid items-stretch gap-4.5 lg:grid-cols-[1.55fr_1fr]">
+            <VideoFeaturedCard story={tv[0]} />
+            <div className="flex flex-col gap-4.5">
+              {tv.slice(1, 3).map((s) => (
+                <VideoCard key={s.slug} story={s} />
+              ))}
+            </div>
+          </div>
+        </Section>
+      )}
 
       {/* Transfers — sponsored card rides at the end of the rail */}
-      <Section className="pt-7.5 pb-2.5">
-        <RailHeading title="Transfers" href="/news?category=transfers" />
-        <Rail>
-          {TRANSFER_STORIES.map((s) => (
-            <TransferCard key={s.slug} story={s} />
-          ))}
-          <SponsoredFrame zone="matches-sidebar" compact className="flex-[0_0_290px] snap-start" />
-        </Rail>
-      </Section>
-
-      {/* Tactical breakdowns */}
-      <Section className="pt-7.5 pb-2.5">
-        <RailHeading title="Tactical Breakdowns" href="/news?category=tactics" />
-        <Rail>
-          {TACTICS_STORIES.map((s) => (
-            <TacticsCard key={s.slug} story={s} />
-          ))}
-        </Rail>
-      </Section>
+      {transfers.length > 0 && (
+        <Section className="pt-7.5 pb-2.5">
+          <RailHeading title="Transfers" href="/news?category=transfers" />
+          <Rail>
+            {transfers.map((s) => (
+              <TransferCard key={s.slug} story={s} />
+            ))}
+            <SponsoredFrame zone="matches-sidebar" compact className="flex-[0_0_290px] snap-start" />
+          </Rail>
+        </Section>
+      )}
 
       {/* Beyond the whistle (long-form) */}
-      <Section className="pt-7.5 pb-7.5">
-        <RailHeading title="Beyond the Whistle" href="/news?category=beyond" />
-        <div className="grid gap-5.5 lg:grid-cols-2">
-          {LONGFORM_STORIES.map((s) => (
-            <LongformCard key={s.slug} story={s} />
-          ))}
-        </div>
-      </Section>
+      {beyond.length > 0 && (
+        <Section className="pt-7.5 pb-7.5">
+          <RailHeading title="Beyond the Whistle" href="/news?category=beyond" />
+          <div className="grid gap-5.5 lg:grid-cols-2">
+            {beyond.map((s) => (
+              <LongformCard key={s.slug} story={s} />
+            ))}
+          </div>
+        </Section>
+      )}
     </>
   )
 }

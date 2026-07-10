@@ -19,13 +19,10 @@ enum ArticleStatus {
 
 /// The site's fixed editorial sections (homepage rails + category pages).
 enum Section {
-  NEWS
   TRANSFERS
-  TACTICS
   WORLDCUP
   PREMIER
   CHAMPIONS
-  LALIGA
   TV
   BEYOND
   MOTHERLAND

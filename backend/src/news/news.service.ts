@@ -12,10 +12,8 @@ const HOME_RAILS: Section[] = [
   Section.WORLDCUP,
   Section.PREMIER,
   Section.CHAMPIONS,
-  Section.LALIGA,
   Section.TV,
   Section.TRANSFERS,
-  Section.TACTICS,
   Section.BEYOND,
 ];
 

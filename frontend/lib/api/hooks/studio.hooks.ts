@@ -33,7 +33,6 @@ export interface ArticleInput {
   hue?: number
   move?: string
   crest?: string
-  formation?: string
   video_url?: string
   duration?: string
   tags?: string[]

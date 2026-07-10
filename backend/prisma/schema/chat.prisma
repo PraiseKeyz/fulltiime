@@ -1,0 +1,19 @@
+// ─── Live chat ────────────────────────────────────────────────────────────────
+
+model ChatMessage {
+  id         String   @id @default(cuid())
+  /// Room key — the article slug. A plain string (no FK) so threads survive
+  /// slug-keyed dummy content now and real articles later.
+  room       String
+  body       String
+  /// Username this message replies to, if any (display-only).
+  reply_to   String?
+
+  user_id    String
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  created_at DateTime @default(now())
+
+  @@index([room, created_at])
+  @@map("chat_messages")
+}
