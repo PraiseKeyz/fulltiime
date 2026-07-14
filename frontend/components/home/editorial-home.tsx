@@ -1,6 +1,5 @@
 import Link from 'next/link'
 import { Cover } from '@/components/content/cover'
-import { SponsoredFrame } from '@/components/ads/sponsored-frame'
 import type { HomePayload } from '@/lib/api/domain'
 import { toStory, type Story } from '@/lib/story'
 
@@ -71,7 +70,7 @@ function HeroFeatured({ story }: { story: Story }) {
           {story.headline}
         </h1>
         {story.sub && (
-          <p className="mb-4.5 max-w-[600px] text-[19px] font-medium leading-[1.4] text-primary">
+          <p className="mb-4.5 line-clamp-1 max-w-[600px] text-[19px] font-medium leading-[1.4] text-primary sm:line-clamp-none">
             {story.sub}
           </p>
         )}
@@ -388,7 +387,7 @@ export function EditorialHome({ home }: { home: HomePayload }) {
         </Section>
       )}
 
-      {/* Transfers — sponsored card rides at the end of the rail */}
+      {/* Transfers */}
       {transfers.length > 0 && (
         <Section className="pt-7.5 pb-2.5">
           <RailHeading title="Transfers" href="/news?category=transfers" />
@@ -396,7 +395,6 @@ export function EditorialHome({ home }: { home: HomePayload }) {
             {transfers.map((s) => (
               <TransferCard key={s.slug} story={s} />
             ))}
-            <SponsoredFrame zone="matches-sidebar" compact className="flex-[0_0_290px] snap-start" />
           </Rail>
         </Section>
       )}
