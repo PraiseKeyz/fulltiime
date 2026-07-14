@@ -32,4 +32,11 @@ export class NewsController {
   findOne(@Param('slug') slug: string) {
     return this.newsService.findOne(slug);
   }
+
+  // Declared after :slug — this is a sub-resource of one article, not a
+  // top-level route, so it never collides with "home" or the slug route above.
+  @Get(':slug/related')
+  related(@Param('slug') slug: string, @Query('limit') limit?: string) {
+    return this.newsService.related(slug, limit ? Number(limit) : undefined);
+  }
 }

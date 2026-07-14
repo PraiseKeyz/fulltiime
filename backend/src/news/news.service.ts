@@ -58,11 +58,54 @@ export class NewsService {
     return { data: article };
   }
 
-  /**
-   * One curated payload for the homepage: hero + latest + trending + a rail
-   * per section. Shaped to mirror the frontend's dummy-content exports so the
-   * eventual swap is mechanical.
-   */
+
+  async related(slug: string, limit = 3) {
+    const source = await this.prisma.article.findUnique({
+      where: { slug },
+      select: { id: true, section: true, tags: true, status: true },
+    });
+    if (!source || source.status !== ArticleStatus.PUBLISHED) {
+      return { data: [] };
+    }
+
+    let byTags: Awaited<ReturnType<typeof this.prisma.article.findMany>> = [];
+    if (source.tags.length) {
+      const candidates = await this.prisma.article.findMany({
+        where: {
+          status: ArticleStatus.PUBLISHED,
+          id: { not: source.id },
+          tags: { hasSome: source.tags },
+        },
+        include: AUTHOR_SELECT,
+        orderBy: { published_at: 'desc' },
+        take: Math.max(limit * 4, 12),
+      });
+      const sourceTags = new Set(source.tags);
+      byTags = candidates
+        .map((a) => ({ a, shared: a.tags.filter((t) => sourceTags.has(t)).length }))
+        .sort((x, y) => y.shared - x.shared)
+        .slice(0, limit)
+        .map(({ a }) => a);
+    }
+
+    const picked = [...byTags];
+    if (picked.length < limit) {
+      const bySection = await this.prisma.article.findMany({
+        where: {
+          status: ArticleStatus.PUBLISHED,
+          section: source.section,
+          id: { notIn: [source.id, ...picked.map((a) => a.id)] },
+        },
+        include: AUTHOR_SELECT,
+        orderBy: { published_at: 'desc' },
+        take: limit - picked.length,
+      });
+      picked.push(...bySection);
+    }
+
+    return { data: picked.slice(0, limit) };
+  }
+
   async home() {
     const published = { status: ArticleStatus.PUBLISHED };
 

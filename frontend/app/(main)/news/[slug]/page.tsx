@@ -3,10 +3,12 @@ import { notFound } from 'next/navigation'
 import { Cover } from '@/components/content/cover'
 import { AiInsights } from '@/components/content/ai-insights'
 import { LiveChat } from '@/components/content/live-chat'
+import { StoryCard } from '@/components/content/story-card'
 import { SponsoredFrame } from '@/components/ads/sponsored-frame'
-import { getArticleBySlug } from '@/lib/api/server'
+import { getArticleBySlug, getRelatedArticles } from '@/lib/api/server'
 import { hashString, readTime } from '@/lib/editorial'
 import { SECTION_META } from '@/lib/sections'
+import { toStory } from '@/lib/story'
 
 export const revalidate = 60
 
@@ -16,8 +18,13 @@ export default async function ArticlePage({
   params: Promise<{ slug: string }>
 }) {
   const { slug } = await params
-  const article = await getArticleBySlug(slug)
+  const [article, related] = await Promise.all([
+    getArticleBySlug(slug),
+    getRelatedArticles(slug, 3),
+  ])
   if (!article) notFound()
+
+  const relatedStories = related.map(toStory)
 
   const kicker = article.kicker ?? SECTION_META[article.section].label.toUpperCase()
   const author = article.author.full_name ?? article.author.username
@@ -62,12 +69,13 @@ export default async function ArticlePage({
           {/* Ad · placement 1 (under AI strip) */}
           <SponsoredFrame zone="article-inline" compact className="mb-6.5" />
 
+          {/* 3:2 box matches the 1080×720 upload target — full image, no crop */}
           <Cover
             src={article.cover_url}
             seed={article.title}
             hue={article.hue ?? hashString(article.slug) % 360}
             alt={article.title}
-            className="mb-8 h-[280px] border border-border sm:h-[420px]"
+            className="mb-8 aspect-[3/2] w-full border border-border"
           />
 
           <div className="article-prose" dangerouslySetInnerHTML={{ __html: article.content }} />
@@ -88,6 +96,20 @@ export default async function ArticlePage({
           <SponsoredFrame zone="article-sidebar" />
         </div>
       </div>
+
+      {/* You might also like — same tags first, same section to fill the rest */}
+      {relatedStories.length > 0 && (
+        <div className="border-t border-border pb-15 pt-9">
+          <h2 className="m-0 mb-5.5 text-[clamp(24px,3.6vw,32px)] uppercase leading-[0.95]">
+            You Might Also Like
+          </h2>
+          <div className="grid gap-5.5 sm:grid-cols-2 lg:grid-cols-3">
+            {relatedStories.map((story) => (
+              <StoryCard key={story.slug} story={story} />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

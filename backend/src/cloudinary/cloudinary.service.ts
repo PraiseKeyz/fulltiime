@@ -35,7 +35,13 @@ export class CloudinaryService {
 
     return new Promise((resolve, reject) => {
       const stream = cloudinary.uploader.upload_stream(
-        { folder: 'fulltiime', resource_type: 'image' },
+        {
+          folder: 'fulltiime',
+          resource_type: 'image',
+          // Fit within 1080×720 preserving aspect ratio — "limit" only ever
+          // scales down; it never crops and never upscales small images.
+          transformation: [{ width: 1080, height: 720, crop: 'limit' }],
+        },
         (error, result) => {
           if (error || !result) return reject(error ?? new Error('Upload failed'));
           resolve(result);

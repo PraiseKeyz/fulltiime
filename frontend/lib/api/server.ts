@@ -24,3 +24,6 @@ export const getArticles = (section?: Section) =>
 
 export const getArticleBySlug = (slug: string) =>
   fetchApi<Article>(`/news/${encodeURIComponent(slug)}`)
+
+export const getRelatedArticles = async (slug: string, limit = 3) =>
+  (await fetchApi<Article[]>(`/news/${encodeURIComponent(slug)}/related?limit=${limit}`)) ?? []

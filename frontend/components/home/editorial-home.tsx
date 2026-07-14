@@ -67,7 +67,7 @@ function HeroFeatured({ story }: { story: Story }) {
         {story.kicker}
       </span>
       <div className="relative max-w-[760px] p-5 sm:p-8.5">
-        <h1 className="mb-4 text-balance text-[clamp(34px,7vw,62px)] leading-[0.94] text-white">
+        <h1 className="mb-4 text-balance font-inter text-[clamp(30px,5.5vw,52px)] font-extrabold leading-[1.02] tracking-[-0.02em] text-white">
           {story.headline}
         </h1>
         {story.sub && (
@@ -89,14 +89,14 @@ function HeroSecondary({ story }: { story: Story }) {
   return (
     <Link
       href={`/news/${story.slug}`}
-      className="animate-fade-up grid flex-1 grid-cols-[128px_1fr] items-center gap-4 border border-border bg-background-secondary p-3.5 transition-colors hover:border-primary/40"
+      className="animate-fade-up grid flex-1 grid-cols-[128px_1fr] items-start gap-4 border border-border bg-background-secondary p-3.5 transition-colors hover:border-primary/40"
     >
       <Cover src={story.src} seed={story.headline} hue={story.hue} className="h-[118px]" />
       <div>
         <span className="font-mono text-[11px] leading-none tracking-[0.1em] text-primary">
           {story.kicker}
         </span>
-        <h3 className="mt-2.25 mb-2 line-clamp-3 text-balance text-[24px] leading-none">
+        <h3 className="mt-2.25 mb-2 line-clamp-3 text-balance font-inter text-[19px] font-bold leading-[1.15] tracking-[-0.01em]">
           {story.headline}
         </h3>
         <div className="font-mono text-[12px] text-muted-foreground">
@@ -122,7 +122,7 @@ function TrendingCard({ story }: { story: Story }) {
         </span>
       </div>
       <div className="flex flex-1 flex-col gap-3.5 p-4">
-        <h3 className="m-0 line-clamp-3 text-balance text-[21px] leading-[1.02]">{story.headline}</h3>
+        <h3 className="m-0 line-clamp-3 text-balance font-inter text-[19px] font-bold leading-[1.2] tracking-[-0.01em]">{story.headline}</h3>
         <div className="mt-auto flex items-center gap-2.5">
           <div className="flex">
             {(story.hues ?? []).map((h, i) => (
@@ -146,19 +146,21 @@ function MotherlandCard({ story }: { story: Story }) {
   return (
     <Link
       href={`/news/${story.slug}`}
-      className="relative flex min-h-[392px] flex-[0_0_min(360px,82vw)] snap-start flex-col justify-end overflow-hidden border border-border"
+      className="relative flex min-h-[392px] flex-[0_0_min(380px,82vw)] snap-start flex-col justify-end overflow-hidden border border-border"
     >
       <Cover src={story.src} seed={story.headline} hue={story.hue} className="absolute inset-0" />
       <div className="absolute inset-0 bg-linear-to-t from-[rgba(7,11,9,0.97)] from-14% via-[rgba(7,11,9,0.4)] via-56% to-[rgba(7,11,9,0.08)]" />
-      <div className="relative p-6">
+      {/* Fixed-height block: kicker + headline always start at the same top
+          offset, whether the headline is 1 or 2 lines or the sub is absent. */}
+      <div className="relative min-h-[184px] p-6">
         <span className="rounded-[5px] bg-primary px-2.25 py-1 font-mono text-[10px] font-bold tracking-[0.1em] text-primary-foreground">
           {story.kicker}
         </span>
-        <h3 className="mt-3.5 mb-2.5 text-balance text-[28px] leading-[0.98] text-white">
+        <h3 className="mt-3.5 mb-2.5 line-clamp-2 text-balance font-inter text-[19px] font-bold leading-[1.2] tracking-[-0.01em] text-white">
           {story.headline}
         </h3>
         {story.sub && (
-          <p className="m-0 max-w-[300px] text-[14px] leading-normal text-[#C8D2CA]">{story.sub}</p>
+          <p className="m-0 line-clamp-2 max-w-[300px] text-[14px] leading-normal text-[#C8D2CA]">{story.sub}</p>
         )}
       </div>
     </Link>
@@ -175,9 +177,11 @@ function PosterCard({ story }: { story: Story }) {
     >
       <Cover src={story.src} seed={story.headline} hue={story.hue} className="absolute inset-0" />
       <div className="absolute inset-0 bg-linear-to-t from-[rgba(7,11,9,0.95)] to-70% to-[rgba(7,11,9,0.15)]" />
-      <div className="relative p-5.5">
+      {/* Fixed-height block: kicker + headline start at the same top offset
+          across every card in the rail, 1-line headlines included. */}
+      <div className="relative min-h-[140px] p-5.5">
         <span className="font-mono text-[11px] tracking-[0.1em] text-primary">{story.kicker}</span>
-        <h3 className="mt-2 line-clamp-3 text-balance text-[27px] leading-none text-white">
+        <h3 className="mt-2 line-clamp-3 text-balance font-inter text-[19px] font-bold leading-[1.2] tracking-[-0.01em] text-white">
           {story.headline}
         </h3>
       </div>
@@ -215,9 +219,9 @@ function VideoFeaturedCard({ story }: { story: Story }) {
           ▶ {story.dur}
         </span>
       )}
-      <div className="relative p-7">
+      <div className="relative min-h-[130px] p-7">
         <span className="font-mono text-[11px] tracking-[0.1em] text-primary">{story.kicker}</span>
-        <h3 className="mt-2.5 mb-0 max-w-[580px] text-balance text-[clamp(25px,3.2vw,36px)] leading-none text-white">
+        <h3 className="mt-2.5 mb-0 line-clamp-2 max-w-[580px] text-balance font-inter text-[19px] font-bold leading-[1.2] tracking-[-0.01em] text-white">
           {story.headline}
         </h3>
       </div>
@@ -243,7 +247,7 @@ function VideoCard({ story }: { story: Story }) {
       </div>
       <div className="bg-background-secondary px-4 py-3.25">
         <span className="font-mono text-[10px] tracking-[0.1em] text-primary">{story.kicker}</span>
-        <h3 className="mt-1.5 mb-0 text-balance text-[19px] leading-[1.04]">{story.headline}</h3>
+        <h3 className="mt-1.5 mb-0 text-balance font-inter text-[19px] font-bold leading-[1.2] tracking-[-0.01em]">{story.headline}</h3>
       </div>
     </Link>
   )
@@ -266,10 +270,12 @@ function TransferCard({ story }: { story: Story }) {
         )}
       </div>
       <div className="px-4 pt-6 pb-4.5">
-        {story.move && (
-          <div className="mb-2 font-mono text-[11px] text-muted-foreground">{story.move}</div>
-        )}
-        <h3 className="mb-2 line-clamp-3 text-balance text-[20px] leading-[1.04]">{story.headline}</h3>
+        {/* Reserved line so the headline starts at the same top offset
+            whether or not this story has a move label. */}
+        <div className="mb-2 min-h-[16px] font-mono text-[11px] text-muted-foreground">
+          {story.move || ' '}
+        </div>
+        <h3 className="mb-2 line-clamp-3 text-balance font-inter text-[19px] font-bold leading-[1.2] tracking-[-0.01em]">{story.headline}</h3>
         {story.sub && (
           <p className="m-0 line-clamp-2 text-[13px] leading-[1.45] text-txt2">{story.sub}</p>
         )}
@@ -287,9 +293,9 @@ function LongformCard({ story }: { story: Story }) {
       className="grid overflow-hidden border border-border bg-background-secondary transition-colors hover:border-primary/40 sm:grid-cols-[200px_1fr]"
     >
       <Cover src={story.src} seed={story.headline} hue={story.hue} className="min-h-[180px] sm:min-h-[220px]" />
-      <div className="flex flex-col justify-center px-5 py-6 sm:px-6.5 sm:py-7">
+      <div className="flex flex-col justify-start px-5 py-6 sm:px-6.5 sm:py-7">
         <span className="mb-3 font-mono text-[11px] tracking-[0.1em] text-primary">{story.kicker}</span>
-        <h3 className="mb-3.5 line-clamp-3 text-balance text-[28px] leading-none">{story.headline}</h3>
+        <h3 className="mb-3.5 line-clamp-3 text-balance font-inter text-[19px] font-bold leading-[1.2] tracking-[-0.01em]">{story.headline}</h3>
         {story.sub && (
           <p className="mb-4 line-clamp-2 text-[14px] leading-normal text-txt2">{story.sub}</p>
         )}

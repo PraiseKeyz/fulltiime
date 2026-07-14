@@ -183,7 +183,7 @@ export function Footer() {
               editorial@fulltiime.com
             </a>
             <a href="mailto:partnerships@fulltiime.com" className="text-primary hover:underline">
-              partnerships@fulltiime.com
+              fulltiime@glostarep.com
             </a>
           </div>
         </div>

@@ -165,7 +165,8 @@ async function compressImage(file: File): Promise<File> {
   try {
     return await imageCompression(file, {
       maxSizeMB: 1.5,
-      maxWidthOrHeight: 2560,
+      // Covers display at 1080×720 (3:2) — scales proportionally, never crops.
+      maxWidthOrHeight: 1080,
       useWebWorker: true,
       initialQuality: 0.85,
     })
