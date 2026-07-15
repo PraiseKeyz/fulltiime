@@ -172,7 +172,7 @@ export function Footer() {
             links={[
               { label: 'Premier League',   href: '/news?category=premier' },
               { label: 'Champions League', href: '/news?category=champions' },
-              { label: 'World Cup 2026',   href: '/news?category=worldcup' },
+              { label: 'World Cup',   href: '/news?category=worldcup' },
               { label: 'The Motherland',     href: '/news?category=motherland' },
             ]}
           />
