@@ -367,8 +367,7 @@ export function EditorialHome({ home }: { home: HomePayload }) {
         </Section>
       )}
 
-      {/* World Cup + league rails */}
-      <PosterRail title="World Cup 2026" href="/news?category=worldcup" stories={rail('WORLDCUP')} />
+      {/* League rails */}
       <PosterRail title="Premier League" href="/news?category=premier" stories={rail('PREMIER')} />
       <PosterRail title="Champions League" href="/news?category=champions" stories={rail('CHAMPIONS')} />
 
@@ -401,7 +400,7 @@ export function EditorialHome({ home }: { home: HomePayload }) {
 
       {/* Beyond the whistle (long-form) */}
       {beyond.length > 0 && (
-        <Section className="pt-7.5 pb-7.5">
+        <Section className="pt-7.5 pb-2.5">
           <RailHeading title="Beyond the Whistle" href="/news?category=beyond" />
           <div className="grid gap-5.5 lg:grid-cols-2">
             {beyond.map((s) => (
@@ -410,6 +409,9 @@ export function EditorialHome({ home }: { home: HomePayload }) {
           </div>
         </Section>
       )}
+
+      {/* World Cup — last section, sits directly above the footer */}
+      <PosterRail title="World Cup" href="/news?category=worldcup" stories={rail('WORLDCUP')} />
     </>
   )
 }

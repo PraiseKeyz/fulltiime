@@ -143,6 +143,7 @@ body {
 /* ── Article prose renderer ─────────────────────────────────────────────────── */
 .article-prose {
   color: var(--foreground);
+  font-family: var(--font-inter);
   font-size: 18px;
   line-height: 1.72;
   max-width: 680px;

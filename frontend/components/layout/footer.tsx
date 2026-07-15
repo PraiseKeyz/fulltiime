@@ -42,14 +42,13 @@ const SOCIALS = [
 const EXPLORE = [
   { label: 'News',               href: '/news' },
   { label: 'Transfers',          href: '/news?category=transfers' },
-  { label: 'World Cup 2026',     href: '/news?category=worldcup' },
   { label: 'Fulltiime TV',       href: '/news?category=tv' },
   { label: 'Beyond the Whistle', href: '/news?category=beyond' },
-  { label: 'The Motherland',     href: '/news?category=motherland' },
+
 ]
 
 const COMPANY = [
-  { label: 'Sign In',        href: '/login' },
+  { label: 'About',         href: '/about' },
   { label: 'Terms of Use',   href: '/terms' },
   { label: 'Privacy Policy', href: '/privacy' },
 ]
@@ -118,7 +117,7 @@ export function Footer() {
               <img src="/logo.svg" alt="Fulltiime" className="h-7 w-auto" />
             </Link>
             <p className="mb-5.5 text-[14px] leading-relaxed text-txt2">
-              Independent football storytelling — deep reads, sharp tactics, and the culture around
+              Independent football storytelling deep reads, sharp tactics, and the culture around
               the game. Football beyond the final whistle.
             </p>
             <div className="mb-2.5 font-mono text-[12px] tracking-[0.12em] text-muted-foreground">
@@ -173,8 +172,8 @@ export function Footer() {
             links={[
               { label: 'Premier League',   href: '/news?category=premier' },
               { label: 'Champions League', href: '/news?category=champions' },
-              { label: 'La Liga',          href: '/news?category=laliga' },
               { label: 'World Cup 2026',   href: '/news?category=worldcup' },
+              { label: 'The Motherland',     href: '/news?category=motherland' },
             ]}
           />
           <FooterColumn title="COMPANY" links={COMPANY} />
@@ -182,7 +181,7 @@ export function Footer() {
 
         <div className="border-b border-border py-7">
           <p className="m-0 max-w-[940px] text-[15px] leading-[1.7] text-txt2">
-            Fulltiime is built for the fan who reads deeply — covering the leagues, the World Cup,
+            Fulltiime is built for the fan who reads deeply covering the leagues, the World Cup,
             and the human stories the scoreboard never tells. From NPFL matchdays to Champions
             League nights, every piece is written by people who actually watch the game, for people
             who never stop talking about it.

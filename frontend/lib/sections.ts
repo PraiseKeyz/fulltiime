@@ -3,7 +3,7 @@ import type { Section } from '@/lib/api/domain'
 /** Display metadata for the backend Section enum, in homepage-rail order. */
 export const SECTION_META: Record<Section, { label: string; title: string; slug: string }> = {
   MOTHERLAND: { label: 'The Motherland', title: 'The Motherland', slug: 'motherland' },
-  WORLDCUP:   { label: 'World Cup',      title: 'World Cup 2026', slug: 'worldcup' },
+  WORLDCUP:   { label: 'World Cup',      title: 'World Cup', slug: 'worldcup' },
   PREMIER:    { label: 'Premier League', title: 'Premier League', slug: 'premier' },
   CHAMPIONS:  { label: 'Champions',      title: 'Champions League', slug: 'champions' },
   TV:         { label: 'Fulltiime TV',   title: 'Fulltiime TV', slug: 'tv' },
