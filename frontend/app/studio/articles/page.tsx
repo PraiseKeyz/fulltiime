@@ -29,7 +29,7 @@ function ArticleRow({ article, canCurate }: { article: Article; canCurate: boole
       <Link href={`/studio/articles/${article.id}`} className="min-w-0 flex-1">
         <div className="mb-1 flex items-center gap-2">
           {article.is_featured && <Star className="h-3.5 w-3.5 shrink-0 fill-primary text-primary" />}
-          <h3 className="truncate text-[17px] leading-tight">{article.title}</h3>
+          <h3 className="truncate font-inter text-[17px] font-bold leading-tight tracking-[-0.01em]">{article.title}</h3>
         </div>
         <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 font-mono text-[11px] text-muted-foreground">
           <span className="text-primary">{SECTION_META[article.section].label}</span>

@@ -24,7 +24,7 @@ function ReviewRow({ article }: { article: Article }) {
     <div className="border border-border bg-background-secondary px-5 py-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <Link href={`/studio/articles/${article.id}`} className="min-w-0 flex-1">
-          <h3 className="mb-1 text-[19px] leading-tight hover:text-primary">{article.title}</h3>
+          <h3 className="mb-1 font-inter text-[19px] font-bold leading-tight tracking-[-0.01em] hover:text-primary">{article.title}</h3>
           <div className="flex flex-wrap items-center gap-x-2 font-mono text-[11px] text-muted-foreground">
             <span className="text-primary">{SECTION_META[article.section].label}</span>
             <span>·</span>

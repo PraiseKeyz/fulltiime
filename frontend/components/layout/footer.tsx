@@ -54,11 +54,27 @@ const COMPANY = [
   { label: 'Privacy Policy', href: '/privacy' },
 ]
 
+function CrossMark() {
+  return (
+    <svg width={8} height={8} shapeRendering="crispEdges" className="overflow-visible">
+      <path
+        d="M0 4H8M4 0V8"
+        stroke="color-mix(in srgb, var(--foreground) 34%, transparent)"
+        strokeWidth={1}
+      />
+    </svg>
+  )
+}
+
 function ColumnMarks() {
   return (
     <>
-      <span className="absolute -left-1.5 -top-2.5 hidden font-mono text-[14px] leading-none text-muted-foreground lg:block">+</span>
-      <span className="absolute -left-1.5 -bottom-2.5 hidden font-mono text-[14px] leading-none text-muted-foreground lg:block">+</span>
+      <span className="absolute left-0 top-0 hidden -translate-x-1/2 -translate-y-1/2 lg:block">
+        <CrossMark />
+      </span>
+      <span className="absolute bottom-0 left-0 hidden -translate-x-1/2 translate-y-1/2 lg:block">
+        <CrossMark />
+      </span>
     </>
   )
 }
@@ -179,9 +195,6 @@ export function Footer() {
             product of Glostarep Media Limited
           </span>
           <div className="flex flex-wrap gap-5 font-mono text-[13px]">
-            <a href="mailto:editorial@fulltiime.com" className="text-primary hover:underline">
-              editorial@fulltiime.com
-            </a>
             <a href="mailto:partnerships@fulltiime.com" className="text-primary hover:underline">
               fulltiime@glostarep.com
             </a>

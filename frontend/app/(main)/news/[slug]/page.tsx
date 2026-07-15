@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Cover } from '@/components/content/cover'
+import { VideoEmbed } from '@/components/content/video-embed'
 import { AiInsights } from '@/components/content/ai-insights'
 import { LiveChat } from '@/components/content/live-chat'
 import { StoryCard } from '@/components/content/story-card'
@@ -9,6 +10,7 @@ import { getArticleBySlug, getRelatedArticles } from '@/lib/api/server'
 import { hashString, readTime } from '@/lib/editorial'
 import { SECTION_META } from '@/lib/sections'
 import { toStory } from '@/lib/story'
+import { youtubeId } from '@/lib/youtube'
 
 export const revalidate = 60
 
@@ -25,6 +27,7 @@ export default async function ArticlePage({
   if (!article) notFound()
 
   const relatedStories = related.map(toStory)
+  const videoId = youtubeId(article.video_url)
 
   const kicker = article.kicker ?? SECTION_META[article.section].label.toUpperCase()
   const author = article.author.full_name ?? article.author.username
@@ -69,24 +72,28 @@ export default async function ArticlePage({
           {/* Ad · placement 1 (under AI strip) */}
           <SponsoredFrame zone="article-inline" compact className="mb-6.5" />
 
-          {/* 3:2 box matches the 1080×720 upload target — full image, no crop */}
-          <Cover
-            src={article.cover_url}
-            seed={article.title}
-            hue={article.hue ?? hashString(article.slug) % 360}
-            alt={article.title}
-            className="mb-8 aspect-[3/2] w-full border border-border"
-          />
+          {videoId ? (
+            <VideoEmbed
+              videoUrl={article.video_url!}
+              title={article.title}
+              coverSrc={article.cover_url}
+              className="mb-8 aspect-video w-full border border-border"
+            />
+          ) : (
+            // 3:2 box matches the 1080×720 upload target — full image, no crop
+            <Cover
+              src={article.cover_url}
+              seed={article.title}
+              hue={article.hue ?? hashString(article.slug) % 360}
+              alt={article.title}
+              className="mb-8 aspect-[3/2] w-full border border-border"
+            />
+          )}
 
           <div className="article-prose" dangerouslySetInnerHTML={{ __html: article.content }} />
 
           {/* Ad · placement 2 (mid-article) */}
           <SponsoredFrame zone="article-inline" className="my-8.5 max-w-[680px]" />
-
-          <p className="m-0 max-w-[680px] font-heading text-[22px] leading-[1.12] text-head">
-            Football beyond the final whistle isn&apos;t a tagline. It&apos;s where the real game
-            lives.
-          </p>
         </article>
 
         {/* Live thread + sidebar ad */}
