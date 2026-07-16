@@ -55,7 +55,7 @@ function LoginContent() {
             <img src="/logo.svg" alt="Fulltiime" className="h-7 w-auto" />
           </Link>
 
-          <h2 className="text-4xl font-black uppercase tracking-tight text-foreground">Welcome back</h2>
+          <h2 className="text-4xl font-black uppercase tracking-wide text-foreground">Welcome back</h2>
           <p className="mt-2 text-[14px] text-muted-foreground">Sign in to continue to your feed.</p>
 
           {/* Social */}

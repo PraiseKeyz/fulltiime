@@ -98,7 +98,7 @@ export default function PrivacyPage() {
         <h2>Contact us</h2>
         <p>
           If you have questions about this policy or your data, email us at{' '}
-          <a href="mailto:support@fulltiime.com">support@fulltiime.com</a>.
+          <a href="mailto:fulltiime.sport@gmail.com">fulltiime.sport@gmail.com</a>.
         </p>
       </section>
     </ContentPage>

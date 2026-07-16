@@ -104,7 +104,7 @@ export default function TermsPage() {
         <h2>Contact us</h2>
         <p>
           Questions about these terms? Email us at{' '}
-          <a href="mailto:support@fulltiime.com">support@fulltiime.com</a>.
+          <a href="mailto:fulltiime.sport@gmail.com">fulltiime.sport@gmail.com</a>.
         </p>
       </section>
     </ContentPage>
