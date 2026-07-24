@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { Instagram, Youtube } from 'lucide-react'
 import { useImmersive } from '@/providers/immersive-provider'
+import { useSubscribeNewsletter } from '@/lib/api/hooks/newsletter.hooks'
 
 // Brand glyphs lucide no longer ships as first-class icons (X, TikTok, WhatsApp).
 // Inline SVGs using currentColor so they inherit the same hover colour as the rest.
@@ -104,6 +105,8 @@ export function Footer() {
   const { immersive } = useImmersive()
   const [email, setEmail] = useState('')
   const [sent, setSent] = useState(false)
+  const [error, setError] = useState('')
+  const subscribe = useSubscribeNewsletter()
 
   if (immersive) return null
 
@@ -132,11 +135,17 @@ export function Footer() {
                 className="flex max-w-[360px] gap-2"
                 onSubmit={(e) => {
                   e.preventDefault()
-                  if (email.includes('@')) setSent(true)
+                  setError('')
+                  subscribe.mutate(email, {
+                    onSuccess: () => setSent(true),
+                    onError: (err) =>
+                      setError(err instanceof Error ? err.message : 'Something went wrong — try again.'),
+                  })
                 }}
               >
                 <input
                   type="email"
+                  required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@email.com"
@@ -144,12 +153,14 @@ export function Footer() {
                 />
                 <button
                   type="submit"
-                  className="rounded-full bg-primary px-5 text-[14px] font-bold text-primary-foreground"
+                  disabled={subscribe.isPending}
+                  className="rounded-full bg-primary px-5 text-[14px] font-bold text-primary-foreground disabled:opacity-50"
                 >
-                  Subscribe
+                  {subscribe.isPending ? '…' : 'Subscribe'}
                 </button>
               </form>
             )}
+            {error && <p className="mt-2 text-[12px] text-destructive">{error}</p>}
             <div className="mt-5.5 flex flex-wrap gap-2">
               {SOCIALS.map(({ label, href, Icon }) => (
                 <a

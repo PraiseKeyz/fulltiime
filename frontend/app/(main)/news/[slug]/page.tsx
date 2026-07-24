@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { Cover } from '@/components/content/cover'
+import { ArticleAudio } from '@/components/content/article-audio'
 import { VideoEmbed } from '@/components/content/video-embed'
 import { AiInsights } from '@/components/content/ai-insights'
 import { LiveChat } from '@/components/content/live-chat'
@@ -47,6 +48,8 @@ export default async function ArticlePage({
       >
         ← back to the homepage
       </Link>
+
+      <ArticleAudio title={article.title} html={article.content} />
 
       <div className="grid items-start gap-7.5 pb-15 lg:grid-cols-[1fr_372px] lg:gap-12">
         {/* Main article */}

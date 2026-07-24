@@ -140,3 +140,39 @@ export interface PaginatedUsers {
   limit: number
   pages: number
 }
+
+// ─── Newsletter ───────────────────────────────────────────────────────────────
+
+export type SubscriberStatus = 'CONFIRMED' | 'UNSUBSCRIBED'
+
+export interface Subscriber {
+  id: string
+  email: string
+  status: SubscriberStatus
+  subscribed_at: string
+  confirmed_at: string | null
+  unsubscribed_at: string | null
+}
+
+export interface PaginatedSubscribers {
+  subscribers: Subscriber[]
+  total: number
+  page: number
+  limit: number
+  pages: number
+}
+
+export type CampaignStatus = 'DRAFT' | 'SENDING' | 'SENT'
+
+export interface Campaign {
+  id: string
+  subject: string
+  content: string
+  status: CampaignStatus
+  recipient_count: number
+  sent_count: number
+  author?: { id: string; username: string; full_name: string | null }
+  created_at: string
+  updated_at: string
+  sent_at: string | null
+}

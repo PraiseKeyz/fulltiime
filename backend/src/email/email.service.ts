@@ -82,7 +82,12 @@ export class EmailService {
     await this.sendEmail({ to, subject, html });
   }
 
-  private async sendEmail(payload: SendEmailPayload) {
+  async sendNewsletterCampaign(to: string, subject: string, content: string, unsubscribeUrl: string) {
+    const html = this.templateService.render('newsletter-campaign', { subject, content, unsubscribeUrl });
+    await this.sendEmail({ to, subject, html, silent: true });
+  }
+
+  private async sendEmail(payload: SendEmailPayload & { silent?: boolean }) {
     if (!this.configured) {
       this.logger.warn(
         `Email SKIPPED (no API key) — to=${payload.to} subject="${payload.subject}"`,
@@ -100,14 +105,17 @@ export class EmailService {
       textbody: payload.text ?? this.htmlToText(payload.html),
     };
 
-    this.logger.log(`Sending email — to=${payload.to} subject="${payload.subject}"`);
+    // Bulk campaign sends log at debug (one line per subscriber at `log`
+    // level would drown everything else); failures always surface loudly.
+    const log = payload.silent
+      ? this.logger.debug.bind(this.logger)
+      : this.logger.log.bind(this.logger);
+    log(`Sending email — to=${payload.to} subject="${payload.subject}"`);
 
     try {
       const res = await this.http.post('/v1.1/email', body);
       const requestId = res.data?.request_id ?? 'n/a';
-      this.logger.log(
-        `Email SENT — to=${payload.to} subject="${payload.subject}" request_id=${requestId}`,
-      );
+      log(`Email SENT — to=${payload.to} subject="${payload.subject}" request_id=${requestId}`);
     } catch (error: any) {
       const status = error?.response?.status;
       const detail = error?.response?.data

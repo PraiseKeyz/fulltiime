@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect } from 'react'
-import { FileText, Inbox, Image as ImageIcon, Users, ArrowLeft } from 'lucide-react'
+import { FileText, Inbox, Image as ImageIcon, Users, Mail, ArrowLeft } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { roleAtLeast } from '@/lib/roles'
 import { useAuth } from '@/providers/auth-provider'
@@ -13,6 +13,7 @@ const NAV = [
   { href: '/studio/review', label: 'Review Queue', icon: Inbox, min: 'EDITOR' as const },
   { href: '/studio/media', label: 'Media', icon: ImageIcon, min: 'WRITER' as const },
   { href: '/studio/users', label: 'Users', icon: Users, min: 'ADMIN' as const },
+  { href: '/studio/newsletter', label: 'Newsletter', icon: Mail, min: 'ADMIN' as const },
 ]
 
 export default function StudioLayout({ children }: { children: React.ReactNode }) {

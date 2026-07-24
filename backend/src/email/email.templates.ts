@@ -36,7 +36,18 @@ function escUrl(v: unknown): string {
 
 // ── Shared layout ─────────────────────────────────────────────────────────────
 
-function layout({ preheader, heading, body }: { preheader: string; heading: string; body: string }) {
+function layout({
+  preheader,
+  heading,
+  body,
+  footer,
+}: {
+  preheader: string;
+  heading: string;
+  body: string;
+  /** Overrides the default "you have an account" footer line. */
+  footer?: string;
+}) {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -73,9 +84,9 @@ function layout({ preheader, heading, body }: { preheader: string; heading: stri
           <!-- Footer -->
           <tr>
             <td style="padding:24px 32px;text-align:center;font-family:Arial,Helvetica,sans-serif;">
-              <p style="margin:0 0 6px;font-size:12px;color:${BRAND.muted};">
+              ${footer ?? `<p style="margin:0 0 6px;font-size:12px;color:${BRAND.muted};">
                 You received this email because you have an account with ${BRAND.name}.
-              </p>
+              </p>`}
               <p style="margin:0;font-size:12px;color:${BRAND.muted};">
                 &copy; ${new Date().getFullYear()} ${BRAND.name}. All rights reserved.
               </p>
@@ -190,9 +201,26 @@ export function staffInviteTemplate(vars: Vars) {
   });
 }
 
+/** Campaign body is raw HTML from the studio's rich-text composer. */
+export function newsletterCampaignTemplate(vars: Vars) {
+  const subject = esc(vars.subject ?? BRAND.name);
+  const content = String(vars.content ?? '');
+  const unsubscribeUrl = String(vars.unsubscribeUrl ?? BRAND.site);
+  return layout({
+    preheader: subject,
+    heading:   String(vars.subject ?? ''),
+    body: `<div style="font-size:15px;line-height:1.65;color:${BRAND.ink};">${content}</div>`,
+    footer: `<p style="margin:0 0 6px;font-size:12px;color:${BRAND.muted};">
+      You're receiving this because you subscribed to the ${BRAND.name} newsletter.
+      <a href="${escUrl(unsubscribeUrl)}" style="color:${BRAND.green};">Unsubscribe</a>
+    </p>`,
+  });
+}
+
 export const TEMPLATES: Record<string, (vars: Vars) => string> = {
-  'welcome':        welcomeTemplate,
-  'verify-email':   verifyEmailTemplate,
-  'password-reset': passwordResetTemplate,
-  'staff-invite':   staffInviteTemplate,
+  'welcome':             welcomeTemplate,
+  'verify-email':        verifyEmailTemplate,
+  'password-reset':      passwordResetTemplate,
+  'staff-invite':        staffInviteTemplate,
+  'newsletter-campaign': newsletterCampaignTemplate,
 };

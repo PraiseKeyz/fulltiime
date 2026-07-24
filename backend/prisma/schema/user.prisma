@@ -22,6 +22,7 @@ model User {
   articles        Article[]
   media           Media[]
   chat_messages   ChatMessage[]
+  newsletter_campaigns NewsletterCampaign[]
 
   created_at      DateTime  @default(now())
   updated_at      DateTime  @updatedAt

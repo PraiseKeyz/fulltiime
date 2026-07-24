@@ -1,0 +1,38 @@
+// ─── Newsletter ───────────────────────────────────────────────────────────────
+
+model NewsletterSubscriber {
+  id          String           @id @default(cuid())
+  email       String           @unique
+  status      SubscriberStatus @default(CONFIRMED)
+
+  /// Long-lived — stays valid for the one-click unsubscribe link in every send.
+  unsubscribe_token String @unique @default(cuid())
+
+  subscribed_at   DateTime  @default(now())
+  confirmed_at    DateTime?
+  unsubscribed_at DateTime?
+
+  @@index([status])
+  @@map("newsletter_subscribers")
+}
+
+model NewsletterCampaign {
+  id      String         @id @default(cuid())
+  subject String
+  content String
+  status  CampaignStatus @default(DRAFT)
+
+  /// Snapshot at send-time — how many confirmed subscribers it went to.
+  recipient_count Int @default(0)
+  /// Ticks up as the background sender works through the batch.
+  sent_count      Int @default(0)
+
+  author_id String
+  author    User   @relation(fields: [author_id], references: [id])
+
+  created_at DateTime  @default(now())
+  updated_at DateTime  @updatedAt
+  sent_at    DateTime?
+
+  @@map("newsletter_campaigns")
+}

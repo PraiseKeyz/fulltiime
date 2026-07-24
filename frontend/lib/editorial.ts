@@ -30,7 +30,24 @@ export function timeAgo(iso: string | null): string {
   return `${Math.floor(hrs / 24)}d ago`
 }
 
+/** Strips tags and decodes the handful of entities TipTap output actually uses. */
+export function stripHtml(html: string): string {
+  return html
+    .replace(/<\s*br\s*\/?>/gi, '\n')
+    .replace(/<\/(p|div|li|h[1-6])>/gi, '\n')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#0?39;/gi, "'")
+    .replace(/[ \t]+/g, ' ')
+    .replace(/\n\s+/g, '\n')
+    .trim()
+}
+
 export function readTime(content: string): string {
-  const words = content.replace(/<[^>]+>/g, ' ').split(/\s+/).filter(Boolean).length
+  const words = stripHtml(content).split(/\s+/).filter(Boolean).length
   return `${Math.max(1, Math.ceil(words / 200))} min`
 }

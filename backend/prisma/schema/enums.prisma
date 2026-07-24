@@ -27,3 +27,15 @@ enum Section {
   BEYOND
   MOTHERLAND
 }
+
+/// Single opt-in — a row is CONFIRMED the moment someone subscribes.
+enum SubscriberStatus {
+  CONFIRMED
+  UNSUBSCRIBED
+}
+
+enum CampaignStatus {
+  DRAFT
+  SENDING
+  SENT
+}

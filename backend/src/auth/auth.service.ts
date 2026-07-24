@@ -12,6 +12,7 @@ import { randomBytes, createHash } from 'node:crypto';
 import { OAuth2Client } from 'google-auth-library';
 import { PrismaService } from '@/prisma/prisma.service.js';
 import { SafeUserSelect } from '@/common/constants/user-select.constant.js';
+import { getFrontendUrl } from '@/common/utils/frontend-url.util.js';
 import { EmailService } from '../email/email.service.js';
 import { RegisterDto } from './dto/register.dto.js';
 import { LoginDto } from './dto/login.dto.js';
@@ -342,12 +343,8 @@ export class AuthService {
     return createHash('sha256').update(rawToken).digest('hex');
   }
 
-  // Base URL for links in emails. FRONTEND_URL may be a comma-separated list
-  // (shared with CORS) — use the first entry.
   private get frontendUrl(): string {
-    const raw   = this.config.get<string>('FRONTEND_URL') ?? '';
-    const first = raw.split(',').map((s) => s.trim()).find(Boolean);
-    return (first ?? 'http://localhost:3000').replace(/\/$/, '');
+    return getFrontendUrl(this.config);
   }
 
   private async signAndStoreTokens(userId: string, email: string) {

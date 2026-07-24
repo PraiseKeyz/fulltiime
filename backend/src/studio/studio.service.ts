@@ -8,6 +8,7 @@ import {
 import { randomBytes } from 'node:crypto';
 import * as argon2 from 'argon2';
 import { PrismaService } from '@/prisma/prisma.service.js';
+import { getFrontendUrl } from '@/common/utils/frontend-url.util.js';
 import { ArticleStatus, Prisma, Role } from '../../generated/prisma/index.js';
 import { roleAtLeast } from '@/auth/guards/roles.guard.js';
 import { CloudinaryService } from '@/cloudinary/cloudinary.service.js';
@@ -358,9 +359,7 @@ export class StudioService {
   // ── Helpers ────────────────────────────────────────────────────────────────
 
   private get frontendUrl(): string {
-    const raw = this.config.get<string>('FRONTEND_URL') ?? '';
-    const first = raw.split(',').map((s) => s.trim()).find(Boolean);
-    return (first ?? 'https://fulltiime.com').replace(/\/$/, '');
+    return getFrontendUrl(this.config);
   }
 
   private async findOrThrow(id: string) {
